@@ -1,0 +1,5 @@
+/app/src/main/java/com/goiashop/GoiaShopApplication.java
+/app/src/main/java/com/goiashop/controller/ProductController.java
+/app/src/main/java/com/goiashop/model/Product.java
+/app/src/main/java/com/goiashop/repository/ProductRepository.java
+/app/src/main/java/com/goiashop/service/ProductService.java
