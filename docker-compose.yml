@@ -18,6 +18,39 @@ services:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 5s
       retries: 10
+    networks:
+      - goia-network
+
+  backend:
+    build: ./backend
+    container_name: goia-shop-backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/BancoGOIA?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: goia
+      SPRING_DATASOURCE_PASSWORD: goia123
+    networks:
+      - goia-network
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: goia-shop-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - goia-network
+    restart: unless-stopped
 
 volumes:
   mysql_data:
+
+networks:
+  goia-network:
+    driver: bridge
