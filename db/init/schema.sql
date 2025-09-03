@@ -1,9 +1,7 @@
-CREATE DATABASE BancoGOI; 
-USE BancoGOI;
+CREATE DATABASE IF NOT EXISTS appdb;
+USE appdb;
 
--- E-COMMERCE BACKOFFICE SYSTEM TABLES --
-
--- Users table for backoffice authentication and user management
+-- E-commerce backoffice users table
 CREATE TABLE IF NOT EXISTS users (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   nome VARCHAR(100) NOT NULL,
@@ -17,16 +15,15 @@ CREATE TABLE IF NOT EXISTS users (
   UNIQUE KEY uq_cpf (cpf)
 );
 
--- EXISTING BANKING SYSTEM TABLES -- 
-
-CREATE TABLE Instituicao (
+-- Existing banking system tables from preSQL (preserved)
+CREATE TABLE IF NOT EXISTS Instituicao (
     ID_instituicao INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
     Razao_Social VARCHAR(100) NOT NULL UNIQUE,
     CNPJ VARCHAR(14) NOT NULL UNIQUE,
     CEP VARCHAR(8) NOT NULL
 );
 
-CREATE TABLE Cliente (
+CREATE TABLE IF NOT EXISTS Cliente (
     ID INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY, 
     Nome VARCHAR(100) NOT NULL,
     Sobrenome VARCHAR(250) NOT NULL,
@@ -36,7 +33,7 @@ CREATE TABLE Cliente (
     Data_Nascimento DATE NOT NULL
 );
 
-CREATE TABLE Conta (
+CREATE TABLE IF NOT EXISTS Conta (
     IdConta INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
     ID_Cliente INTEGER NOT NULL,  
     Numero_Conta VARCHAR(10) NOT NULL UNIQUE,
@@ -47,7 +44,7 @@ CREATE TABLE Conta (
     FOREIGN KEY (ID_Cliente) REFERENCES Cliente(ID) ON DELETE CASCADE  
 );
 
-CREATE TABLE Pagamento (
+CREATE TABLE IF NOT EXISTS Pagamento (
     Id_Pagamento INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
     Id_Conta INTEGER NOT NULL,
     Tipo_Pagamento ENUM('Boleto', 'Fatura Cartão', 'Tributo', 'Transferência', 'Aporte', 'Outro') NOT NULL,
@@ -59,14 +56,14 @@ CREATE TABLE Pagamento (
     FOREIGN KEY (Id_Conta) REFERENCES Conta(IdConta) ON DELETE CASCADE
 );
 
-CREATE TABLE Produtos (
+CREATE TABLE IF NOT EXISTS Produtos (
     ID_Produto INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
     Id_Conta INTEGER NOT NULL,
     Servico ENUM('Cheque Especial', 'Cartão de Crédito', 'CDB') NOT NULL UNIQUE,
     FOREIGN KEY (Id_Conta) REFERENCES Conta(IdConta) ON DELETE CASCADE
 );
 
-CREATE TABLE Cheque_Especial (
+CREATE TABLE IF NOT EXISTS Cheque_Especial (
     Id_Cheque INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
     Id_Conta INTEGER NOT NULL,
     Valor DECIMAL(14,2) NOT NULL,
@@ -76,7 +73,7 @@ CREATE TABLE Cheque_Especial (
     FOREIGN KEY (Id_Conta) REFERENCES Conta(IdConta) ON DELETE CASCADE
 );
 
-CREATE TABLE Cartao_Credito (
+CREATE TABLE IF NOT EXISTS Cartao_Credito (
     Id_Cartao INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
     Id_Conta INTEGER NOT NULL,
     Valor_Utilizado DECIMAL(14,2) NOT NULL,
@@ -86,7 +83,7 @@ CREATE TABLE Cartao_Credito (
     FOREIGN KEY (Id_Conta) REFERENCES Conta(IdConta) ON DELETE CASCADE
 );
 
-CREATE TABLE Fatura_Cartao (
+CREATE TABLE IF NOT EXISTS Fatura_Cartao (
     ID_Fatura INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
     Id_Cartao INTEGER NOT NULL,
     Competencia DATE NOT NULL,
@@ -100,7 +97,7 @@ CREATE TABLE Fatura_Cartao (
     FOREIGN KEY (Id_Cartao) REFERENCES Cartao_Credito(Id_Cartao) ON DELETE CASCADE
 );
 
-CREATE TABLE Lancamentos_Cartao (
+CREATE TABLE IF NOT EXISTS Lancamentos_Cartao (
     ID_Lancamento INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
     Id_Cartao INTEGER NOT NULL,
     Descricao VARCHAR(200) NOT NULL,
@@ -110,7 +107,7 @@ CREATE TABLE Lancamentos_Cartao (
     FOREIGN KEY (Id_Cartao) REFERENCES Cartao_Credito(Id_Cartao) ON DELETE CASCADE
 );
 
-CREATE TABLE Transferencia (
+CREATE TABLE IF NOT EXISTS Transferencia (
     Id_Transferencia INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
     Id_Conta INTEGER NOT NULL,
     Id_Cartao INTEGER,
@@ -122,7 +119,7 @@ CREATE TABLE Transferencia (
     FOREIGN KEY (Id_Cartao) REFERENCES Cartao_Credito(Id_Cartao) ON DELETE CASCADE
 );
 
-CREATE TABLE Extrato_Conta (
+CREATE TABLE IF NOT EXISTS Extrato_Conta (
     Id_Extrato INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
     Id_Conta INTEGER NOT NULL,
     Descricao VARCHAR(200) NOT NULL,
@@ -130,4 +127,3 @@ CREATE TABLE Extrato_Conta (
     Data DATE NOT NULL,
     FOREIGN KEY (Id_Conta) REFERENCES Conta(IdConta) ON DELETE CASCADE
 );
-

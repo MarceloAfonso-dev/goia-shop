@@ -68,6 +68,58 @@ Cada área tem a responsabilidade de desenvolver e manter suas respectivas parte
 
 Nesta seção, apresentamos as imagens das prototipagens do projeto. As imagens foram geradas para auxiliar no desenvolvimento e na validação das interfaces do sistema. Elas estão armazenadas no repositório, no diretório `./Prototipagens`.
 
+
+---
+
+## E-commerce Backoffice System
+
+### Database Setup
+
+The repository now includes a complete Docker-based MySQL setup for the e-commerce backoffice system alongside the existing banking system schema.
+
+#### Quick Start
+
+1. **Start the database:**
+   ```bash
+   docker compose up -d
+   ```
+
+2. **Database connection details:**
+   - Host: localhost
+   - Port: 3306
+   - Database: appdb
+   - Username: app
+   - Password: app123
+
+3. **Stop the database:**
+   ```bash
+   docker compose down
+   ```
+
+#### Database Schema
+
+The setup includes:
+- **Users table**: For backoffice authentication and user management
+  - Supports ADMIN and ESTOQUISTA user groups
+  - ATIVO/INATIVO status management
+  - BCrypt password hashing (of SHA-256 client hash)
+  - CPF and email uniqueness constraints
+
+#### Application Integration
+
+The database is designed to support a Spring Boot application with:
+- User authentication and session management
+- Role-based access control (ADMIN/ESTOQUISTA)
+- User CRUD operations with proper validation
+- Automatic user seeding on first startup
+
+#### Preset Users (to be created by application startup)
+
+The application should create these users on first run:
+- `admin@demo.com` / `Admin123!` → ADMIN, ATIVO
+- `estoquista@demo.com` / `Estoque123!` → ESTOQUISTA, ATIVO
+- `inativo@demo.com` / `Inativo123!` → ADMIN, INATIVO (optional for testing)
+
 ---
 
 <p align="center">
