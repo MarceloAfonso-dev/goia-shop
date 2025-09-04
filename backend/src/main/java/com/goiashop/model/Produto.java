@@ -7,32 +7,32 @@ import jakarta.validation.constraints.Positive;
 
 @Entity
 @Table(name = "produtos_ecommerce")
-public class Product {
+public class Produto {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @NotBlank(message = "Product name is required")
+    @NotBlank(message = "Nome do produto é obrigatório")
     @Column(name = "nome", nullable = false)
-    private String name;
+    private String nome;
     
     @Column(name = "descricao", columnDefinition = "TEXT")
-    private String description;
+    private String descricao;
     
-    @NotNull(message = "Price is required")
-    @Positive(message = "Price must be positive")
+    @NotNull(message = "Preço é obrigatório")
+    @Positive(message = "Preço deve ser positivo")
     @Column(name = "preco", nullable = false, precision = 10)
-    private Double price;
+    private Double preco;
     
-    @NotNull(message = "Stock is required")
-    @Positive(message = "Stock must be positive")
+    @NotNull(message = "Estoque é obrigatório")
+    @Positive(message = "Estoque deve ser positivo")
     @Column(name = "quantidade_estoque", nullable = false)
-    private Integer stock;
+    private Integer quantidadeEstoque;
     
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
-    private ProductStatus status = ProductStatus.ATIVO;
+    private ProdutoStatus status = ProdutoStatus.ATIVO;
     
     @Column(name = "created_at")
     private java.time.LocalDateTime createdAt;
@@ -47,14 +47,14 @@ public class Product {
     private Long updatedBy;
     
     // Default constructor
-    public Product() {}
+    public Produto() {}
     
     // Constructor with fields
-    public Product(String name, String description, Double price, Integer stock) {
-        this.name = name;
-        this.description = description;
-        this.price = price;
-        this.stock = stock;
+    public Produto(String nome, String descricao, Double preco, Integer quantidadeEstoque) {
+        this.nome = nome;
+        this.descricao = descricao;
+        this.preco = preco;
+        this.quantidadeEstoque = quantidadeEstoque;
     }
     
     // Getters and Setters
@@ -66,43 +66,43 @@ public class Product {
         this.id = id;
     }
     
-    public String getName() {
-        return name;
+    public String getNome() {
+        return nome;
     }
     
-    public void setName(String name) {
-        this.name = name;
+    public void setNome(String nome) {
+        this.nome = nome;
     }
     
-    public String getDescription() {
-        return description;
+    public String getDescricao() {
+        return descricao;
     }
     
-    public void setDescription(String description) {
-        this.description = description;
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
     }
     
-    public Double getPrice() {
-        return price;
+    public Double getPreco() {
+        return preco;
     }
     
-    public void setPrice(Double price) {
-        this.price = price;
+    public void setPreco(Double preco) {
+        this.preco = preco;
     }
     
-    public Integer getStock() {
-        return stock;
+    public Integer getQuantidadeEstoque() {
+        return quantidadeEstoque;
     }
     
-    public void setStock(Integer stock) {
-        this.stock = stock;
+    public void setQuantidadeEstoque(Integer quantidadeEstoque) {
+        this.quantidadeEstoque = quantidadeEstoque;
     }
     
-    public ProductStatus getStatus() {
+    public ProdutoStatus getStatus() {
         return status;
     }
     
-    public void setStatus(ProductStatus status) {
+    public void setStatus(ProdutoStatus status) {
         this.status = status;
     }
     
@@ -140,17 +140,17 @@ public class Product {
     
     @Override
     public String toString() {
-        return "Product{" +
+        return "Produto{" +
                 "id=" + id +
-                ", name='" + name + '\'' +
-                ", description='" + description + '\'' +
-                ", price=" + price +
-                ", stock=" + stock +
+                ", nome='" + nome + '\'' +
+                ", descricao='" + descricao + '\'' +
+                ", preco=" + preco +
+                ", quantidadeEstoque=" + quantidadeEstoque +
                 ", status=" + status +
                 '}';
     }
     
-    public enum ProductStatus {
+    public enum ProdutoStatus {
         ATIVO, INATIVO
     }
 }

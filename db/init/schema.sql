@@ -172,3 +172,45 @@ CREATE INDEX idx_users_grupo ON users(grupo);
 CREATE INDEX idx_produtos_status ON produtos_ecommerce(status);
 CREATE INDEX idx_audit_logs_user ON audit_logs(user_id);
 CREATE INDEX idx_audit_logs_action ON audit_logs(action);
+
+-- ========================================
+-- DADOS DE TESTE PARA DESENVOLVIMENTO
+-- ========================================
+
+-- Usuários de teste para o backoffice
+-- Senhas em texto plano para teste (em produção usar BCrypt)
+
+-- Usuário ADMIN
+INSERT INTO users (nome, cpf, email, senha_hash, grupo, status, created_at, updated_at) 
+VALUES (
+    'Administrador Sistema',
+    '12345678901',
+    'admin@goiashop.com',
+    'admin123', -- Senha em texto plano para teste
+    'ADMIN',
+    'ATIVO',
+    NOW(),
+    NOW()
+);
+
+-- Usuário ESTOQUISTA
+INSERT INTO users (nome, cpf, email, senha_hash, grupo, status, created_at, updated_at) 
+VALUES (
+    'Estoquista Padrão',
+    '98765432109',
+    'estoquista@goiashop.com',
+    'estoque123', -- Senha em texto plano para teste
+    'ESTOQUISTA',
+    'ATIVO',
+    NOW(),
+    NOW()
+);
+
+-- Produtos de teste
+INSERT INTO produtos_ecommerce (nome, descricao, preco, quantidade_estoque, status, created_at, updated_at, created_by, updated_by)
+VALUES 
+    ('Notebook Dell Inspiron', 'Notebook Dell Inspiron 15 polegadas, 8GB RAM, 256GB SSD', 2999.99, 10, 'ATIVO', NOW(), NOW(), 1, 1),
+    ('Mouse Wireless Logitech', 'Mouse sem fio Logitech com sensor óptico de alta precisão', 89.90, 50, 'ATIVO', NOW(), NOW(), 1, 1),
+    ('Teclado Mecânico RGB', 'Teclado mecânico com switches blue e iluminação RGB', 299.90, 25, 'ATIVO', NOW(), NOW(), 1, 1),
+    ('Monitor LG 24"', 'Monitor LG 24 polegadas Full HD, painel IPS', 799.90, 15, 'ATIVO', NOW(), NOW(), 1, 1),
+    ('Headset Gamer', 'Headset gamer com microfone removível e som surround', 199.90, 30, 'ATIVO', NOW(), NOW(), 1, 1);
