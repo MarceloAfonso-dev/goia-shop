@@ -46,8 +46,8 @@ public class AuthService {
                 return new LoginResponse("Usuário não tem permissão para acessar o backoffice");
             }
             
-            // Valida senha usando SHA-256 + BCrypt
-            if (!validatePassword(request.getSenha(), user.getSenhaHash())) {
+            // Valida senha usando apenas BCrypt
+            if (!passwordService.verifyPassword(request.getSenha(), user.getSenhaHash())) {
                 return new LoginResponse("Senha incorreta");
             }
             
@@ -61,14 +61,6 @@ public class AuthService {
         }
     }
     
-    /**
-     * Valida senha recebida do frontend (já em SHA-256) com hash BCrypt do banco
-     */
-    private boolean validatePassword(String sha256FromFrontend, String bcryptFromDatabase) {
-        // O frontend deve enviar a senha já em SHA-256
-        // Aqui comparamos o SHA-256 com o BCrypt armazenado
-        return passwordService.verifyPassword(sha256FromFrontend, bcryptFromDatabase);
-    }
     
     /**
      * Cria uma nova sessão para o usuário

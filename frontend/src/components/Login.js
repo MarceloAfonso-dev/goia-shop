@@ -3,7 +3,7 @@ import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap'
 import api from '../utils/api';
 import { hashPassword } from '../utils/crypto';
 
-const Login = ({ onLoginSuccess }) => {
+const Login = ({ onLoginSuccess, onBackToLanding }) => {
     const [formData, setFormData] = useState({
         email: '',
         senha: ''
@@ -76,8 +76,20 @@ const Login = ({ onLoginSuccess }) => {
                 <Col md={6} className="mx-auto">
                     <Card className="shadow">
                         <Card.Header className="bg-primary text-white text-center">
-                            <h3>GOIA Shop - Backoffice</h3>
-                            <p className="mb-0">Faça login para acessar o sistema</p>
+                            <div className="d-flex justify-content-between align-items-center">
+                                <Button 
+                                    variant="outline-light" 
+                                    size="sm" 
+                                    onClick={onBackToLanding}
+                                    className="me-2"
+                                >
+                                    ← Voltar
+                                </Button>
+                                <div className="flex-grow-1">
+                                    <h3>GOIA Shop - Backoffice</h3>
+                                    <p className="mb-0">Faça login para acessar o sistema</p>
+                                </div>
+                            </div>
                         </Card.Header>
                         <Card.Body>
                             {error && <Alert variant="danger">{error}</Alert>}

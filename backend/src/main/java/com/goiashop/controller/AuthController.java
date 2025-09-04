@@ -75,26 +75,4 @@ public class AuthController {
         return ResponseEntity.ok(false);
     }
     
-    /**
-     * Endpoint de desenvolvimento: Gera hash SHA-256 de uma string
-     * Usado apenas para testes - REMOVER EM PRODUÇÃO
-     */
-    @PostMapping("/dev/generate-sha256")
-    public ResponseEntity<Map<String, String>> generateSHA256(@RequestBody Map<String, String> request) {
-        String password = request.get("password");
-        if (password == null || password.isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
-        
-        String sha256Hash = passwordService.applySHA256(password);
-        String bcryptHash = passwordService.applyBCrypt(sha256Hash);
-        
-        Map<String, String> response = new HashMap<>();
-        response.put("original", password);
-        response.put("sha256", sha256Hash);
-        response.put("bcrypt", bcryptHash);
-        response.put("note", "Frontend deve enviar apenas o SHA-256");
-        
-        return ResponseEntity.ok(response);
-    }
 }
