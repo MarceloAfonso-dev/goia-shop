@@ -1,12 +1,16 @@
 package com.goiashop.service;
 
-import com.goiashop.model.User;
-import com.goiashop.repository.UserRepository;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import com.goiashop.dto.UsuarioAlteracaoRequest;
+import com.goiashop.dto.UsuarioCadastroRequest;
+import com.goiashop.model.User;
+import com.goiashop.repository.UserRepository;
 
 @Service
 public class UserService {
@@ -76,10 +80,87 @@ public class UserService {
         if (userOpt.isEmpty()) {
             throw new RuntimeException("Usuário não encontrado");
         }
-        
+
         User user = userOpt.get();
         user.setStatus(novoStatus);
-        
+        user.setUpdatedAt(LocalDateTime.now());
+
         return userRepository.save(user);
+    }
+    
+    /**
+     * Filtra usuários por nome (busca parcial)
+     */
+    public List<User> filtrarPorNome(String nome) {
+        return userRepository.findByNomeContainingIgnoreCase(nome);
+    }
+    
+    /**
+     * Verifica se já existe usuário com o CPF
+     */
+    public boolean existeByCpf(String cpf) {
+        return userRepository.existsByCpf(cpf);
+    }
+    
+    /**
+     * Verifica se já existe usuário com o email
+     */
+    public boolean existeByEmail(String email) {
+        return userRepository.existsByEmail(email);
+    }
+    
+    /**
+     * Cadastra um novo usuário
+     */
+    public User cadastrarUsuario(UsuarioCadastroRequest request) {
+        User novoUsuario = new User();
+        novoUsuario.setNome(request.getNome());
+        novoUsuario.setCpf(request.getCpf());
+        novoUsuario.setEmail(request.getEmail());
+        novoUsuario.setGrupo(User.UserGroup.valueOf(request.getGrupo()));
+        novoUsuario.setStatus(User.UserStatus.ATIVO); // Sempre ativo no cadastro
+        novoUsuario.setCreatedAt(LocalDateTime.now());
+        novoUsuario.setUpdatedAt(LocalDateTime.now());
+        
+        // Criptografa a senha
+        String senhaHasheada = passwordService.encryptPassword(request.getSenha());
+        novoUsuario.setSenhaHash(senhaHasheada);
+        
+        return userRepository.save(novoUsuario);
+    }
+    
+    /**
+     * Altera dados de um usuário existente
+     */
+    public User alterarUsuario(Long userId, UsuarioAlteracaoRequest request) {
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isEmpty()) {
+            throw new RuntimeException("Usuário não encontrado");
+        }
+        
+        User usuario = userOpt.get();
+        
+        // Atualiza apenas os campos fornecidos (não nulos)
+        if (request.getNome() != null && !request.getNome().trim().isEmpty()) {
+            usuario.setNome(request.getNome());
+        }
+        
+        if (request.getCpf() != null && !request.getCpf().trim().isEmpty()) {
+            usuario.setCpf(request.getCpf());
+        }
+        
+        if (request.getGrupo() != null) {
+            usuario.setGrupo(User.UserGroup.valueOf(request.getGrupo()));
+        }
+        
+        // Se alterando senha
+        if (request.getSenha() != null && !request.getSenha().isEmpty()) {
+            String senhaHasheada = passwordService.encryptPassword(request.getSenha());
+            usuario.setSenhaHash(senhaHasheada);
+        }
+        
+        usuario.setUpdatedAt(LocalDateTime.now());
+        
+        return userRepository.save(usuario);
     }
 }

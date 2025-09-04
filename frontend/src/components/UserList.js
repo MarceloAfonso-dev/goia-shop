@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Card, Badge, Spinner, Alert, Row, Col, Button, Modal } from 'react-bootstrap';
+import { Table, Card, Badge, Spinner, Alert, Row, Col, Button, Modal, Form, InputGroup } from 'react-bootstrap';
 import api from '../utils/api';
+import UsuarioCadastroModal from './UsuarioCadastroModal';
+import UsuarioAlteracaoModal from './UsuarioAlteracaoModal';
 
 const UserList = () => {
     const [users, setUsers] = useState([]);
@@ -9,17 +11,28 @@ const UserList = () => {
     const [loadingUserId, setLoadingUserId] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
+    
+    // Novos estados
+    const [filtroNome, setFiltroNome] = useState('');
+    const [showCadastroModal, setShowCadastroModal] = useState(false);
+    const [showAlteracaoModal, setShowAlteracaoModal] = useState(false);
+    const [usuarioParaAlterar, setUsuarioParaAlterar] = useState(null);
 
     useEffect(() => {
         fetchUsers();
     }, []);
 
-    const fetchUsers = async () => {
+    const fetchUsers = async (nomeFilter = '') => {
         try {
             setLoading(true);
             setError('');
 
-            const response = await api.get('/usuarios');
+            let url = '/usuarios';
+            if (nomeFilter.trim()) {
+                url = `/usuarios/filtrar?nome=${encodeURIComponent(nomeFilter)}`;
+            }
+
+            const response = await api.get(url);
             setUsers(response.data);
         } catch (err) {
             if (err.response?.status === 403) {
@@ -71,6 +84,34 @@ const UserList = () => {
     const cancelStatusChange = () => {
         setShowModal(false);
         setSelectedUser(null);
+    };
+
+    // Função para filtrar usuários
+    const handleFiltroChange = (e) => {
+        const valor = e.target.value;
+        setFiltroNome(valor);
+        
+        // Aplica o filtro com debounce simples
+        setTimeout(() => {
+            fetchUsers(valor);
+        }, 300);
+    };
+
+    // Função para abrir modal de cadastro
+    const abrirCadastro = () => {
+        setShowCadastroModal(true);
+    };
+
+    // Função para abrir modal de alteração
+    const abrirAlteracao = (usuario) => {
+        setUsuarioParaAlterar(usuario);
+        setShowAlteracaoModal(true);
+    };
+
+    // Função para limpar filtros
+    const limparFiltros = () => {
+        setFiltroNome('');
+        fetchUsers();
     };
 
     const getGroupBadge = (grupo) => {
@@ -165,7 +206,41 @@ const UserList = () => {
 
             <Card>
                 <Card.Header>
-                    <h5 className="mb-0">Lista de Usuários do Sistema</h5>
+                    <Row className="align-items-center">
+                        <Col md={6}>
+                            <h5 className="mb-0">Lista de Usuários do Sistema</h5>
+                        </Col>
+                        <Col md={6}>
+                            <Row>
+                                <Col md={8}>
+                                    <InputGroup size="sm">
+                                        <Form.Control
+                                            type="text"
+                                            placeholder="Filtrar por nome..."
+                                            value={filtroNome}
+                                            onChange={handleFiltroChange}
+                                        />
+                                        <Button 
+                                            variant="outline-secondary" 
+                                            onClick={limparFiltros}
+                                            title="Limpar filtros"
+                                        >
+                                            ✕
+                                        </Button>
+                                    </InputGroup>
+                                </Col>
+                                <Col md={4} className="text-end">
+                                    <Button 
+                                        variant="success" 
+                                        size="sm" 
+                                        onClick={abrirCadastro}
+                                    >
+                                        ➕ Cadastrar Usuário
+                                    </Button>
+                                </Col>
+                            </Row>
+                        </Col>
+                    </Row>
                 </Card.Header>
                 <Card.Body>
                     <div className="table-responsive">
@@ -203,25 +278,36 @@ const UserList = () => {
                                             </small>
                                         </td>
                                         <td>
-                                            <Button
-                                                variant={user.status === 'ATIVO' ? 'warning' : 'success'}
-                                                size="sm"
-                                                onClick={() => handleStatusChange(user)}
-                                                disabled={loadingUserId === user.id}
-                                                title={user.status === 'ATIVO' ? 'Desativar usuário' : 'Ativar usuário'}
-                                            >
-                                                {loadingUserId === user.id ? (
-                                                    <Spinner size="sm" animation="border" />
-                                                ) : (
-                                                    <>
-                                                        {user.status === 'ATIVO' ? (
-                                                            <>🔒 Desativar</>
-                                                        ) : (
-                                                            <>🔓 Ativar</>
-                                                        )}
-                                                    </>
-                                                )}
-                                            </Button>
+                                            <div className="d-flex gap-1">
+                                                <Button
+                                                    variant="primary"
+                                                    size="sm"
+                                                    onClick={() => abrirAlteracao(user)}
+                                                    title="Editar usuário"
+                                                    className="me-1"
+                                                >
+                                                    ✏️ Editar
+                                                </Button>
+                                                <Button
+                                                    variant={user.status === 'ATIVO' ? 'warning' : 'success'}
+                                                    size="sm"
+                                                    onClick={() => handleStatusChange(user)}
+                                                    disabled={loadingUserId === user.id}
+                                                    title={user.status === 'ATIVO' ? 'Desativar usuário' : 'Ativar usuário'}
+                                                >
+                                                    {loadingUserId === user.id ? (
+                                                        <Spinner size="sm" animation="border" />
+                                                    ) : (
+                                                        <>
+                                                            {user.status === 'ATIVO' ? (
+                                                                <>🔒 Desativar</>
+                                                            ) : (
+                                                                <>🔓 Ativar</>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </Button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -238,7 +324,8 @@ const UserList = () => {
                     Usuários com perfil de <strong>ESTOQUISTA</strong> não têm acesso a esta lista.
                 </p>
                 <p className="mb-0">
-                    <strong>Ações disponíveis:</strong> Você pode ativar ou desativar usuários clicando no botão de ação correspondente.
+                    <strong>Ações disponíveis:</strong> Você pode cadastrar novos usuários, editar informações, 
+                    filtrar a lista por nome e ativar/desativar usuários conforme necessário.
                     Usuários inativos não poderão fazer login no sistema.
                 </p>
             </Alert>
@@ -296,6 +383,31 @@ const UserList = () => {
                     </Button>
                 </Modal.Footer>
             </Modal>
+            
+            {/* Modal de Cadastro */}
+            <UsuarioCadastroModal
+                show={showCadastroModal}
+                onHide={() => setShowCadastroModal(false)}
+                onUsuarioCadastrado={() => {
+                    fetchUsers();
+                    setShowCadastroModal(false);
+                }}
+            />
+            
+            {/* Modal de Alteração */}
+            <UsuarioAlteracaoModal
+                show={showAlteracaoModal}
+                onHide={() => {
+                    setShowAlteracaoModal(false);
+                    setUsuarioParaAlterar(null);
+                }}
+                usuario={usuarioParaAlterar}
+                onUsuarioAlterado={() => {
+                    fetchUsers();
+                    setShowAlteracaoModal(false);
+                    setUsuarioParaAlterar(null);
+                }}
+            />
         </div>
     );
 };

@@ -1,11 +1,12 @@
 package com.goiashop.repository;
 
-import com.goiashop.model.User;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import com.goiashop.model.User;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -39,4 +40,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * Lista usuários por status
      */
     List<User> findByStatus(User.UserStatus status);
+    
+    /**
+     * Lista usuários que contenham o nome (busca parcial, insensível a maiúsculas)
+     */
+    List<User> findByNomeContainingIgnoreCase(String nome);
 }
