@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Card, Badge, Spinner, Alert, Row, Col } from 'react-bootstrap';
+import { Table, Card, Badge, Spinner, Alert, Row, Col, Button, Modal } from 'react-bootstrap';
 import api from '../utils/api';
 
 const UserList = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [loadingUserId, setLoadingUserId] = useState(null);
+    const [showModal, setShowModal] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
 
     useEffect(() => {
         fetchUsers();
@@ -14,6 +17,7 @@ const UserList = () => {
     const fetchUsers = async () => {
         try {
             setLoading(true);
+            setError('');
 
             const response = await api.get('/usuarios');
             setUsers(response.data);
@@ -28,6 +32,45 @@ const UserList = () => {
         } finally {
             setLoading(false);
         }
+    };
+    
+    const handleStatusChange = async (user) => {
+        setSelectedUser(user);
+        setShowModal(true);
+    };
+    
+    const confirmStatusChange = async () => {
+        if (!selectedUser) return;
+        
+        try {
+            setLoadingUserId(selectedUser.id);
+            const novoStatus = selectedUser.status === 'ATIVO' ? 'INATIVO' : 'ATIVO';
+            
+            await api.put(`/usuarios/${selectedUser.id}/status`, {
+                status: novoStatus
+            });
+            
+            // Atualiza a lista de usuários
+            setUsers(users.map(user => 
+                user.id === selectedUser.id 
+                    ? { ...user, status: novoStatus }
+                    : user
+            ));
+            
+            setShowModal(false);
+            setSelectedUser(null);
+            
+        } catch (err) {
+            console.error('Erro ao alterar status:', err);
+            setError('Erro ao alterar status do usuário: ' + (err.response?.data?.message || err.message));
+        } finally {
+            setLoadingUserId(null);
+        }
+    };
+    
+    const cancelStatusChange = () => {
+        setShowModal(false);
+        setSelectedUser(null);
     };
 
     const getGroupBadge = (grupo) => {
@@ -136,6 +179,7 @@ const UserList = () => {
                                     <th>Grupo</th>
                                     <th>Status</th>
                                     <th>Data Criação</th>
+                                    <th>Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -158,6 +202,27 @@ const UserList = () => {
                                                 {formatDate(user.createdAt)}
                                             </small>
                                         </td>
+                                        <td>
+                                            <Button
+                                                variant={user.status === 'ATIVO' ? 'warning' : 'success'}
+                                                size="sm"
+                                                onClick={() => handleStatusChange(user)}
+                                                disabled={loadingUserId === user.id}
+                                                title={user.status === 'ATIVO' ? 'Desativar usuário' : 'Ativar usuário'}
+                                            >
+                                                {loadingUserId === user.id ? (
+                                                    <Spinner size="sm" animation="border" />
+                                                ) : (
+                                                    <>
+                                                        {user.status === 'ATIVO' ? (
+                                                            <>🔒 Desativar</>
+                                                        ) : (
+                                                            <>🔓 Ativar</>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </Button>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -172,7 +237,65 @@ const UserList = () => {
                     Esta funcionalidade está disponível apenas para usuários com perfil de <strong>ADMINISTRADOR</strong>.
                     Usuários com perfil de <strong>ESTOQUISTA</strong> não têm acesso a esta lista.
                 </p>
+                <p className="mb-0">
+                    <strong>Ações disponíveis:</strong> Você pode ativar ou desativar usuários clicando no botão de ação correspondente.
+                    Usuários inativos não poderão fazer login no sistema.
+                </p>
             </Alert>
+            
+            {/* Modal de Confirmação */}
+            <Modal show={showModal} onHide={cancelStatusChange} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>
+                        {selectedUser?.status === 'ATIVO' ? '🔒 Desativar Usuário' : '🔓 Ativar Usuário'}
+                    </Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {selectedUser && (
+                        <div>
+                            <p>
+                                Tem certeza que deseja {selectedUser.status === 'ATIVO' ? 'desativar' : 'ativar'} o usuário:
+                            </p>
+                            <div className="bg-light p-3 rounded">
+                                <strong>{selectedUser.nome}</strong><br/>
+                                <small className="text-muted">{selectedUser.email}</small><br/>
+                                <Badge bg={selectedUser.grupo === 'ADMIN' ? 'danger' : 'info'}>
+                                    {selectedUser.grupo}
+                                </Badge>
+                            </div>
+                            <br/>
+                            <Alert variant={selectedUser.status === 'ATIVO' ? 'warning' : 'info'}>
+                                {selectedUser.status === 'ATIVO' ? (
+                                    <>
+                                        <strong>⚠️ Atenção:</strong> Ao desativar este usuário, ele não conseguirá mais 
+                                        fazer login no sistema até ser reativado.
+                                    </>
+                                ) : (
+                                    <>
+                                        <strong>ℹ️ Informação:</strong> Ao ativar este usuário, ele poderá fazer login 
+                                        normalmente no sistema.
+                                    </>
+                                )}
+                            </Alert>
+                        </div>
+                    )}
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={cancelStatusChange}>
+                        Cancelar
+                    </Button>
+                    <Button 
+                        variant={selectedUser?.status === 'ATIVO' ? 'warning' : 'success'}
+                        onClick={confirmStatusChange}
+                        disabled={loadingUserId !== null}
+                    >
+                        {loadingUserId !== null ? (
+                            <Spinner size="sm" animation="border" className="me-2" />
+                        ) : null}
+                        {selectedUser?.status === 'ATIVO' ? 'Sim, Desativar' : 'Sim, Ativar'}
+                    </Button>
+                </Modal.Footer>
+            </Modal>
         </div>
     );
 };
