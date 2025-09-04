@@ -1,5 +1,6 @@
 /app/src/main/java/com/goiashop/service/UserService.java
 /app/src/main/java/com/goiashop/dto/LoginResponse.java
+/app/src/main/java/com/goiashop/service/PasswordService.java
 /app/src/main/java/com/goiashop/model/Produto.java
 /app/src/main/java/com/goiashop/model/User.java
 /app/src/main/java/com/goiashop/controller/ProdutoController.java

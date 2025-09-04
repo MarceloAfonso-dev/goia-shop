@@ -18,6 +18,9 @@ public class AuthService {
     @Autowired
     private UserRepository userRepository;
     
+    @Autowired
+    private PasswordService passwordService;
+    
     // Simulação de sessões em memória (em produção usar Redis ou JWT)
     private static final Map<String, User> activeSessions = new HashMap<>();
     
@@ -43,7 +46,7 @@ public class AuthService {
                 return new LoginResponse("Usuário não tem permissão para acessar o backoffice");
             }
             
-            // Valida senha (em produção usar BCrypt)
+            // Valida senha usando SHA-256 + BCrypt
             if (!validatePassword(request.getSenha(), user.getSenhaHash())) {
                 return new LoginResponse("Senha incorreta");
             }
@@ -59,12 +62,12 @@ public class AuthService {
     }
     
     /**
-     * Valida senha (simulação - em produção usar BCrypt)
+     * Valida senha recebida do frontend (já em SHA-256) com hash BCrypt do banco
      */
-    private boolean validatePassword(String senha, String senhaHash) {
-        // TODO: Implementar BCrypt.compare(senha, senhaHash)
-        // Por enquanto, simulação simples
-        return senha != null && senha.equals(senhaHash);
+    private boolean validatePassword(String sha256FromFrontend, String bcryptFromDatabase) {
+        // O frontend deve enviar a senha já em SHA-256
+        // Aqui comparamos o SHA-256 com o BCrypt armazenado
+        return passwordService.verifyPassword(sha256FromFrontend, bcryptFromDatabase);
     }
     
     /**

@@ -186,7 +186,7 @@ VALUES (
     'Administrador Sistema',
     '12345678901',
     'admin@goiashop.com',
-    'admin123', -- Senha em texto plano para teste
+    '$2a$10$i3mpoGju16al2WfTFKYMbOCcFd9Wk78JrBAoYHTz4cICGBTOOhoLS', -- BCrypt do SHA-256 de "admin123"
     'ADMIN',
     'ATIVO',
     NOW(),
@@ -199,7 +199,7 @@ VALUES (
     'Estoquista Padrão',
     '98765432109',
     'estoquista@goiashop.com',
-    'estoque123', -- Senha em texto plano para teste
+    '$2a$10$zHtD0FQq9a20UvoFkDfrvO3X/DB27UBbpwEpTkrzbmGWkn1axV8Gm', -- BCrypt do SHA-256 de "estoque123"
     'ESTOQUISTA',
     'ATIVO',
     NOW(),

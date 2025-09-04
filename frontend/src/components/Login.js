@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
 import api from '../utils/api';
+import { hashPassword } from '../utils/crypto';
 
 const Login = ({ onLoginSuccess }) => {
     const [formData, setFormData] = useState({
@@ -23,7 +24,22 @@ const Login = ({ onLoginSuccess }) => {
         setError('');
 
         try {
-            const response = await api.post('/auth/login', formData);
+            // 1. Aplica SHA-256 na senha antes de enviar para o backend
+            const hashedPassword = await hashPassword(formData.senha);
+            
+            // 2. Cria o payload com a senha já criptografada
+            const loginPayload = {
+                email: formData.email,
+                senha: hashedPassword  // Envia o hash SHA-256, não a senha original
+            };
+            
+            console.log('Enviando login com senha SHA-256:', {
+                email: loginPayload.email,
+                senhaHash: hashedPassword.substring(0, 16) + '...' // Log parcial para debug
+            });
+            
+            // 3. Envia para o backend
+            const response = await api.post('/auth/login', loginPayload);
             
             if (response.data.success) {
                 // Salvar token e dados do usuário
@@ -36,7 +52,11 @@ const Login = ({ onLoginSuccess }) => {
                 setError(response.data.message || 'Erro no login');
             }
         } catch (err) {
-            if (err.response?.status === 401) {
+            console.error('Erro no login:', err);
+            
+            if (err.message === 'Erro na criptografia da senha') {
+                setError('Erro na criptografia da senha. Verifique se seu navegador suporta Web Crypto API.');
+            } else if (err.response?.status === 401) {
                 setError('Email ou senha incorretos');
             } else if (err.response?.data?.message) {
                 setError(err.response.data.message);
@@ -100,7 +120,8 @@ const Login = ({ onLoginSuccess }) => {
                         <Card.Footer className="text-center text-muted">
                             <small>Usuários de teste:</small><br/>
                             <small>Admin: admin@goiashop.com / admin123</small><br/>
-                            <small>Estoquista: estoquista@goiashop.com / estoque123</small>
+                            <small>Estoquista: estoquista@goiashop.com / estoque123</small><br/>
+                            <small className="text-success">🔒 Senhas protegidas com SHA-256 + BCrypt</small>
                         </Card.Footer>
                     </Card>
                 </Col>
