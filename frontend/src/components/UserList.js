@@ -87,14 +87,22 @@ const UserList = () => {
     };
 
     // Função para filtrar usuários
+    // Função para apenas atualizar o valor do filtro (sem aplicar)
     const handleFiltroChange = (e) => {
         const valor = e.target.value;
         setFiltroNome(valor);
-        
-        // Aplica o filtro com debounce simples
-        setTimeout(() => {
-            fetchUsers(valor);
-        }, 300);
+    };
+
+    // Função para aplicar o filtro ao clicar no botão de pesquisa
+    const aplicarFiltro = () => {
+        fetchUsers(filtroNome);
+    };
+
+    // Função para aplicar filtro quando pressionar Enter
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            aplicarFiltro();
+        }
     };
 
     // Função para abrir modal de cadastro
@@ -216,10 +224,18 @@ const UserList = () => {
                                     <InputGroup size="sm">
                                         <Form.Control
                                             type="text"
-                                            placeholder="Filtrar por nome..."
+                                            placeholder="Digite o nome do usuário..."
                                             value={filtroNome}
                                             onChange={handleFiltroChange}
+                                            onKeyPress={handleKeyPress}
                                         />
+                                        <Button 
+                                            variant="primary" 
+                                            onClick={aplicarFiltro}
+                                            title="Buscar usuários"
+                                        >
+                                            🔍
+                                        </Button>
                                         <Button 
                                             variant="outline-secondary" 
                                             onClick={limparFiltros}
