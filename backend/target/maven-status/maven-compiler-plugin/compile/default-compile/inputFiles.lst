@@ -1,0 +1,13 @@
+/app/src/main/java/com/goiashop/service/UserService.java
+/app/src/main/java/com/goiashop/dto/LoginResponse.java
+/app/src/main/java/com/goiashop/model/Produto.java
+/app/src/main/java/com/goiashop/model/User.java
+/app/src/main/java/com/goiashop/controller/ProdutoController.java
+/app/src/main/java/com/goiashop/controller/UsuarioController.java
+/app/src/main/java/com/goiashop/dto/LoginRequest.java
+/app/src/main/java/com/goiashop/repository/ProdutoRepository.java
+/app/src/main/java/com/goiashop/service/AuthService.java
+/app/src/main/java/com/goiashop/controller/AuthController.java
+/app/src/main/java/com/goiashop/GoiaShopApplication.java
+/app/src/main/java/com/goiashop/repository/UserRepository.java
+/app/src/main/java/com/goiashop/service/ProdutoService.java
