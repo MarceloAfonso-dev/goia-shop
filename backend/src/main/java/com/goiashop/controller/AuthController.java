@@ -23,9 +23,6 @@ public class AuthController {
     @Autowired
     private PasswordService passwordService;
     
-    /**
-     * Endpoint de login
-     */
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         LoginResponse response = authService.login(request);
@@ -37,9 +34,6 @@ public class AuthController {
         }
     }
     
-    /**
-     * Endpoint de logout
-     */
     @PostMapping("/logout")
     public ResponseEntity<String> logout(@RequestHeader("Authorization") String token) {
         if (token != null && token.startsWith("Bearer ")) {
@@ -49,9 +43,6 @@ public class AuthController {
         return ResponseEntity.ok("Logout realizado com sucesso");
     }
     
-    /**
-     * Endpoint para verificar se o token é válido
-     */
     @GetMapping("/validate")
     public ResponseEntity<Boolean> validateToken(@RequestHeader("Authorization") String token) {
         if (token != null && token.startsWith("Bearer ")) {
@@ -62,9 +53,6 @@ public class AuthController {
         return ResponseEntity.ok(false);
     }
     
-    /**
-     * Endpoint para verificar se o usuário é admin
-     */
     @GetMapping("/is-admin")
     public ResponseEntity<Boolean> isAdmin(@RequestHeader("Authorization") String token) {
         if (token != null && token.startsWith("Bearer ")) {

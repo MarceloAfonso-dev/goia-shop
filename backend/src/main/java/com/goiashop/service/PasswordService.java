@@ -12,16 +12,10 @@ public class PasswordService {
         this.bCryptPasswordEncoder = new BCryptPasswordEncoder();
     }
     
-    /**
-     * Criptografa uma senha em texto puro usando BCrypt
-     */
     public String encryptPassword(String plainPassword) {
         return bCryptPasswordEncoder.encode(plainPassword);
     }
     
-    /**
-     * Verifica se uma senha em texto puro corresponde ao hash BCrypt armazenado
-     */
     public boolean verifyPassword(String plainPassword, String bcryptFromDatabase) {
         return bCryptPasswordEncoder.matches(plainPassword, bcryptFromDatabase);
     }
