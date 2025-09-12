@@ -11,7 +11,6 @@
 /app/src/main/java/com/goiashop/service/AuthService.java
 /app/src/main/java/com/goiashop/controller/AuthController.java
 /app/src/main/java/com/goiashop/GoiaShopApplication.java
-/app/src/main/java/com/goiashop/controller/TestController.java
 /app/src/main/java/com/goiashop/repository/UserRepository.java
 /app/src/main/java/com/goiashop/service/ProdutoService.java
 /app/src/main/java/com/goiashop/config/CorsConfig.java

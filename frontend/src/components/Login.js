@@ -33,11 +33,6 @@ const Login = ({ onLoginSuccess, onBackToLanding }) => {
                 senha: hashedPassword  // Envia o hash SHA-256, não a senha original
             };
             
-            console.log('Enviando login com senha SHA-256:', {
-                email: loginPayload.email,
-                senhaHash: hashedPassword.substring(0, 16) + '...' // Log parcial para debug
-            });
-            
             // 3. Envia para o backend
             const response = await api.post('/auth/login', loginPayload);
             
