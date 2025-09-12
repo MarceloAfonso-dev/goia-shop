@@ -21,6 +21,8 @@ import com.goiashop.dto.UsuarioCadastroRequest;
 import com.goiashop.model.User;
 import com.goiashop.service.UserService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/usuarios")
 @CrossOrigin(origins = {"http://localhost:3000", "http://frontend:3000"})
@@ -117,31 +119,11 @@ public class UsuarioController {
      * Cadastra um novo usuário
      */
     @PostMapping("/cadastrar")
-    public ResponseEntity<?> cadastrarUsuario(@RequestBody UsuarioCadastroRequest request) {
+    public ResponseEntity<?> cadastrarUsuario(@Valid @RequestBody UsuarioCadastroRequest request) {
         try {
-            // Validações básicas
-            if (request.getNome() == null || request.getNome().trim().isEmpty()) {
-                return ResponseEntity.badRequest().body("Nome é obrigatório");
-            }
-            
-            if (request.getCpf() == null || !request.getCpf().matches("\\d{11}")) {
-                return ResponseEntity.badRequest().body("CPF deve conter exatamente 11 dígitos");
-            }
-            
-            if (request.getEmail() == null || !request.getEmail().contains("@")) {
-                return ResponseEntity.badRequest().body("Email deve ter formato válido");
-            }
-            
-            if (request.getSenha() == null || request.getSenha().length() < 6) {
-                return ResponseEntity.badRequest().body("Senha deve ter no mínimo 6 caracteres");
-            }
-            
+            // Validação de senhas coincidentes
             if (!request.getSenha().equals(request.getConfirmaSenha())) {
                 return ResponseEntity.badRequest().body("As senhas não coincidem");
-            }
-            
-            if (request.getGrupo() == null || (!request.getGrupo().equals("ADMIN") && !request.getGrupo().equals("ESTOQUISTA"))) {
-                return ResponseEntity.badRequest().body("Grupo deve ser ADMIN ou ESTOQUISTA");
             }
             
             // Verificar se CPF já existe

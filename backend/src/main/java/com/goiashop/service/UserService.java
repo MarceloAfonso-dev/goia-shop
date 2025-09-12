@@ -25,6 +25,9 @@ public class UserService {
     
     @Autowired
     private PasswordService passwordService;
+    
+    @Autowired
+    private AuditLogService auditLogService;
 
     public List<User> listarTodos() {
         return userRepository.findAll();
@@ -113,10 +116,17 @@ public class UserService {
         }
 
         User user = userOpt.get();
+        User.UserStatus statusAntigo = user.getStatus();
         user.setStatus(novoStatus);
         user.setUpdatedAt(LocalDateTime.now());
 
-        return userRepository.save(user);
+        User usuarioAtualizado = userRepository.save(user);
+        
+        // Registra auditoria de mudança de status
+        auditLogService.logStatusChange(1L, "users", usuarioAtualizado.getId(), 
+                                       statusAntigo.toString(), novoStatus.toString());
+
+        return usuarioAtualizado;
     }
     
     /**
@@ -157,7 +167,12 @@ public class UserService {
         String senhaHasheada = passwordService.encryptPassword(request.getSenha());
         novoUsuario.setSenhaHash(senhaHasheada);
         
-        return userRepository.save(novoUsuario);
+        User usuarioSalvo = userRepository.save(novoUsuario);
+        
+        // Registra auditoria de criação
+        auditLogService.logCreate(1L, "users", usuarioSalvo.getId(), usuarioSalvo);
+        
+        return usuarioSalvo;
     }
     
     /**
@@ -192,6 +207,11 @@ public class UserService {
         
         usuario.setUpdatedAt(LocalDateTime.now());
         
-        return userRepository.save(usuario);
+        User usuarioAtualizado = userRepository.save(usuario);
+        
+        // Registra auditoria de atualização
+        auditLogService.logUpdate(1L, "users", usuarioAtualizado.getId(), userOpt.get(), usuarioAtualizado);
+        
+        return usuarioAtualizado;
     }
 }
