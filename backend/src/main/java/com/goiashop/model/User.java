@@ -1,6 +1,15 @@
 package com.goiashop.model;
 
-import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -28,6 +37,7 @@ public class User {
     @Column(name = "email", nullable = false, length = 120, unique = true)
     private String email;
     
+    @JsonIgnore  // Nunca serializar senha hash em JSON
     @NotBlank(message = "Senha é obrigatória")
     @Column(name = "senha_hash", nullable = false, length = 100)
     private String senhaHash;

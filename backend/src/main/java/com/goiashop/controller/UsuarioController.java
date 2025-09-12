@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.goiashop.dto.PaginatedResponse;
 import com.goiashop.dto.UsuarioAlteracaoRequest;
 import com.goiashop.dto.UsuarioCadastroRequest;
 import com.goiashop.model.User;
@@ -29,9 +30,22 @@ public class UsuarioController {
     private UserService userService;
 
     @GetMapping
-    public ResponseEntity<List<User>> listarUsuarios() {
-        List<User> usuarios = userService.listarTodos();
-        return ResponseEntity.ok(usuarios);
+    public ResponseEntity<?> listarUsuarios(
+            @RequestParam(required = false) String nome,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer pageSize) {
+        
+        // Se page foi fornecido, usar paginação
+        if (page != null) {
+            int size = pageSize != null ? pageSize : 10; // Default 10 itens por página
+            PaginatedResponse<User> response = userService.listarComPaginacao(nome, status, page, size);
+            return ResponseEntity.ok(response);
+        } else {
+            // Compatibilidade com versão anterior (sem paginação)
+            List<User> usuarios = userService.listarTodos();
+            return ResponseEntity.ok(usuarios);
+        }
     }
 
     @GetMapping("/{id}")

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Card, Badge, Spinner, Alert, Row, Col, Button, Modal, Form, InputGroup } from 'react-bootstrap';
+import { Table, Card, Badge, Spinner, Alert, Row, Col, Button, Modal, Form, InputGroup, Pagination } from 'react-bootstrap';
 import api from '../utils/api';
 import UsuarioCadastroModal from './UsuarioCadastroModal';
 import UsuarioAlteracaoModal from './UsuarioAlteracaoModal';
@@ -12,28 +12,53 @@ const UserList = () => {
     const [showModal, setShowModal] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     
-    // Novos estados
+    // Estados de filtro e paginação
     const [filtroNome, setFiltroNome] = useState('');
+    const [filtroStatus, setFiltroStatus] = useState('');
     const [showCadastroModal, setShowCadastroModal] = useState(false);
     const [showAlteracaoModal, setShowAlteracaoModal] = useState(false);
     const [usuarioParaAlterar, setUsuarioParaAlterar] = useState(null);
+    
+    // Estados de paginação
+    const [paginationData, setPaginationData] = useState({
+        content: [],
+        page: 0,
+        size: 5,
+        totalElements: 0,
+        totalPages: 0,
+        first: true,
+        last: true
+    });
+    const [currentPage, setCurrentPage] = useState(0);
+    const [pageSize, setPageSize] = useState(5);
 
     useEffect(() => {
         fetchUsers();
-    }, []);
+    }, [currentPage, pageSize]);
 
-    const fetchUsers = async (nomeFilter = '') => {
+    const fetchUsers = async (nomeFilter = filtroNome, statusFilter = filtroStatus, page = currentPage, size = pageSize) => {
         try {
             setLoading(true);
             setError('');
 
-            let url = '/usuarios';
+            const params = new URLSearchParams({
+                page: page.toString(),
+                pageSize: size.toString()
+            });
+
             if (nomeFilter.trim()) {
-                url = `/usuarios/filtrar?nome=${encodeURIComponent(nomeFilter)}`;
+                params.append('nome', nomeFilter);
+            }
+            if (statusFilter) {
+                params.append('status', statusFilter);
             }
 
-            const response = await api.get(url);
-            setUsers(response.data);
+            const response = await api.get(`/usuarios?${params.toString()}`);
+            
+            // Atualiza dados de paginação
+            setPaginationData(response.data);
+            setUsers(response.data.content);
+            
         } catch (err) {
             if (err.response?.status === 403) {
                 setError('Acesso negado. Apenas administradores podem visualizar usuários.');
@@ -86,16 +111,22 @@ const UserList = () => {
         setSelectedUser(null);
     };
 
-    // Função para filtrar usuários
     // Função para apenas atualizar o valor do filtro (sem aplicar)
     const handleFiltroChange = (e) => {
         const valor = e.target.value;
         setFiltroNome(valor);
     };
 
+    // Função para atualizar filtro de status
+    const handleFiltroStatusChange = (e) => {
+        const valor = e.target.value;
+        setFiltroStatus(valor);
+    };
+
     // Função para aplicar o filtro ao clicar no botão de pesquisa
     const aplicarFiltro = () => {
-        fetchUsers(filtroNome);
+        setCurrentPage(0); // Reset para primeira página
+        fetchUsers(filtroNome, filtroStatus, 0, pageSize);
     };
 
     // Função para aplicar filtro quando pressionar Enter
@@ -103,6 +134,19 @@ const UserList = () => {
         if (e.key === 'Enter') {
             aplicarFiltro();
         }
+    };
+
+    // Funções de paginação
+    const handlePageChange = (newPage) => {
+        setCurrentPage(newPage);
+        fetchUsers(filtroNome, filtroStatus, newPage, pageSize);
+    };
+
+    const handlePageSizeChange = (e) => {
+        const newSize = parseInt(e.target.value);
+        setPageSize(newSize);
+        setCurrentPage(0);
+        fetchUsers(filtroNome, filtroStatus, 0, newSize);
     };
 
     // Função para abrir modal de cadastro
@@ -119,7 +163,9 @@ const UserList = () => {
     // Função para limpar filtros
     const limparFiltros = () => {
         setFiltroNome('');
-        fetchUsers();
+        setFiltroStatus('');
+        setCurrentPage(0);
+        fetchUsers('', '', 0, pageSize);
     };
 
     const getGroupBadge = (grupo) => {
@@ -178,7 +224,7 @@ const UserList = () => {
                             <Row>
                                 <Col md={3}>
                                     <div className="text-center">
-                                        <h4 className="text-primary">{users.length}</h4>
+                                        <h4 className="text-primary">{paginationData.totalElements}</h4>
                                         <small className="text-muted">Total de Usuários</small>
                                     </div>
                                 </Col>
@@ -187,7 +233,7 @@ const UserList = () => {
                                         <h4 className="text-danger">
                                             {users.filter(u => u.grupo === 'ADMIN').length}
                                         </h4>
-                                        <small className="text-muted">Administradores</small>
+                                        <small className="text-muted">Administradores (página atual)</small>
                                     </div>
                                 </Col>
                                 <Col md={3}>
@@ -195,7 +241,7 @@ const UserList = () => {
                                         <h4 className="text-info">
                                             {users.filter(u => u.grupo === 'ESTOQUISTA').length}
                                         </h4>
-                                        <small className="text-muted">Estoquistas</small>
+                                        <small className="text-muted">Estoquistas (página atual)</small>
                                     </div>
                                 </Col>
                                 <Col md={3}>
@@ -203,7 +249,7 @@ const UserList = () => {
                                         <h4 className="text-success">
                                             {users.filter(u => u.status === 'ATIVO').length}
                                         </h4>
-                                        <small className="text-muted">Usuários Ativos</small>
+                                        <small className="text-muted">Ativos (página atual)</small>
                                     </div>
                                 </Col>
                             </Row>
@@ -217,42 +263,69 @@ const UserList = () => {
                     <Row className="align-items-center">
                         <Col md={6}>
                             <h5 className="mb-0">Lista de Usuários do Sistema</h5>
+                            <small className="text-muted">
+                                Página {currentPage + 1} de {paginationData.totalPages} | 
+                                {paginationData.totalElements} usuários encontrados
+                            </small>
                         </Col>
                         <Col md={6}>
                             <Row>
-                                <Col md={8}>
-                                    <InputGroup size="sm">
-                                        <Form.Control
-                                            type="text"
-                                            placeholder="Digite o nome do usuário..."
-                                            value={filtroNome}
-                                            onChange={handleFiltroChange}
-                                            onKeyPress={handleKeyPress}
-                                        />
-                                        <Button 
-                                            variant="primary" 
-                                            onClick={aplicarFiltro}
-                                            title="Buscar usuários"
-                                        >
-                                            🔍
-                                        </Button>
-                                        <Button 
-                                            variant="outline-secondary" 
-                                            onClick={limparFiltros}
-                                            title="Limpar filtros"
-                                        >
-                                            ✕
-                                        </Button>
-                                    </InputGroup>
-                                </Col>
-                                <Col md={4} className="text-end">
-                                    <Button 
-                                        variant="success" 
-                                        size="sm" 
-                                        onClick={abrirCadastro}
-                                    >
-                                        ➕ Cadastrar Usuário
-                                    </Button>
+                                <Col md={12}>
+                                    <Row className="g-2">
+                                        <Col md={4}>
+                                            <Form.Control
+                                                type="text"
+                                                placeholder="Nome do usuário..."
+                                                size="sm"
+                                                value={filtroNome}
+                                                onChange={handleFiltroChange}
+                                                onKeyPress={handleKeyPress}
+                                            />
+                                        </Col>
+                                        <Col md={3}>
+                                            <Form.Select
+                                                size="sm"
+                                                value={filtroStatus}
+                                                onChange={handleFiltroStatusChange}
+                                            >
+                                                <option value="">Todos Status</option>
+                                                <option value="ATIVO">Ativo</option>
+                                                <option value="INATIVO">Inativo</option>
+                                            </Form.Select>
+                                        </Col>
+                                        <Col md={2}>
+                                            <Button 
+                                                variant="primary" 
+                                                size="sm"
+                                                onClick={aplicarFiltro}
+                                                title="Buscar usuários"
+                                                className="w-100"
+                                            >
+                                                🔍
+                                            </Button>
+                                        </Col>
+                                        <Col md={1}>
+                                            <Button 
+                                                variant="outline-secondary" 
+                                                size="sm"
+                                                onClick={limparFiltros}
+                                                title="Limpar filtros"
+                                                className="w-100"
+                                            >
+                                                ✕
+                                            </Button>
+                                        </Col>
+                                        <Col md={2}>
+                                            <Button 
+                                                variant="success" 
+                                                size="sm" 
+                                                onClick={abrirCadastro}
+                                                className="w-100"
+                                            >
+                                                ➕ Cadastrar
+                                            </Button>
+                                        </Col>
+                                    </Row>
                                 </Col>
                             </Row>
                         </Col>
@@ -330,6 +403,72 @@ const UserList = () => {
                             </tbody>
                         </Table>
                     </div>
+                    
+                    {/* Controles de Paginação */}
+                    <Row className="mt-3 align-items-center">
+                        <Col md={4}>
+                            <Form.Group>
+                                <Form.Label className="me-2">Itens por página:</Form.Label>
+                                <Form.Select
+                                    size="sm"
+                                    value={pageSize}
+                                    onChange={handlePageSizeChange}
+                                    style={{ width: 'auto', display: 'inline-block' }}
+                                >
+                                    <option value={5}>5</option>
+                                    <option value={10}>10</option>
+                                    <option value={20}>20</option>
+                                    <option value={50}>50</option>
+                                </Form.Select>
+                            </Form.Group>
+                        </Col>
+                        <Col md={4} className="text-center">
+                            <small className="text-muted">
+                                Mostrando {paginationData.content.length} de {paginationData.totalElements} usuários
+                            </small>
+                        </Col>
+                        <Col md={4}>
+                            <Pagination className="justify-content-end mb-0" size="sm">
+                                <Pagination.First 
+                                    disabled={paginationData.first}
+                                    onClick={() => handlePageChange(0)}
+                                />
+                                <Pagination.Prev 
+                                    disabled={paginationData.first}
+                                    onClick={() => handlePageChange(currentPage - 1)}
+                                />
+                                
+                                {/* Páginas numeradas */}
+                                {(() => {
+                                    const pages = [];
+                                    const startPage = Math.max(0, currentPage - 2);
+                                    const endPage = Math.min(paginationData.totalPages - 1, currentPage + 2);
+                                    
+                                    for (let i = startPage; i <= endPage; i++) {
+                                        pages.push(
+                                            <Pagination.Item
+                                                key={i}
+                                                active={i === currentPage}
+                                                onClick={() => handlePageChange(i)}
+                                            >
+                                                {i + 1}
+                                            </Pagination.Item>
+                                        );
+                                    }
+                                    return pages;
+                                })()}
+                                
+                                <Pagination.Next 
+                                    disabled={paginationData.last}
+                                    onClick={() => handlePageChange(currentPage + 1)}
+                                />
+                                <Pagination.Last 
+                                    disabled={paginationData.last}
+                                    onClick={() => handlePageChange(paginationData.totalPages - 1)}
+                                />
+                            </Pagination>
+                        </Col>
+                    </Row>
                 </Card.Body>
             </Card>
 
@@ -405,7 +544,7 @@ const UserList = () => {
                 show={showCadastroModal}
                 onHide={() => setShowCadastroModal(false)}
                 onUsuarioCadastrado={() => {
-                    fetchUsers();
+                    fetchUsers(filtroNome, filtroStatus, currentPage, pageSize);
                     setShowCadastroModal(false);
                 }}
             />
@@ -419,7 +558,7 @@ const UserList = () => {
                 }}
                 usuario={usuarioParaAlterar}
                 onUsuarioAlterado={() => {
-                    fetchUsers();
+                    fetchUsers(filtroNome, filtroStatus, currentPage, pageSize);
                     setShowAlteracaoModal(false);
                     setUsuarioParaAlterar(null);
                 }}

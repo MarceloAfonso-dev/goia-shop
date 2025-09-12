@@ -12,6 +12,8 @@
 /app/src/main/java/com/goiashop/controller/AuthController.java
 /app/src/main/java/com/goiashop/GoiaShopApplication.java
 /app/src/main/java/com/goiashop/repository/UserRepository.java
+/app/src/main/java/com/goiashop/dto/PaginatedResponse.java
 /app/src/main/java/com/goiashop/service/ProdutoService.java
 /app/src/main/java/com/goiashop/config/CorsConfig.java
+/app/src/main/java/com/goiashop/config/AdminAuthInterceptor.java
 /app/src/main/java/com/goiashop/dto/UsuarioAlteracaoRequest.java

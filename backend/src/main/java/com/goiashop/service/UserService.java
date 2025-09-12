@@ -5,8 +5,13 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import com.goiashop.dto.PaginatedResponse;
 import com.goiashop.dto.UsuarioAlteracaoRequest;
 import com.goiashop.dto.UsuarioCadastroRequest;
 import com.goiashop.model.User;
@@ -23,6 +28,32 @@ public class UserService {
 
     public List<User> listarTodos() {
         return userRepository.findAll();
+    }
+    
+    /**
+     * Lista usuários com paginação e filtros
+     */
+    public PaginatedResponse<User> listarComPaginacao(String nome, String status, int page, int size) {
+        // Configurar ordenação por nome
+        Pageable pageable = PageRequest.of(page, size, Sort.by("nome").ascending());
+        
+        User.UserStatus statusEnum = null;
+        if (status != null && !status.trim().isEmpty()) {
+            try {
+                statusEnum = User.UserStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                // Ignora status inválido
+            }
+        }
+        
+        Page<User> userPage = userRepository.findByFilters(nome, statusEnum, pageable);
+        
+        return new PaginatedResponse<>(
+            userPage.getContent(),
+            userPage.getNumber(),
+            userPage.getSize(),
+            userPage.getTotalElements()
+        );
     }
 
     public User buscarPorId(Long id) {
