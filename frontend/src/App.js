@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import LandingPage from './components/LandingPage';
 import Login from './components/Login';
@@ -8,6 +8,17 @@ import { useAuth } from './hooks/useAuth';
 function App() {
   const { user, loading, login, logout } = useAuth();
   const [currentPage, setCurrentPage] = useState('landing'); // 'landing', 'login', 'dashboard'
+
+  // Quando o usuário for carregado do localStorage, ir direto para o dashboard
+  useEffect(() => {
+    if (user) {
+      console.log('App - usuário logado detectado, indo para dashboard');
+      setCurrentPage('dashboard');
+    } else {
+      console.log('App - usuário não logado, ficando na landing');
+      setCurrentPage('landing');
+    }
+  }, [user]);
 
   if (loading) {
     return (

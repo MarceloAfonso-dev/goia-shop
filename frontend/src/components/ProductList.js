@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Card, Badge, Spinner, Alert, Row, Col } from 'react-bootstrap';
+import { Table, Card, Badge, Spinner, Alert, Row, Col, Button } from 'react-bootstrap';
 import api from '../utils/api';
+import ProductCadastroModal from './ProductCadastroModal';
 
 const ProductList = () => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [showCadastroModal, setShowCadastroModal] = useState(false);
 
     useEffect(() => {
         fetchProducts();
@@ -105,8 +107,15 @@ const ProductList = () => {
             </Row>
 
             <Card>
-                <Card.Header>
+                <Card.Header className="d-flex justify-content-between align-items-center">
                     <h5 className="mb-0">Lista de Produtos</h5>
+                    <Button 
+                        variant="primary" 
+                        onClick={() => setShowCadastroModal(true)}
+                        size="sm"
+                    >
+                        + Novo Produto
+                    </Button>
                 </Card.Header>
                 <Card.Body>
                     <div className="table-responsive">
@@ -157,6 +166,13 @@ const ProductList = () => {
                     </div>
                 </Card.Body>
             </Card>
+            
+            {/* Modal de Cadastro */}
+            <ProductCadastroModal
+                show={showCadastroModal}
+                onHide={() => setShowCadastroModal(false)}
+                onSuccess={fetchProducts}
+            />
         </div>
     );
 };

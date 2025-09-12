@@ -1,6 +1,22 @@
 package com.goiashop.model;
 
-import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -34,6 +50,9 @@ public class Produto {
     @Enumerated(EnumType.STRING)
     private ProdutoStatus status = ProdutoStatus.ATIVO;
     
+    @Column(name = "avaliacao")
+    private Double avaliacao;
+    
     @Column(name = "created_at")
     private java.time.LocalDateTime createdAt;
     
@@ -45,6 +64,12 @@ public class Produto {
     
     @Column(name = "updated_by")
     private Long updatedBy;
+    
+    // Relacionamento com imagens do produto
+    @OneToMany(mappedBy = "produto", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OrderBy("ordem ASC, id ASC")
+    @JsonManagedReference
+    private List<ProdutoImagem> imagens = new ArrayList<>();
     
     // Default constructor
     public Produto() {}
@@ -106,6 +131,14 @@ public class Produto {
         this.status = status;
     }
     
+    public Double getAvaliacao() {
+        return avaliacao;
+    }
+    
+    public void setAvaliacao(Double avaliacao) {
+        this.avaliacao = avaliacao;
+    }
+    
     public java.time.LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -136,6 +169,28 @@ public class Produto {
     
     public void setUpdatedBy(Long updatedBy) {
         this.updatedBy = updatedBy;
+    }
+    
+    public List<ProdutoImagem> getImagens() {
+        return imagens;
+    }
+    
+    public void setImagens(List<ProdutoImagem> imagens) {
+        this.imagens = imagens;
+    }
+    
+    // Método utilitário para adicionar imagem
+    public void addImagem(ProdutoImagem imagem) {
+        imagem.setProduto(this);
+        this.imagens.add(imagem);
+    }
+    
+    // Método utilitário para obter imagem principal
+    public ProdutoImagem getImagemPrincipal() {
+        return imagens.stream()
+                .filter(ProdutoImagem::getIsPrincipal)
+                .findFirst()
+                .orElse(imagens.isEmpty() ? null : imagens.get(0));
     }
     
     @Override

@@ -7,10 +7,7 @@ import com.goiashop.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class AuthService {
@@ -21,7 +18,8 @@ public class AuthService {
     @Autowired
     private PasswordService passwordService;
     
-    private static final Map<String, User> activeSessions = new HashMap<>();
+    @Autowired
+    private JwtService jwtService;
     
     public LoginResponse login(LoginRequest request) {
         try {
@@ -44,7 +42,7 @@ public class AuthService {
                 return new LoginResponse("Senha incorreta");
             }
             
-            String token = createSession(user);
+            String token = jwtService.generateToken(user);
             return new LoginResponse(token, user);
             
         } catch (Exception e) {
@@ -52,27 +50,37 @@ public class AuthService {
         }
     }
     
-    private String createSession(User user) {
-        String token = UUID.randomUUID().toString();
-        activeSessions.put(token, user);
-        return token;
-    }
-    
     public User validateSession(String token) {
-        return activeSessions.get(token);
-    }
-    
-    public void logout(String token) {
-        activeSessions.remove(token);
+        try {
+            if (token == null || !jwtService.validateToken(token)) {
+                return null;
+            }
+            
+            String email = jwtService.extractEmail(token);
+            Optional<User> userOpt = userRepository.findByEmailAndStatus(email, User.UserStatus.ATIVO);
+            
+            return userOpt.orElse(null);
+        } catch (Exception e) {
+            return null;
+        }
     }
     
     public boolean isAdmin(String token) {
-        User user = validateSession(token);
-        return user != null && user.getGrupo() == User.UserGroup.ADMIN;
+        try {
+            return jwtService.validateToken(token) && 
+                   "ADMIN".equals(jwtService.extractUserGroup(token));
+        } catch (Exception e) {
+            return false;
+        }
     }
     
     public boolean isEstoquista(String token) {
-        User user = validateSession(token);
-        return user != null && user.getGrupo() == User.UserGroup.ESTOQUISTA;
+        try {
+            return jwtService.validateToken(token) && 
+                   ("ESTOQUISTA".equals(jwtService.extractUserGroup(token)) || 
+                    "ADMIN".equals(jwtService.extractUserGroup(token)));
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
