@@ -1,89 +1,81 @@
 package com.goiashop.service;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+/**
+ * Serviço de upload de arquivos que delega para o ImageStorageFilesystem.
+ * Mantido para compatibilidade com código existente.
+ * 
+ * @deprecated Use ImageStorageFilesystem diretamente para novas implementações.
+ */
 @Service
 public class FileUploadService {
     
-    @Value("${app.upload.dir:uploads}")
-    private String uploadDir;
+    @Autowired
+    private ImageStorageFilesystem imageStorage;
     
-    @Value("${app.base.url:http://localhost:8080}")
-    private String baseUrl;
-    
+    /**
+     * Faz upload de um arquivo de imagem
+     * 
+     * @param file Arquivo a ser enviado
+     * @param subDir Subdiretório (ex: "produtos")
+     * @return Caminho relativo do arquivo
+     * @throws IOException Se houver erro no upload
+     */
     public String uploadFile(MultipartFile file, String subDir) throws IOException {
-        // Validar arquivo
-        if (file.isEmpty()) {
-            throw new IllegalArgumentException("Arquivo não pode ser vazio");
-        }
-        
-        // Validar tipo de arquivo (apenas imagens)
-        String contentType = file.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            throw new IllegalArgumentException("Apenas arquivos de imagem são permitidos");
-        }
-        
-        // Validar tamanho (máximo 5MB)
-        if (file.getSize() > 5 * 1024 * 1024) {
-            throw new IllegalArgumentException("Arquivo muito grande. Máximo 5MB permitido");
-        }
-        
-        // Criar diretório se não existir
-        Path uploadPath = Paths.get(uploadDir, subDir);
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
-        
-        // Gerar nome único para o arquivo
-        String originalFilename = file.getOriginalFilename();
-        String extension = "";
-        if (originalFilename != null && originalFilename.contains(".")) {
-            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-        }
-        
-        String uniqueFilename = UUID.randomUUID().toString() + extension;
-        Path filePath = uploadPath.resolve(uniqueFilename);
-        
-        // Salvar arquivo
-        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-        
-        // Retornar caminho relativo
-        return subDir + "/" + uniqueFilename;
+        ImageStorageFilesystem.ImageStorageResult result = imageStorage.saveImage(file, subDir);
+        return result.getRelativePath();
     }
     
+    /**
+     * Faz upload e retorna dados completos do arquivo
+     * 
+     * @param file Arquivo a ser enviado
+     * @param subDir Subdiretório
+     * @return Resultado completo do upload
+     * @throws IOException Se houver erro no upload
+     */
+    public ImageStorageFilesystem.ImageStorageResult uploadFileComplete(MultipartFile file, String subDir) throws IOException {
+        return imageStorage.saveImage(file, subDir);
+    }
+    
+    /**
+     * Gera URL pública para um arquivo
+     * 
+     * @param relativePath Caminho relativo do arquivo
+     * @return URL pública
+     */
     public String getFileUrl(String relativePath) {
-        return baseUrl + "/uploads/" + relativePath;
+        // Esta função não é mais necessária pois a URL já vem do ImageStorageResult
+        // Mantida para compatibilidade
+        return "http://localhost:8080/uploads/" + relativePath;
     }
     
+    /**
+     * Remove um arquivo
+     * 
+     * @param relativePath Caminho relativo do arquivo
+     */
     public void deleteFile(String relativePath) {
-        try {
-            Path filePath = Paths.get(uploadDir, relativePath);
-            Files.deleteIfExists(filePath);
-        } catch (IOException e) {
-            // Log error but don't throw exception
-            System.err.println("Erro ao deletar arquivo: " + relativePath + " - " + e.getMessage());
-        }
+        imageStorage.deleteImage(relativePath);
     }
     
+    /**
+     * Valida se é um arquivo de imagem válido
+     * 
+     * @param file Arquivo a ser validado
+     * @return true se for uma imagem válida
+     */
     public boolean isValidImageFile(MultipartFile file) {
-        if (file == null || file.isEmpty()) {
+        try {
+            imageStorage.saveImage(file, "temp");
+            return true;
+        } catch (Exception e) {
             return false;
         }
-        
-        String contentType = file.getContentType();
-        return contentType != null && 
-               (contentType.equals("image/jpeg") || 
-                contentType.equals("image/png") || 
-                contentType.equals("image/gif") || 
-                contentType.equals("image/webp"));
     }
 }

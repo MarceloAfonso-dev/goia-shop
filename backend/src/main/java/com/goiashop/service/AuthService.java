@@ -1,13 +1,14 @@
 package com.goiashop.service;
 
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.goiashop.dto.LoginRequest;
 import com.goiashop.dto.LoginResponse;
 import com.goiashop.model.User;
 import com.goiashop.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.util.Optional;
 
 @Service
 public class AuthService {
@@ -48,6 +49,12 @@ public class AuthService {
         } catch (Exception e) {
             return new LoginResponse("Erro interno: " + e.getMessage());
         }
+    }
+    
+    public void logout(String token) {
+        // Para JWT, o logout é efetivo no frontend removendo o token
+        // Aqui poderíamos implementar uma blacklist se necessário
+        // Por enquanto, é um no-op já que JWT é stateless
     }
     
     public User validateSession(String token) {

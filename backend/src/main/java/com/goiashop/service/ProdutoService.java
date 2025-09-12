@@ -27,7 +27,7 @@ public class ProdutoService {
     private ProdutoImagemRepository produtoImagemRepository;
     
     @Autowired
-    private FileUploadService fileUploadService;
+    private ImageStorageFilesystem imageStorage;
     
     @Autowired
     private AuditLogService auditLogService;
@@ -85,25 +85,24 @@ public class ProdutoService {
         }
         
         try {
-            // Fazer upload do arquivo
-            String relativePath = fileUploadService.uploadFile(file, "produtos");
-            String url = fileUploadService.getFileUrl(relativePath);
+            // Upload do arquivo usando a nova arquitetura
+            ImageStorageFilesystem.ImageStorageResult uploadResult = imageStorage.saveImage(file, "produtos");
             
             // Se esta imagem for principal, remover flag de outras imagens
             if (isPrincipal) {
                 produto.getImagens().forEach(img -> img.setIsPrincipal(false));
             }
             
-            // Criar registro da imagem
+            // Criar registro da imagem com metadata completa
             ProdutoImagem imagem = new ProdutoImagem();
             imagem.setProduto(produto);
-            imagem.setNomeArquivo(file.getOriginalFilename());
-            imagem.setCaminhoArquivo(relativePath);
-            imagem.setUrlArquivo(url);
+            imagem.setNomeArquivo(uploadResult.getOriginalName());
+            imagem.setCaminhoArquivo(uploadResult.getRelativePath());
+            imagem.setUrlArquivo(uploadResult.getPublicUrl());
             imagem.setIsPrincipal(isPrincipal);
             imagem.setOrdem(ordem != null ? ordem : 0);
-            imagem.setTamanhoArquivo(file.getSize());
-            imagem.setTipoMime(file.getContentType());
+            imagem.setTamanhoArquivo(uploadResult.getFileSize());
+            imagem.setTipoMime(uploadResult.getMimeType());
             
             // Salvar
             ProdutoImagem imagemSalva = produtoImagemRepository.save(imagem);
@@ -132,7 +131,7 @@ public class ProdutoService {
             ProdutoImagem imagem = imagemOpt.get();
             
             // Deletar arquivo físico
-            fileUploadService.deleteFile(imagem.getCaminhoArquivo());
+            imageStorage.deleteImage(imagem.getCaminhoArquivo());
             
             // Deletar registro
             produtoImagemRepository.delete(imagem);

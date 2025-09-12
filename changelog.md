@@ -7,6 +7,94 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-09-11 - Marcelo Afonso
+
+### Added
+- **Backend**: Sistema completo de upload de imagens para produtos
+  - Service `ImageStorageFilesystem` com arquitetura robusta e segura
+  - Validação de tipos de arquivo por magic bytes e MIME type
+  - Sanitização de nomes de arquivo com geração de UUID únicos
+  - Suporte a JPEG, PNG, GIF e WebP com limite de 5MB por arquivo
+  - Configuração flexível via `application.properties`
+- **Backend**: Model `ProdutoImagem` para gerenciamento de metadados de imagens
+  - Relacionamento OneToMany com produtos
+  - Controle de imagem principal e ordem de exibição
+  - Timestamps de criação e atualização
+  - URLs de acesso público para imagens
+- **Backend**: Repository `ProdutoImagemRepository` para persistência de imagens
+- **Backend**: Endpoints REST para upload de imagens em `ProdutoController`
+  - `POST /api/produtos/{id}/imagens` - Upload múltiplo de imagens
+  - Validação de permissões e limites por produto
+- **Backend**: Service `FileUploadService` para validações adicionais de segurança
+- **Backend**: Configuração de servir arquivos estáticos via Spring Boot
+- **Frontend**: Modal `ProductCadastroModal` para cadastro completo de produtos
+  - Interface em duas etapas: dados básicos e upload de imagens
+  - Preview de imagens em tempo real
+  - Seleção de imagem principal com interface visual
+  - Validação client-side de tipos e tamanhos de arquivo
+  - Feedback visual de progresso de upload
+- **Frontend**: Integração completa com API de upload no `ProductList`
+- **Infraestrutura**: Volume Docker persistente para diretório `uploads/`
+- **Documentação**: Atualização completa da `DOCUMENTACAO.md` com todas as funcionalidades
+
+### Changed
+- **Backend**: Refatoração do `ProdutoService` para incluir gerenciamento de imagens
+  - Método `cadastrarProduto()` com suporte a upload simultâneo
+  - Método `adicionarImagem()` para upload individual de imagens
+  - Validação de limites e permissões de usuário
+- **Backend**: Modelo `Produto` expandido com relacionamento de imagens
+  - Lista de imagens associadas com cascade operations
+  - Métodos utilitários para gerenciamento de imagens
+  - Suporte a imagem principal automática
+- **Backend**: Configuração de upload em `application.properties`
+  - Limites de tamanho de arquivo e request
+  - Diretório de upload configurável via variável de ambiente
+  - Tipos de arquivo permitidos configuráveis
+- **Frontend**: Componente `ProductList` com botão de cadastro de produtos
+- **Arquitetura**: Implementação do padrão Strategy para storage de imagens
+  - Interface `ImageStorage` para futuras implementações (S3, etc.)
+  - Implementação `ImageStorageFilesystem` para sistema de arquivos local
+
+### Fixed
+- **Backend**: Problemas de upload em ambiente Docker containerizado
+  - Correção de paths relativos vs absolutos
+  - Substituição de `MultipartFile.transferTo()` por `Files.copy()` para maior compatibilidade
+  - Resolução de problemas com diretórios temporários em containers
+- **Backend**: Validação robusta de tipos de arquivo
+  - Verificação por magic bytes além de MIME type
+  - Prevenção de bypass de validação via renomeação de arquivos
+- **Frontend**: Tratamento de erros de upload com feedback adequado ao usuário
+- **Frontend**: Validação de múltiplos arquivos com limites de quantidade
+
+### Removed
+- **Backend**: Código de debug e logs desnecessários após testes
+  - Remoção de `System.out.println` statements
+  - Limpeza de comentários de desenvolvimento
+- **Frontend**: Componentes de debug da interface de upload
+  - Remoção de alertas de debug
+  - Limpeza de console.log statements
+  - Remoção de estados não utilizados
+
+### Security
+- **Backend**: Validação dupla de segurança para uploads
+  - Magic bytes verification para detecção real do tipo de arquivo
+  - MIME type validation como camada adicional
+  - Sanitização completa de nomes de arquivo
+  - Geração de UUIDs para evitar conflitos e ataques de path traversal
+- **Backend**: Limites rígidos de tamanho e quantidade de arquivos
+  - 5MB máximo por arquivo
+  - 5 imagens máximo por produto
+  - 10MB máximo por request HTTP
+- **Backend**: Isolamento de arquivos em diretório específico com controle de acesso
+
+### Performance
+- **Backend**: Otimização de queries com relacionamentos JPA
+  - Lazy loading para imagens de produtos
+  - Cascade operations otimizadas
+- **Frontend**: Upload assíncrono com feedback de progresso
+  - Interface não bloqueante durante uploads
+  - Preview instantâneo de imagens selecionadas
+
 ## [0.2.0] - 2025-09-04 - Pedro Ibanez
 
 ### Added

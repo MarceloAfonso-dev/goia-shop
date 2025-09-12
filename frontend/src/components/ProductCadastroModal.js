@@ -17,21 +17,9 @@ const ProductCadastroModal = ({ show, onHide, onSuccess }) => {
     const [uploadProgress, setUploadProgress] = useState('');
     const [error, setError] = useState('');
     const [step, setStep] = useState(1); // 1: dados, 2: imagens
-    const [debugInfo, setDebugInfo] = useState('Nenhum arquivo selecionado');
 
-    // Debug: Monitorar mudanças no estado files
+    // Monitorar mudanças no modal show
     useEffect(() => {
-        const info = files.length > 0 
-            ? `${files.length} arquivos: ${files.map(f => f.name).join(', ')}`
-            : 'Nenhum arquivo selecionado';
-        console.log('🔍 useEffect files mudou:', files.length, files);
-        console.log('🔍 Stack trace:', new Error().stack);
-        setDebugInfo(info);
-    }, [files]);
-
-    // Debug: Monitorar mudanças no modal show
-    useEffect(() => {
-        console.log('🔍 Modal show mudou:', show);
         if (!show) {
             console.log('🔍 Modal foi fechado - files serão resetados');
         }
@@ -184,12 +172,8 @@ const ProductCadastroModal = ({ show, onHide, onSuccess }) => {
     };
 
     const handleClose = () => {
-        console.log('🔍 handleClose chamado! Step atual:', step);
-        console.log('🔍 Stack trace do handleClose:', new Error().stack);
-        
         // Prevenir fechamento acidental durante upload
         if (loading) {
-            console.log('🚫 Bloqueando handleClose durante loading');
             return;
         }
         
@@ -205,7 +189,6 @@ const ProductCadastroModal = ({ show, onHide, onSuccess }) => {
         setPrincipalImageIndex(0);
         setError('');
         setStep(1);
-        setDebugInfo('Nenhum arquivo selecionado');
         onHide();
     };
 
@@ -351,20 +334,6 @@ const ProductCadastroModal = ({ show, onHide, onSuccess }) => {
                                 <Form.Text className="text-muted">
                                     Máximo 5 imagens. Formatos: JPEG, PNG, GIF, WebP (máx. 5MB cada)
                                 </Form.Text>
-                                
-                                {/* Debug Info */}
-                                <Alert variant="info" className="mt-2">
-                                    <small><strong>Debug:</strong> {debugInfo}</small>
-                                    <br />
-                                    <Button 
-                                        size="sm" 
-                                        variant="outline-info" 
-                                        onClick={() => console.log('📋 Estado atual files:', files.length, files)}
-                                        className="mt-1"
-                                    >
-                                        Testar Estado Files
-                                    </Button>
-                                </Alert>
                             </Form.Group>
 
                             {/* Preview das imagens */}

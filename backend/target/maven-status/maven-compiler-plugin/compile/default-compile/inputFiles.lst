@@ -26,4 +26,5 @@
 /app/src/main/java/com/goiashop/repository/UserRepository.java
 /app/src/main/java/com/goiashop/dto/PaginatedResponse.java
 /app/src/main/java/com/goiashop/service/ProdutoService.java
+/app/src/main/java/com/goiashop/service/ImageStorageFilesystem.java
 /app/src/main/java/com/goiashop/model/ProdutoImagem.java
