@@ -40,4 +40,16 @@ api.interceptors.response.use(
     }
 );
 
+// Para ativar produto
+export async function activateProduct(id) {
+  const response = await api.patch(`/produtos/${id}/ativar`);
+  return response.data;
+}
+
+// Para inativar produto
+export async function deactivateProduct(id) {
+  const response = await api.patch(`/produtos/${id}/inativar`);
+  return response.data;
+}
+
 export default api;

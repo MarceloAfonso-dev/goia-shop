@@ -165,4 +165,50 @@ public class ProdutoService {
             auditLogService.logUpdate(userId, "produto_imagens", imagemId, oldData, newData);
         }
     }
+    
+    @Transactional
+    public Produto ativarProduto(Long id, Long userId) {
+        Optional<Produto> produtoOpt = produtoRepository.findById(id);
+        if (produtoOpt.isPresent()) {
+            Produto produto = produtoOpt.get();
+            produto.setStatus(Produto.ProdutoStatus.ATIVO);
+            produto.setUpdatedAt(LocalDateTime.now());
+            produto.setUpdatedBy(userId);
+            
+            Produto produtoAtualizado = produtoRepository.save(produto);
+            
+            // Registrar auditoria
+            Map<String, Object> oldData = new HashMap<>();
+            oldData.put("status", "INATIVO");
+            Map<String, Object> newData = new HashMap<>();
+            newData.put("status", "ATIVO");
+            auditLogService.logUpdate(userId, "produtos_ecommerce", id, oldData, newData);
+            
+            return produtoAtualizado;
+        }
+        throw new IllegalArgumentException("Produto não encontrado");
+    }
+    
+    @Transactional
+    public Produto inativarProduto(Long id, Long userId) {
+        Optional<Produto> produtoOpt = produtoRepository.findById(id);
+        if (produtoOpt.isPresent()) {
+            Produto produto = produtoOpt.get();
+            produto.setStatus(Produto.ProdutoStatus.INATIVO);
+            produto.setUpdatedAt(LocalDateTime.now());
+            produto.setUpdatedBy(userId);
+            
+            Produto produtoAtualizado = produtoRepository.save(produto);
+            
+            // Registrar auditoria
+            Map<String, Object> oldData = new HashMap<>();
+            oldData.put("status", "ATIVO");
+            Map<String, Object> newData = new HashMap<>();
+            newData.put("status", "INATIVO");
+            auditLogService.logUpdate(userId, "produtos_ecommerce", id, oldData, newData);
+            
+            return produtoAtualizado;
+        }
+        throw new IllegalArgumentException("Produto não encontrado");
+    }
 }

@@ -3,6 +3,10 @@ import { Table, Card, Badge, Spinner, Alert, Row, Col, Button } from 'react-boot
 import api from '../utils/api';
 import ProductCadastroModal from './ProductCadastroModal';
 import ProductPreview from './ProductPreview';
+import { useAuth } from '../hooks/useAuth';
+
+// Ativar/Inativar produto
+import { activateProduct, deactivateProduct } from "../utils/api";
 
 const ProductList = () => {
     const [products, setProducts] = useState([]);
@@ -10,6 +14,8 @@ const ProductList = () => {
     const [error, setError] = useState('');
     const [showCadastroModal, setShowCadastroModal] = useState(false);
     const [previewProductId, setPreviewProductId] = useState(null);
+
+    const { isAdmin } = useAuth();
 
     useEffect(() => {
         fetchProducts();
@@ -44,12 +50,36 @@ const ProductList = () => {
             <Badge bg="secondary">{status}</Badge>;
     };
 
+    // Preview do produto
     const handlePreviewProduct = (productId) => {
         setPreviewProductId(productId);
     };
 
     const handleClosePreview = () => {
         setPreviewProductId(null);
+    };
+
+    // Ativar/Inativar produto
+    const handleActivate = async (id) => {
+        try {
+            await activateProduct(id);
+            alert("Produto ativado com sucesso!");
+            fetchProducts();
+        } catch (error) {
+            console.error(error);
+            alert("Erro ao ativar produto.");
+        }
+    };
+
+    const handleDeactivate = async (id) => {
+        try {
+            await deactivateProduct(id);
+            alert("Produto inativado com sucesso!");
+            fetchProducts();
+        } catch (error) {
+            console.error(error);
+            alert("Erro ao inativar produto.");
+        }
     };
 
     if (loading) {
@@ -143,44 +173,67 @@ const ProductList = () => {
                             </thead>
                             <tbody>
                                 {products.map((product) => (
-                                                                    <tr key={product.id}>
-                                    <td>{product.id}</td>
-                                    <td>
-                                        <strong>{product.nome}</strong>
-                                    </td>
-                                    <td>
-                                        <small className="text-muted">
-                                            {product.descricao.length > 50 
-                                                ? product.descricao.substring(0, 50) + '...'
-                                                : product.descricao
-                                            }
-                                        </small>
-                                    </td>
-                                    <td>
-                                        <span className="fw-bold text-success">
-                                            {formatPrice(product.preco)}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span className={`badge ${
-                                            product.quantidadeEstoque > 10 ? 'bg-success' :
-                                            product.quantidadeEstoque > 5 ? 'bg-warning' : 'bg-danger'
-                                        }`}>
-                                            {product.quantidadeEstoque}
-                                        </span>
-                                    </td>
-                                    <td>{getStatusBadge(product.status)}</td>
-                                    <td>
-                                        <Button 
-                                            variant="info" 
-                                            size="sm" 
-                                            onClick={() => handlePreviewProduct(product.id)}
-                                            className="me-2"
-                                        >
-                                            👁️ Preview
-                                        </Button>
-                                    </td>
-                                </tr>
+                                    <tr key={product.id}>
+                                        <td>{product.id}</td>
+                                        <td>
+                                            <strong>{product.nome}</strong>
+                                        </td>
+                                        <td>
+                                            <small className="text-muted">
+                                                {product.descricao.length > 50 
+                                                    ? product.descricao.substring(0, 50) + '...'
+                                                    : product.descricao
+                                                }
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <span className="fw-bold text-success">
+                                                {formatPrice(product.preco)}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span className={`badge ${
+                                                product.quantidadeEstoque > 10 ? 'bg-success' :
+                                                product.quantidadeEstoque > 5 ? 'bg-warning' : 'bg-danger'
+                                            }`}>
+                                                {product.quantidadeEstoque}
+                                            </span>
+                                        </td>
+                                        <td>{getStatusBadge(product.status)}</td>
+                                        <td>
+                                            <Button 
+                                                variant="info" 
+                                                size="sm" 
+                                                onClick={() => handlePreviewProduct(product.id)}
+                                                className="me-2"
+                                            >
+                                                👁️ Preview
+                                            </Button>
+                                            {isAdmin && (
+                                                <>
+                                                    {product.status === "ATIVO" ? (
+                                                        <Button 
+                                                            variant="secondary" 
+                                                            size="sm" 
+                                                            onClick={() => handleDeactivate(product.id)}
+                                                            className="ms-2"
+                                                        >
+                                                            Inativar
+                                                        </Button>
+                                                    ) : (
+                                                        <Button 
+                                                            variant="success" 
+                                                            size="sm" 
+                                                            onClick={() => handleActivate(product.id)}
+                                                            className="ms-2"
+                                                        >
+                                                            Ativar
+                                                        </Button>
+                                                    )}
+                                                </>
+                                            )}
+                                        </td>
+                                    </tr>
                                 ))}
                             </tbody>
                         </Table>
