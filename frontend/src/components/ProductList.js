@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Table, Card, Badge, Spinner, Alert, Row, Col, Button } from 'react-bootstrap';
 import api from '../utils/api';
 import ProductCadastroModal from './ProductCadastroModal';
+import ProductPreview from './ProductPreview';
 
 const ProductList = () => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [showCadastroModal, setShowCadastroModal] = useState(false);
+    const [previewProductId, setPreviewProductId] = useState(null);
 
     useEffect(() => {
         fetchProducts();
@@ -40,6 +42,14 @@ const ProductList = () => {
         return status === 'ATIVO' ? 
             <Badge bg="success">{status}</Badge> : 
             <Badge bg="secondary">{status}</Badge>;
+    };
+
+    const handlePreviewProduct = (productId) => {
+        setPreviewProductId(productId);
+    };
+
+    const handleClosePreview = () => {
+        setPreviewProductId(null);
     };
 
     if (loading) {
@@ -128,6 +138,7 @@ const ProductList = () => {
                                     <th>Preço</th>
                                     <th>Estoque</th>
                                     <th>Status</th>
+                                    <th>Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -159,6 +170,16 @@ const ProductList = () => {
                                         </span>
                                     </td>
                                     <td>{getStatusBadge(product.status)}</td>
+                                    <td>
+                                        <Button 
+                                            variant="info" 
+                                            size="sm" 
+                                            onClick={() => handlePreviewProduct(product.id)}
+                                            className="me-2"
+                                        >
+                                            👁️ Preview
+                                        </Button>
+                                    </td>
                                 </tr>
                                 ))}
                             </tbody>
@@ -173,6 +194,14 @@ const ProductList = () => {
                 onHide={() => setShowCadastroModal(false)}
                 onSuccess={fetchProducts}
             />
+
+            {/* Product Preview */}
+            {previewProductId && (
+                <ProductPreview
+                    productId={previewProductId}
+                    onClose={handleClosePreview}
+                />
+            )}
         </div>
     );
 };
