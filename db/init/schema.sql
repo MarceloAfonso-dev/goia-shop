@@ -192,6 +192,8 @@ CREATE INDEX idx_produto_imagens_principal ON produto_imagens(is_principal);
 CREATE INDEX idx_audit_logs_user ON audit_logs(user_id);
 CREATE INDEX idx_audit_logs_action ON audit_logs(action);
 
+ALTER TABLE produtos ADD COLUMN ativo BOOLEAN DEFAULT TRUE;
+
 -- ========================================
 -- DADOS DE TESTE PARA DESENVOLVIMENTO
 -- ========================================

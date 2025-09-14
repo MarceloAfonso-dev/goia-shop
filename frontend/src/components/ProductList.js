@@ -3,11 +3,24 @@ import { Table, Card, Badge, Spinner, Alert, Row, Col, Button } from 'react-boot
 import api from '../utils/api';
 import ProductCadastroModal from './ProductCadastroModal';
 
+//Task - Ativar/Inativar @gustavo
+import { activateProduct, deactivateProduct } from "../utils/api";
+
 const ProductList = () => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [showCadastroModal, setShowCadastroModal] = useState(false);
+
+    //Task - Ativar/Inativar
+    const [isAdmin, setIsAdmin] = useState(false);
+
+    useEffect(() => {
+        const role = localStorage.getItem("role"); // ou de onde você pega a role
+        if (role === "ADMIN") {
+            setIsAdmin(true);
+        }
+    }, []);
 
     useEffect(() => {
         fetchProducts();
@@ -40,6 +53,28 @@ const ProductList = () => {
         return status === 'ATIVO' ? 
             <Badge bg="success">{status}</Badge> : 
             <Badge bg="secondary">{status}</Badge>;
+    };
+
+    const handleActivate = async (id) => {
+        try {
+            await activateProduct(id);
+            alert("Produto ativado com sucesso!");
+            fetchProducts(); // recarrega a lista
+        } catch (error) {
+            console.error(error);
+            alert("Erro ao ativar produto.");
+        }   
+    };
+
+    const handleDeactivate = async (id) => {
+        try {
+            await deactivateProduct(id);
+            alert("Produto inativado com sucesso!");
+            fetchProducts(); // recarrega a lista
+        } catch (error) {
+            console.error(error);
+            alert("Erro ao inativar produto.");
+        }
     };
 
     if (loading) {
@@ -128,38 +163,62 @@ const ProductList = () => {
                                     <th>Preço</th>
                                     <th>Estoque</th>
                                     <th>Status</th>
+                                    <th>Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {products.map((product) => (
-                                                                    <tr key={product.id}>
-                                    <td>{product.id}</td>
-                                    <td>
-                                        <strong>{product.nome}</strong>
-                                    </td>
-                                    <td>
-                                        <small className="text-muted">
-                                            {product.descricao.length > 50 
-                                                ? product.descricao.substring(0, 50) + '...'
-                                                : product.descricao
-                                            }
-                                        </small>
-                                    </td>
-                                    <td>
-                                        <span className="fw-bold text-success">
-                                            {formatPrice(product.preco)}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span className={`badge ${
-                                            product.quantidadeEstoque > 10 ? 'bg-success' :
-                                            product.quantidadeEstoque > 5 ? 'bg-warning' : 'bg-danger'
-                                        }`}>
-                                            {product.quantidadeEstoque}
-                                        </span>
-                                    </td>
-                                    <td>{getStatusBadge(product.status)}</td>
-                                </tr>
+                                    <tr key={product.id}>
+                                        <td>{product.id}</td>
+                                        <td>
+                                            <strong>{product.nome}</strong>
+                                        </td>
+                                        <td>
+                                            <small className="text-muted">
+                                                {product.descricao.length > 50 
+                                                    ? product.descricao.substring(0, 50) + '...'
+                                                    : product.descricao
+                                                }
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <span className="fw-bold text-success">
+                                                {formatPrice(product.preco)}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span className={`badge ${
+                                                product.quantidadeEstoque > 10 ? 'bg-success' :
+                                                product.quantidadeEstoque > 5 ? 'bg-warning' : 'bg-danger'
+                                            }`}>
+                                                {product.quantidadeEstoque}
+                                            </span>
+                                        </td>
+                                        <td>{getStatusBadge(product.status)}</td>
+                                        <td>
+                                            {isAdmin && (
+                                                <>
+                                                    {product.status === "ATIVO" ? (
+                                                        <Button 
+                                                            variant="secondary" 
+                                                            size="sm" 
+                                                            onClick={() => handleDeactivate(product.id)}
+                                                        >
+                                                            Inativar
+                                                        </Button>
+                                                    ) : (
+                                                        <Button 
+                                                            variant="success" 
+                                                            size="sm" 
+                                                            onClick={() => handleActivate(product.id)}
+                                                        >
+                                                            Ativar
+                                                        </Button>
+                                                    )}
+                                                </>
+                                            )}
+                                        </td>
+                                    </tr>
                                 ))}
                             </tbody>
                         </Table>
