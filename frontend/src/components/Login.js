@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
 import api from '../utils/api';
-import { hashPassword } from '../utils/crypto';
 
 const Login = ({ onLoginSuccess, onBackToLanding }) => {
     const [formData, setFormData] = useState({
@@ -24,16 +23,14 @@ const Login = ({ onLoginSuccess, onBackToLanding }) => {
         setError('');
 
         try {
-            // 1. Aplica SHA-256 na senha antes de enviar para o backend
-            const hashedPassword = await hashPassword(formData.senha);
-            
-            // 2. Cria o payload com a senha já criptografada
+            // Envia a senha original diretamente para o backend
+            // O backend será responsável por toda a criptografia (BCrypt)
             const loginPayload = {
                 email: formData.email,
-                senha: hashedPassword  // Envia o hash SHA-256, não a senha original
+                senha: formData.senha  // Senha original, sem criptografia no frontend
             };
             
-            // 3. Envia para o backend
+            // Envia para o backend
             const response = await api.post('/auth/login', loginPayload);
             
             if (response.data.success) {
@@ -49,9 +46,7 @@ const Login = ({ onLoginSuccess, onBackToLanding }) => {
         } catch (err) {
             console.error('Erro no login:', err);
             
-            if (err.message === 'Erro na criptografia da senha') {
-                setError('Erro na criptografia da senha. Verifique se seu navegador suporta Web Crypto API.');
-            } else if (err.response?.status === 401) {
+            if (err.response?.status === 401) {
                 setError('Email ou senha incorretos');
             } else if (err.response?.data?.message) {
                 setError(err.response.data.message);
@@ -126,9 +121,9 @@ const Login = ({ onLoginSuccess, onBackToLanding }) => {
                         </Card.Body>
                         <Card.Footer className="text-center text-muted">
                             <small>Usuários de teste:</small><br/>
-                            <small>Admin: admin@goiashop.com / admin123</small><br/>
+                            <small>Admin: admin@goiashop.com / adm123</small><br/>
                             <small>Estoquista: estoquista@goiashop.com / estoque123</small><br/>
-                            <small className="text-success">🔒 Senhas protegidas com SHA-256 + BCrypt</small>
+                            <small className="text-success">🔒 Senhas protegidas com BCrypt no servidor</small>
                         </Card.Footer>
                     </Card>
                 </Col>

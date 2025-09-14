@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Row, Col, Alert, Spinner } from 'react-bootstrap';
 import api from '../utils/api';
-import { hashPassword } from '../utils/crypto';
 
 const UsuarioAlteracaoModal = ({ show, onHide, usuario, onUsuarioAlterado }) => {
     const [formData, setFormData] = useState({
@@ -91,9 +90,10 @@ const UsuarioAlteracaoModal = ({ show, onHide, usuario, onUsuarioAlterado }) => 
 
             // Incluir senha apenas se foi alterada
             if (formData.senha) {
-                const senhaEncriptada = await hashPassword(formData.senha);
-                dadosEnvio.senha = senhaEncriptada;
-                dadosEnvio.confirmaSenha = senhaEncriptada;
+                // Enviar senha original para o backend (sem criptografia no frontend)
+                // O backend será responsável por toda a criptografia (BCrypt)
+                dadosEnvio.senha = formData.senha;
+                dadosEnvio.confirmaSenha = formData.confirmaSenha;
             }
 
             await api.put(`/usuarios/${usuario.id}/alterar`, dadosEnvio);

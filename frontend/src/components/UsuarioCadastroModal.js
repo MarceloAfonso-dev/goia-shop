@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Modal, Button, Form, Row, Col, Alert, Spinner } from 'react-bootstrap';
 import api from '../utils/api';
-import { hashPassword } from '../utils/crypto';
 
 const UsuarioCadastroModal = ({ show, onHide, onUsuarioCadastrado }) => {
     const [formData, setFormData] = useState({
@@ -60,14 +59,13 @@ const UsuarioCadastroModal = ({ show, onHide, onUsuarioCadastrado }) => {
                 throw new Error('As senhas não coincidem');
             }
 
-            // Criptografar senha antes de enviar
-            const senhaEncriptada = await hashPassword(formData.senha);
-
+            // Enviar senha original para o backend (sem criptografia no frontend)
+            // O backend será responsável por toda a criptografia (BCrypt)
             const dadosEnvio = {
                 ...formData,
                 cpf: formData.cpf.replace(/\D/g, ''), // Remove formatação
-                senha: senhaEncriptada,
-                confirmaSenha: senhaEncriptada
+                senha: formData.senha,  // Senha original
+                confirmaSenha: formData.confirmaSenha  // Senha original
             };
 
             await api.post('/usuarios/cadastrar', dadosEnvio);

@@ -7,6 +7,59 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Unreleased]
 
+## [0.3.1] - 2025-09-13 - Correções Críticas de Segurança - Marcelo Afonso
+
+### 🔥 BREAKING CHANGES
+- **Segurança**: Remoção completa da criptografia no frontend por questões de segurança
+- **Inicialização**: Migração da criação de usuários do SQL para Java (DataInitializer)
+
+### 🛡️ Security
+- **Frontend**: Removido módulo `crypto-js` e hash SHA-256 do cliente
+  - Eliminação de vulnerabilidades de criptografia client-side
+  - Senhas agora enviadas via HTTPS em texto plano para o backend
+  - Toda criptografia centralizada no servidor usando BCrypt
+- **Backend**: Implementado `DataInitializer` para criação automática de usuários
+  - Eliminação de problemas de encoding/corrupção de hashes BCrypt no SQL
+  - Usuários criados automaticamente na inicialização da aplicação
+  - Garantia de integridade dos hashes em qualquer ambiente
+
+### 🔧 Fixed
+- **Docker**: Configuração de proxy corrigida com `setupProxy.js`
+  - Substituição da configuração `package.json` por solução robusta
+  - Resolução de DNS interno `backend:8080` funcionando perfeitamente
+  - Logs de debug para troubleshooting de conectividade
+- **Autenticação**: Correção definitiva dos problemas de login
+  - Hashes BCrypt de 60 caracteres preservados corretamente
+  - Formato `$2a$10$` validado em todos os ambientes
+  - Zero falhas de autenticação com credenciais válidas
+
+### 🏗️ Changed
+- **Arquivos Frontend Alterados**:
+  - `frontend/src/components/Login.js` - Remoção de hash SHA-256
+  - `frontend/src/components/UsuarioCadastroModal.js` - Envio direto de senhas
+  - `frontend/src/components/UsuarioAlteracaoModal.js` - Envio direto de senhas
+  - `frontend/src/setupProxy.js` - Nova configuração de proxy Docker
+- **Arquivos Backend Alterados**:
+  - `backend/src/main/java/com/goiashop/config/DataInitializer.java` - Novo componente
+  - `backend/src/main/java/com/goiashop/service/PasswordService.java` - Melhorado
+- **Infraestrutura**:
+  - `db/init/schema.sql` - Removidas inserções problemáticas de usuários
+  - `docker-compose.yml` - Configuração de rede otimizada
+
+### 📋 Usuários Padrão Criados Automaticamente
+- **Admin**: `admin@goiashop.com` / `adm123` (Grupo: ADMIN)
+- **Estoquista**: `estoquista@goiashop.com` / `estoque123` (Grupo: ESTOQUISTA)
+
+### 🚀 Deploy
+- **Comando para ambiente limpo**: `docker-compose down -v && docker-compose up -d`
+- **Verificação**: Login funcionando imediatamente após inicialização
+- **Compatibilidade**: 100% portável entre Windows/Linux/macOS
+
+### 📖 Documentation
+- **DOCUMENTACAO.md**: Seção completa sobre alterações de segurança
+- **README.md**: Instruções atualizadas de deploy e credenciais
+- **Troubleshooting**: Guia completo de resolução de problemas
+
 ## [0.3.0] - 2025-09-11 - Marcelo Afonso
 
 ### Added

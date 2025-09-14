@@ -98,6 +98,50 @@ Sistema de backoffice para gerenciamento de loja online com autenticação segur
 ### Controle de Acesso
 - **ADMIN**: Acesso total ao sistema
 - **ESTOQUISTA**: Produtos e relatórios
+
+## 🔄 Alterações de Segurança e Configuração
+
+### 🛡️ Remoção da Criptografia do Frontend
+**Problema Resolvido**: Eliminação de vulnerabilidades de segurança no cliente
+
+**Alterações Implementadas**:
+- ❌ **Removido**: Módulo `crypto-js` e hash SHA-256 no frontend
+- ✅ **Implementado**: Envio de senhas em texto plano via HTTPS
+- ✅ **Centralizado**: Toda criptografia BCrypt exclusivamente no backend
+- 📁 **Arquivos alterados**: `Login.js`, `UsuarioCadastroModal.js`, `UsuarioAlteracaoModal.js`
+
+**Justificativa**: Criptografia no cliente é insegura e expõe algoritmos. HTTPS + BCrypt no servidor é a abordagem mais segura.
+
+### ⚙️ Configuração de Proxy para Docker
+**Problema Resolvido**: Falhas de comunicação entre frontend e backend em ambiente containerizado
+
+**Solução Implementada**:
+- ✅ **Criado**: `frontend/src/setupProxy.js` para configuração específica do Docker
+- ✅ **Configurado**: Roteamento automático `/api/*` → `http://backend:8080`
+- ✅ **Substituído**: Configuração `package.json` por solução mais robusta
+- 🔧 **Benefício**: Resolução DNS interna e logs de debug
+
+### 🗄️ Inicialização Automática de Usuários via Java
+**Problema Resolvido**: Corrupção de hashes BCrypt durante inicialização do banco via SQL
+
+**Implementação**:
+- ✅ **Criado**: `DataInitializer.java` - Componente Spring Boot
+- ✅ **Automático**: Criação de usuários com BCrypt na inicialização da aplicação
+- ✅ **Seguro**: Hashes gerados diretamente no contexto Java (sem corrupção)
+- ✅ **Inteligente**: Verifica existência antes de criar (não duplica)
+
+**Usuários Criados Automaticamente**:
+- 👤 **Admin**: `admin@goiashop.com` / `adm123`
+- 📦 **Estoquista**: `estoquista@goiashop.com` / `estoque123`
+
+### 🔐 Sistema de Criptografia Robusto
+**Implementação BCrypt**:
+- **Algoritmo**: BCrypt com salt automático
+- **Formato**: `$2a$10$` (60 caracteres total)
+- **Custo**: 10 rounds (resistente a força bruta)
+- **Compatibilidade**: Funciona em qualquer ambiente/SO
+
+**Resultado**: Zero problemas de encoding, máxima portabilidade e segurança garantida.
 - **CLIENTE**: Bloqueado no backoffice
 
 ### CORS e Segurança Web

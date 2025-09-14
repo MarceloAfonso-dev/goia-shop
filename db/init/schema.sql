@@ -196,34 +196,9 @@ CREATE INDEX idx_audit_logs_action ON audit_logs(action);
 -- DADOS DE TESTE PARA DESENVOLVIMENTO
 -- ========================================
 
-INSERT INTO users (nome, cpf, email, senha_hash, grupo, status, created_at, updated_at) 
-VALUES (
-    'Administrador Sistema',
-    '12345678901',
-    'admin@goiashop.com',
-    '$2a$10$7xOFDIWeEc/uQ3XFikh9T.iyMifd4tC0tf/JQiRyytvjzNsaqOSgO',
-    'ADMIN',
-    'ATIVO',
-    NOW(),
-    NOW()
-);
+-- Usuários serão criados automaticamente pelo DataInitializer.java
+-- admin@goiashop.com / adm123 (ADMIN)
+-- estoquista@goiashop.com / estoque123 (ESTOQUISTA)
 
-INSERT INTO users (nome, cpf, email, senha_hash, grupo, status, created_at, updated_at) 
-VALUES (
-    'Estoquista Padrão',
-    '98765432109',
-    'estoquista@goiashop.com',
-    '$2a$10$cxaSfqRbLUZByoxnwiKXC.LpUqxrMItEZzRYS6VNkOUA76Ymc3Vmy',
-    'ESTOQUISTA',
-    'ATIVO',
-    NOW(),
-    NOW()
-);
-
-INSERT INTO produtos_ecommerce (nome, descricao, preco, quantidade_estoque, status, created_at, updated_at, created_by, updated_by)
-VALUES 
-    ('Notebook Dell Inspiron', 'Notebook Dell Inspiron 15 polegadas, 8GB RAM, 256GB SSD', 2999.99, 10, 'ATIVO', NOW(), NOW(), 1, 1),
-    ('Mouse Wireless Logitech', 'Mouse sem fio Logitech com sensor óptico de alta precisão', 89.90, 50, 'ATIVO', NOW(), NOW(), 1, 1),
-    ('Teclado Mecânico RGB', 'Teclado mecânico com switches blue e iluminação RGB', 299.90, 25, 'ATIVO', NOW(), NOW(), 1, 1),
-    ('Monitor LG 24"', 'Monitor LG 24 polegadas Full HD, painel IPS', 799.90, 15, 'ATIVO', NOW(), NOW(), 1, 1),
-    ('Headset Gamer', 'Headset gamer com microfone removível e som surround', 199.90, 30, 'ATIVO', NOW(), NOW(), 1, 1);
+-- Produtos de exemplo (criados após os usuários via foreign key)
+-- Note: Os produtos serão inseridos pelo DataInitializer também
