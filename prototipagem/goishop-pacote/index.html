@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GOIA Shop</title>
+  <link rel="icon" type="image/png" href="assets/img/GOIA-icon-header.png" />
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">
+        <img src="assets/img/GOIA-icon-header.png">
+        GOIA
+    </div>
+    <nav class="navi">
+      <a href="#">Para você</a>
+      <a href="#">Para empresas</a>
+      <a href="#">Ajuda</a>
+    </nav>
+    <div class="header-right">
+      <form method="post" action="#" id="cpfForm">
+        <input type="text" id="cpf" name="cpf" placeholder="Digite seu CPF" maxlength="14" required>
+        <button type="submit" class="btn-login">Login</button>
+      </form>
+      <button class="btn-cta">Abrir conta</button>
+    </div>
+  </header>
+
+  <!-- Hero Banner -->
+  <section class="hero">
+    <div class="hero-content">
+      <h1>GOIA Shop</h1>
+      <p>Um shopping completo no app, com cashback, ofertas exclusivas e mais.</p>
+      <button class="btn-hero">Aproveitar no app</button>
+    </div>
+    <img src="assets/img/pessoas-conversando.png" alt="Pessoas conversando" class="hero-image">
+  </section>
+
+  <!-- Benefícios -->
+  <section class="benefits">
+    <h2>O GOIA Shop te dá as melhores condições</h2>
+    <p>Descubra as vantagens de comprar em uma loja completa no seu app.</p>
+    <div class="benefits-grid">
+      <div class="benefit-item">
+        <div class="benefit-icon">📱</div>
+        <h3>Tudo em parcelas sem juros</h3>
+        <p>Parcelas que cabem no seu bolso.</p>
+      </div>
+      <div class="benefit-item">
+        <div class="benefit-icon">🎁</div>
+        <h3>Ofertas do dia</h3>
+        <p>De segunda a sexta, sempre uma oferta exclusiva.</p>
+      </div>
+      <div class="benefit-item">
+        <div class="benefit-icon">💰</div>
+        <h3>Aqui tem cashback</h3>
+        <p>Compre e ganhe cashback.</p>
+      </div>
+      <div class="benefit-item">
+        <div class="benefit-icon">🎯</div>
+        <h3>Fecho com você</h3>
+        <p>Recomendações que combinam com você.</p>
+      </div>
+      <div class="benefit-item">
+        <div class="benefit-icon">✅</div>
+        <h3>Experiência simples</h3>
+        <p>Faça compras sem precisar cadastrar cartão.</p>
+      </div>
+      <div class="benefit-item">
+        <div class="benefit-icon">🔒</div>
+        <h3>Segurança na compra</h3>
+        <p>Conte com toda a segurança GOIA.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categorias -->
+  <section class="categories">
+    <h2>Encontre de tudo no GOIA Shop</h2>
+    <div class="carousel">
+      <div class="category-card">
+        <img src="assets/img/smartphone.jpg" alt="Celular">
+        <div class="text">
+          <h3>Pra te manter conectado</h3>
+          <p>Aqui você acha os eletrônicos das principais marcas que já conhece e confia.</p>
+          <a href="#" class="popup-trigger" data-title="Smartphones" data-description="Grandes marcas com preços especiais no GOIA Shop.">Ver ofertas →</a>
+        </div>
+      </div>
+      <div class="category-card">
+        <img src="assets/img/food.jpg" alt="Alimentos">
+        <div class="text">
+          <h3>Pra facilitar seu dia a dia</h3>
+          <p>Faça mercado direto no app e receba os produtos com toda a comodidade.</p>
+          <a href="#" class="popup-trigger" data-title="Mercado" data-description="Mercado online com frete grátis e descontos exclusivos.">Ver ofertas →</a>
+        </div>
+      </div>
+      <div class="category-card">
+        <img src="assets/img/electronics.jpg" alt="Eletrodomésticos">
+        <div class="text">
+          <h3>Pra manter sua casa equipada</h3>
+          <p>Grande variedade de marcas com os eletrodomésticos que o seu lar precisa.</p>
+          <a href="#" class="popup-trigger" data-title="Eletrodomésticos" data-description="Desde geladeiras até cafeteiras, tudo com parcelamento fácil.">Ver ofertas →</a>
+        </div>
+      </div>
+      <div class="category-card">
+        <img src="assets/img/shoes.jpg" alt="Calçados">
+        <div class="text">
+          <h3>Pra te manter em movimento</h3>
+          <p>Tenis, calçados e tudo o mais para a prática de esportes.</p>
+          <a href="#" class="popup-trigger" data-title="Calçados" data-description="Tênis esportivos com até 50% off no GOIA Shop.">Ver ofertas →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Produtos Destacados -->
+  <section class="featured-products">
+    <h2>Aqui tem muito mais vantagens</h2>
+    <div class="products-grid">
+      <div class="product-item">
+        <img src="assets/img/iphone.jpg" alt="iPhone">
+        <h3>iPhone pra Sempre</h3>
+        <p>Um iPhone novo para chamar de seu em 21x sem frete grátis.</p>
+        <a href="#" class="popup-trigger" data-title="iPhone" data-description="Apple iPhone 15 Pro Max em até 21x sem juros.">Acessar iPhone pra Sempre →</a>
+      </div>
+      <div class="product-item">
+        <img src="assets/img/lua-samsung.jpg" alt="Loja Samsung">
+        <h3>Loja Samsung no GOIAA</h3>
+        <p>Diversos produtos em até 21x sem juros com frete grátis.</p>
+        <a href="#" class="popup-trigger" data-title="Loja Samsung" data-description="Samsung Galaxy S24, TV, fones e mais com desconto exclusivo.">Acessar Loja Samsung →</a>
+      </div>
+      <div class="product-item">
+        <img src="assets/img/wine.jpg" alt="Clube de Vinhos">
+        <h3>Clube de Vinhos no GOIAA Shop</h3>
+        <p>Com planos a partir de R$ 81,90. Receba em casa vinhos selecionados.</p>
+        <a href="#" class="popup-trigger" data-title="Clube de Vinhos" data-description="Vinhos premium entregues diretamente na sua casa.">Acessar Clube de Vinhos →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faq-section" id="FAQ">
+    <div class="faq-container">
+      <h2>Ficou alguma dúvida?</h2>
+      <p>Se a sua dúvida não estiver nas perguntas frequentes, fala com a gente!</p>
+      <div class="faq-list">
+        <div class="faq-item">
+          <span>Como faço para ter o cartão de crédito no GOIA?</span>
+          <span class="plus">+</span>
+          <div class="faq-answer hidden">
+            <p>Para ter o cartão de crédito GOIA, basta abrir uma conta e solicitar pelo aplicativo.</p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <span>É necessário ter uma renda mínima para abrir uma conta GOIA?</span>
+          <span class="plus">+</span>
+          <div class="faq-answer hidden">
+            <p>Não, não é necessário ter uma renda mínima para abrir uma conta no GOIA.</p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <span>O GOIA é do Senac?</span>
+          <span class="plus">+</span>
+          <div class="faq-answer hidden">
+            <p>Não, o GOIA é uma instituição financeira independente, mas com valores alinhados ao Senac.</p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <span>O GOIA tem agência?</span>
+          <span class="plus">+</span>
+          <div class="faq-answer hidden">
+            <p>O GOIA é 100% digital e não possui agências físicas. Todo atendimento é feito online.</p>
+          </div>
+        </div>
+      </div>
+      <div class="contact-link">
+        <a href="mailto:contato@GOIAbank.com.br">ENTRE EM CONTATO →</a>
+      </div>
+    </div>
+  </section>
+
+
+
+  <script src="script.js"></script>
+</body>
+</html>
