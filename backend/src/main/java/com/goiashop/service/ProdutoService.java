@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.goiashop.dto.ProdutoAlteracaoQuantidadeRequest;
 import com.goiashop.dto.ProdutoCadastroRequest;
 import com.goiashop.model.Produto;
 import com.goiashop.model.ProdutoImagem;
@@ -174,21 +175,21 @@ public class ProdutoService {
             produto.setStatus(Produto.ProdutoStatus.ATIVO);
             produto.setUpdatedAt(LocalDateTime.now());
             produto.setUpdatedBy(userId);
-            
+
             Produto produtoAtualizado = produtoRepository.save(produto);
-            
+
             // Registrar auditoria
             Map<String, Object> oldData = new HashMap<>();
             oldData.put("status", "INATIVO");
             Map<String, Object> newData = new HashMap<>();
             newData.put("status", "ATIVO");
             auditLogService.logUpdate(userId, "produtos_ecommerce", id, oldData, newData);
-            
+
             return produtoAtualizado;
         }
         throw new IllegalArgumentException("Produto não encontrado");
     }
-    
+
     @Transactional
     public Produto inativarProduto(Long id, Long userId) {
         Optional<Produto> produtoOpt = produtoRepository.findById(id);
@@ -197,18 +198,51 @@ public class ProdutoService {
             produto.setStatus(Produto.ProdutoStatus.INATIVO);
             produto.setUpdatedAt(LocalDateTime.now());
             produto.setUpdatedBy(userId);
-            
+
             Produto produtoAtualizado = produtoRepository.save(produto);
-            
+
             // Registrar auditoria
             Map<String, Object> oldData = new HashMap<>();
             oldData.put("status", "ATIVO");
             Map<String, Object> newData = new HashMap<>();
             newData.put("status", "INATIVO");
             auditLogService.logUpdate(userId, "produtos_ecommerce", id, oldData, newData);
-            
+
             return produtoAtualizado;
         }
         throw new IllegalArgumentException("Produto não encontrado");
     }
+
+    // MÉTODO ADICIONADO: Alterar quantidade em estoque com auditoria
+    @Transactional
+    public Produto alterarQuantidadeEstoque(Long produtoId, ProdutoAlteracaoQuantidadeRequest request, Long userId) {
+        Optional<Produto> produtoOpt = produtoRepository.findById(produtoId);
+        if (!produtoOpt.isPresent()) {
+            throw new IllegalArgumentException("Produto não encontrado");
+        }
+
+        Produto produto = produtoOpt.get();
+
+        // Armazenar valor antigo para auditoria
+        Integer quantidadeAnterior = produto.getQuantidadeEstoque();
+
+        // Atualizar quantidade
+        produto.setQuantidadeEstoque(request.getQuantidadeEstoque());
+        produto.setUpdatedAt(LocalDateTime.now());
+        produto.setUpdatedBy(userId);
+
+        // Salvar alterações
+        Produto produtoAtualizado = produtoRepository.save(produto);
+
+        // Registrar auditoria
+        Map<String, Object> oldData = new HashMap<>();
+        oldData.put("quantidade_estoque", quantidadeAnterior);
+        Map<String, Object> newData = new HashMap<>();
+        newData.put("quantidade_estoque", request.getQuantidadeEstoque());
+        auditLogService.logUpdate(userId, "produtos_ecommerce", produtoId, oldData, newData);
+
+        return produtoAtualizado;
+    }
+    // FIM DAS MUDANÇAS
+
 }

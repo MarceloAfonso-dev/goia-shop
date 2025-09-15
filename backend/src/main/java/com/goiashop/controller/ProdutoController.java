@@ -1,5 +1,6 @@
 package com.goiashop.controller;
 
+import com.goiashop.dto.ProdutoAlteracaoQuantidadeRequest; // Mudança: import do DTO de alteração de quantidade
 import com.goiashop.dto.ProdutoCadastroRequest;
 import com.goiashop.model.Produto;
 import com.goiashop.model.ProdutoImagem;
@@ -182,4 +183,41 @@ public class ProdutoController {
             return ResponseEntity.badRequest().body("Erro ao inativar produto: " + e.getMessage());
         }
     }
+
+    // MUDANÇA: Novo endpoint para alterar quantidade em estoque
+    /**
+     * Altera a quantidade em estoque de um produto
+     */
+    @PutMapping("/{id}/quantidade")
+    public ResponseEntity<?> alterarQuantidadeEstoque(
+            @PathVariable Long id,
+            @Valid @RequestBody ProdutoAlteracaoQuantidadeRequest request,
+            @RequestHeader("Authorization") String token) {
+        try {
+            // Validar token e obter usuário
+            if (token == null || !token.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body("Token de autorização necessário");
+            }
+            
+            String tokenValue = token.substring(7);
+            var user = authService.validateSession(tokenValue);
+            if (user == null) {
+                return ResponseEntity.status(401).body("Sessão inválida");
+            }
+            
+            // Verificar se é admin ou estoquista (ambos podem alterar quantidade)
+            if (!authService.isAdmin(tokenValue) && !authService.isEstoquista(tokenValue)) {
+                return ResponseEntity.status(403).body("Apenas administradores e estoquistas podem alterar quantidade");
+            }
+            
+            Produto produto = produtoService.alterarQuantidadeEstoque(id, request, user.getId());
+            return ResponseEntity.ok(produto);
+            
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Erro ao alterar quantidade: " + e.getMessage());
+        }
+    }
+    // FIM DA MUDANÇA
 }

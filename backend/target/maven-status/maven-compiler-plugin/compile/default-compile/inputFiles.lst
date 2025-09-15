@@ -7,6 +7,7 @@
 /app/src/main/java/com/goiashop/repository/AuditLogRepository.java
 /app/src/main/java/com/goiashop/controller/AuthController.java
 /app/src/main/java/com/goiashop/service/AuditLogService.java
+/app/src/main/java/com/goiashop/dto/ProdutoAlteracaoQuantidadeRequest.java
 /app/src/main/java/com/goiashop/config/CorsConfig.java
 /app/src/main/java/com/goiashop/config/AdminAuthInterceptor.java
 /app/src/main/java/com/goiashop/dto/UsuarioAlteracaoRequest.java

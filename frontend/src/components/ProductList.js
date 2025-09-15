@@ -7,6 +7,7 @@ import { useAuth } from '../hooks/useAuth';
 
 // Ativar/Inativar produto
 import { activateProduct, deactivateProduct } from "../utils/api";
+import ProductQuantidadeModal from './ProductQuantidadeModal';
 
 const ProductList = () => {
     const [products, setProducts] = useState([]);
@@ -14,8 +15,10 @@ const ProductList = () => {
     const [error, setError] = useState('');
     const [showCadastroModal, setShowCadastroModal] = useState(false);
     const [previewProductId, setPreviewProductId] = useState(null);
+    const [showQuantidadeModal, setShowQuantidadeModal] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState(null);
 
-    const { isAdmin } = useAuth();
+    const { isAdmin, isEstoquista } = useAuth();
 
     useEffect(() => {
         fetchProducts();
@@ -25,13 +28,21 @@ const ProductList = () => {
         try {
             setLoading(true);
             const response = await api.get('/produtos');
-            setProducts(response.data);
+            if (Array.isArray(response.data)) {
+                setProducts(response.data);
+                setError('');
+            } else {
+                // Se veio um objeto de erro, mostra mensagem
+                setError(response.data?.error || 'Erro desconhecido ao carregar produtos');
+                setProducts([]); // <- IMPORTANTE: limpa o array para não tentar renderizar objeto!
+            }
         } catch (err) {
             if (err.response?.data?.message) {
                 setError('Erro ao carregar produtos: ' + err.response.data.message);
             } else {
                 setError('Erro ao conectar com o servidor');
             }
+            setProducts([]); // <- IMPORTANTE!
         } finally {
             setLoading(false);
         }
@@ -80,6 +91,11 @@ const ProductList = () => {
             console.error(error);
             alert("Erro ao inativar produto.");
         }
+    };
+
+    const handleEditQuantidade = (product) => {
+        setSelectedProduct(product);
+        setShowQuantidadeModal(true);
     };
 
     if (loading) {
@@ -172,69 +188,89 @@ const ProductList = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {products.map((product) => (
-                                    <tr key={product.id}>
-                                        <td>{product.id}</td>
-                                        <td>
-                                            <strong>{product.nome}</strong>
-                                        </td>
-                                        <td>
-                                            <small className="text-muted">
-                                                {product.descricao.length > 50 
-                                                    ? product.descricao.substring(0, 50) + '...'
-                                                    : product.descricao
-                                                }
-                                            </small>
-                                        </td>
-                                        <td>
-                                            <span className="fw-bold text-success">
-                                                {formatPrice(product.preco)}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span className={`badge ${
-                                                product.quantidadeEstoque > 10 ? 'bg-success' :
-                                                product.quantidadeEstoque > 5 ? 'bg-warning' : 'bg-danger'
-                                            }`}>
-                                                {product.quantidadeEstoque}
-                                            </span>
-                                        </td>
-                                        <td>{getStatusBadge(product.status)}</td>
-                                        <td>
-                                            <Button 
-                                                variant="info" 
-                                                size="sm" 
-                                                onClick={() => handlePreviewProduct(product.id)}
-                                                className="me-2"
-                                            >
-                                                👁️ Preview
-                                            </Button>
-                                            {isAdmin && (
-                                                <>
-                                                    {product.status === "ATIVO" ? (
-                                                        <Button 
-                                                            variant="secondary" 
-                                                            size="sm" 
-                                                            onClick={() => handleDeactivate(product.id)}
-                                                            className="ms-2"
-                                                        >
-                                                            Inativar
-                                                        </Button>
-                                                    ) : (
-                                                        <Button 
-                                                            variant="success" 
-                                                            size="sm" 
-                                                            onClick={() => handleActivate(product.id)}
-                                                            className="ms-2"
-                                                        >
-                                                            Ativar
-                                                        </Button>
-                                                    )}
-                                                </>
-                                            )}
+                                {Array.isArray(products) && products.length > 0 ? (
+                                    products.map((product) => (
+                                        <tr key={product.id}>
+                                            <td>{product.id}</td>
+                                            <td>
+                                                <strong>{product.nome}</strong>
+                                            </td>
+                                            <td>
+                                                <small className="text-muted">
+                                                    {product.descricao.length > 50 
+                                                        ? product.descricao.substring(0, 50) + '...'
+                                                        : product.descricao
+                                                    }
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <span className="fw-bold text-success">
+                                                    {formatPrice(product.preco)}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className={`badge ${
+                                                    product.quantidadeEstoque > 10 ? 'bg-success' :
+                                                    product.quantidadeEstoque > 5 ? 'bg-warning' : 'bg-danger'
+                                                }`}>
+                                                    {product.quantidadeEstoque}
+                                                </span>
+                                            </td>
+                                            <td>{getStatusBadge(product.status)}</td>
+                                            <td>
+                                                <Button 
+                                                    variant="info" 
+                                                    size="sm" 
+                                                    onClick={() => handlePreviewProduct(product.id)}
+                                                    className="me-2"
+                                                >
+                                                    👁️ Preview
+                                                </Button>
+                                                {isAdmin && (
+                                                    <>
+                                                        {product.status === "ATIVO" ? (
+                                                            <Button 
+                                                                variant="secondary" 
+                                                                size="sm" 
+                                                                onClick={() => handleDeactivate(product.id)}
+                                                                className="ms-2"
+                                                            >
+                                                                Inativar
+                                                            </Button>
+                                                        ) : (
+                                                            <Button 
+                                                                variant="success" 
+                                                                size="sm" 
+                                                                onClick={() => handleActivate(product.id)}
+                                                                className="ms-2"
+                                                            >
+                                                                Ativar
+                                                            </Button>
+                                                        )}
+                                                    </>
+                                                )}
+                                                {/* Botão de editar estoque para estoquista/admin */}
+                                                {(isAdmin || isEstoquista) && (
+                                                    <Button
+                                                        variant="outline-primary"
+                                                        size="sm"
+                                                        onClick={() => handleEditQuantidade(product)}
+                                                        title="Alterar quantidade em estoque"
+                                                        className="ms-2"
+                                                    >
+                                                        📦 Editar Estoque
+                                                    </Button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={7} className="text-center">
+                                            Nenhum produto encontrado.
                                         </td>
                                     </tr>
-                                ))}
+                                )}
                             </tbody>
                         </Table>
                     </div>
@@ -255,6 +291,14 @@ const ProductList = () => {
                     onClose={handleClosePreview}
                 />
             )}
+            
+            {/* Modal de Edição de Quantidade */}
+            <ProductQuantidadeModal
+                show={showQuantidadeModal}
+                onHide={() => setShowQuantidadeModal(false)}
+                product={selectedProduct}
+                onSuccess={fetchProducts}
+            />
         </div>
     );
 };
