@@ -1,6 +1,9 @@
 CREATE DATABASE IF NOT EXISTS BancoGOIA;
 USE BancoGOIA;
 
+-- ========================================
+-- TABELAS DO E-COMMERCE GOIA SHOP
+-- ========================================
 CREATE TABLE Instituicao (
     ID_instituicao INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
     Razao_Social VARCHAR(100) NOT NULL UNIQUE,
@@ -127,6 +130,11 @@ CREATE TABLE users (
     UNIQUE KEY uq_cpf (cpf)
 );
 
+<<<<<<< HEAD
+-- Nota: Sistema usa JWT stateless, não precisa de tabela de sessões
+
+-- Tabela de produtos do e-commerce
+=======
 -- Tabela de sessões (para controle de login)
 CREATE TABLE sessions (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -138,6 +146,7 @@ CREATE TABLE sessions (
 );
 
 -- Tabela de produtos (placeholder para funcionalidade futura)
+>>>>>>> origin/Listar-produtos-(ESTOQUISTA)-Gustavo
 CREATE TABLE produtos_ecommerce (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(100) NOT NULL,
