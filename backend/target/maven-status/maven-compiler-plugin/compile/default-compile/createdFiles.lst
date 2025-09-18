@@ -28,7 +28,9 @@ com/goiashop/model/User$UserStatus.class
 com/goiashop/controller/UsuarioController.class
 com/goiashop/config/CorsConfig.class
 com/goiashop/controller/AuthController.class
+com/goiashop/dto/ProdutoCompletoRequest.class
 com/goiashop/GoiaShopApplication.class
 com/goiashop/model/ProdutoImagem.class
 com/goiashop/service/ProdutoService.class
+com/goiashop/dto/ProdutoImagemRequest.class
 com/goiashop/service/ImageStorageFilesystem.class

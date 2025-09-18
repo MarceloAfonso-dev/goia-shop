@@ -18,8 +18,8 @@ const ProductQuantidadeModal = ({ show, onHide, product, onSuccess }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        if (quantidade < 0) {
-            setError('A quantidade não pode ser negativa');
+        if (quantidade <= 0) {
+            setError('A quantidade deve ser maior que zero. Para zerar o estoque, use a opção de inativar o produto.');
             return;
         }
 
@@ -75,14 +75,15 @@ const ProductQuantidadeModal = ({ show, onHide, product, onSuccess }) => {
                         <Form.Label>Nova Quantidade em Estoque</Form.Label>
                         <Form.Control
                             type="number"
-                            min="0"
+                            min="1"
                             value={quantidade}
-                            onChange={(e) => setQuantidade(parseInt(e.target.value) || 0)}
-                            placeholder="Digite a nova quantidade"
+                            onChange={(e) => setQuantidade(parseInt(e.target.value) || 1)}
+                            placeholder="Digite a nova quantidade (mínimo 1)"
                             required
                         />
                         <Form.Text className="text-muted">
-                            Quantidade atual: <strong>{product.quantidadeEstoque}</strong>
+                            Quantidade atual: <strong>{product.quantidadeEstoque}</strong><br/>
+                            <small className="text-warning">⚠️ Quantidade mínima: 1 unidade</small>
                         </Form.Text>
                     </Form.Group>
                 </Modal.Body>

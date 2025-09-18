@@ -99,8 +99,8 @@ const ProductCadastroModal = ({ show, onHide, onSuccess }) => {
                 throw new Error('Preço deve ser maior que zero');
             }
             
-            if (!formData.quantidadeEstoque || parseInt(formData.quantidadeEstoque) < 0) {
-                throw new Error('Quantidade em estoque deve ser zero ou maior');
+            if (!formData.quantidadeEstoque || parseInt(formData.quantidadeEstoque) <= 0) {
+                throw new Error('Quantidade em estoque deve ser maior que zero');
             }
             
             if (formData.avaliacao && (parseFloat(formData.avaliacao) < 1 || parseFloat(formData.avaliacao) > 5)) {
@@ -210,8 +210,8 @@ const ProductCadastroModal = ({ show, onHide, onSuccess }) => {
             setError('Preço deve ser maior que zero');
             return;
         }
-        if (!formData.quantidadeEstoque || parseInt(formData.quantidadeEstoque) < 0) {
-            setError('Quantidade em estoque deve ser zero ou maior');
+        if (!formData.quantidadeEstoque || parseInt(formData.quantidadeEstoque) <= 0) {
+            setError('Quantidade em estoque deve ser maior que zero');
             return;
         }
         
@@ -283,6 +283,8 @@ const ProductCadastroModal = ({ show, onHide, onSuccess }) => {
                                             value={formData.quantidadeEstoque}
                                             onChange={handleInputChange}
                                             required
+                                            min="1"
+                                            placeholder="1"
                                         />
                                     </Form.Group>
                                 </Col>

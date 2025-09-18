@@ -7,6 +7,116 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-09-18 - Sistema Completo de Gerenciamento de Produtos - Pedro Carvalho
+
+### 🎯 Added
+- **Sistema de Gerenciamento Completo de Produtos**:
+  - Modal de edição completa com gerenciamento de imagens
+  - Upload múltiplo de imagens para produtos
+  - Sistema de ordenação de imagens com botões ↑↓
+  - Definição de imagem principal com reordenação automática
+  - Remoção de imagens com confirmação e limpeza de arquivos
+  - Interface visual intuitiva para gerenciamento de imagens
+
+- **Novos Endpoints Backend**:
+  - `PUT /api/produtos/{id}/completo` - Edição completa de produto
+  - `POST /api/produtos/{id}/imagens` - Adicionar múltiplas imagens
+  - `DELETE /api/produtos/{id}/imagens/{imagemId}` - Remover imagem específica
+  - `PUT /api/produtos/{id}/imagens/{imagemId}/principal` - Definir imagem principal
+
+- **Validação de CPF no Frontend**:
+  - Algoritmo robusto de validação de CPF
+  - Formatação automática durante digitação
+  - Validação em tempo real com feedback visual
+  - Mensagens de erro claras e informativas
+
+- **Restrições de Segurança**:
+  - Admin não pode alterar seu próprio grupo de acesso
+  - Estoquistas têm botões desabilitados para edição de produtos
+  - Tooltips explicativos para restrições de permissão
+  - Validação de propriedade de imagens
+
+### 🔧 Enhanced
+- **Sistema de Imagens**:
+  - Imagem principal automaticamente vai para primeira posição
+  - Reordenação automática quando imagem é definida como principal
+  - Botão ⬆️ para mover imagem para o topo e definir como principal
+  - Interface responsiva com controles de hover
+  - Suporte a múltiplos formatos (JPEG, PNG, GIF, WebP)
+
+- **Interface de Produtos**:
+  - Botão 🖼️ para edição completa (apenas ADMIN)
+  - Botões desabilitados visualmente para estoquistas
+  - Controles de imagem com hover effects
+  - Validação de quantidade mínima (não permite 0)
+  - Mensagens de erro melhoradas
+
+- **Sistema de Auditoria**:
+  - Log completo de operações de imagens (CREATE, UPDATE, DELETE)
+  - Rastreamento de mudanças de ordem e imagem principal
+  - Auditoria de edições completas de produtos
+  - Dados antigos e novos armazenados em JSON
+
+### 🛠️ Technical
+- **Backend (Java Spring Boot)**:
+  - Novos DTOs: `ProdutoCompletoRequest`, `ProdutoImagemRequest`
+  - Métodos de serviço: `atualizarProdutoCompleto()`, `gerenciarImagensProduto()`
+  - Validação de propriedade de imagens
+  - Limpeza automática de arquivos físicos
+  - Transações para operações complexas
+
+- **Frontend (React)**:
+  - Novo componente: `ProductEditCompleteModal`
+  - Sistema de drag-and-drop simplificado com botões
+  - Gerenciamento de estado para imagens
+  - Upload múltiplo com preview
+  - Validação de CPF com algoritmo customizado
+
+### 🔒 Security
+- **Validação de Arquivos**:
+  - Verificação de magic bytes para garantir que é imagem
+  - Validação de MIME types permitidos
+  - Limite de tamanho de arquivo (5MB)
+  - Sanitização de nomes de arquivo
+  - Prevenção de path traversal
+
+- **Controle de Acesso**:
+  - Apenas ADMINs podem gerenciar imagens
+  - Validação de propriedade de imagens
+  - Verificação de permissões em todos os endpoints
+  - Auditoria de todas as operações sensíveis
+
+### 📁 Files Changed
+- **Backend**:
+  - `ProdutoService.java` - Novos métodos de gerenciamento
+  - `ProdutoController.java` - Novos endpoints
+  - `ProdutoCompletoRequest.java` - Novo DTO
+  - `ProdutoImagemRequest.java` - Novo DTO
+  - `ImageStorageFilesystem.java` - Correções de métodos
+
+- **Frontend**:
+  - `ProductEditCompleteModal.js` - Novo componente
+  - `ProductList.js` - Integração com novo modal
+  - `UsuarioCadastroModal.js` - Validação de CPF
+  - `UsuarioAlteracaoModal.js` - Restrições de admin
+  - `ProductPreview.css` - Controles com hover
+  - `crypto.js` - Validação de CPF
+
+### 🎨 UI/UX Improvements
+- **Controles de Imagem**:
+  - Botões aparecem apenas no hover (desktop)
+  - Sempre visíveis em dispositivos touch
+  - Transições suaves e elegantes
+  - Badges visuais para imagem principal
+  - Botões de ação intuitivos
+
+- **Feedback Visual**:
+  - Estados de loading durante upload
+  - Confirmações para ações destrutivas
+  - Tooltips explicativos
+  - Validação em tempo real
+  - Mensagens de erro claras
+
 ## [0.3.1] - 2025-09-13 - Correções Críticas de Segurança - Marcelo Afonso
 
 ### 🔥 BREAKING CHANGES

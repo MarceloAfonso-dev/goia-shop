@@ -9,6 +9,7 @@ const ProductPreview = ({ productId, onClose }) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [imageFit, setImageFit] = useState('contain'); // 'contain' ou 'cover'
 
     useEffect(() => {
         if (productId) {
@@ -136,6 +137,9 @@ const ProductPreview = ({ productId, onClose }) => {
                                             src={images[currentImageIndex]?.urlArquivo}
                                             alt={product.nome}
                                             className="main-image"
+                                            style={{ objectFit: imageFit }}
+                                            loading="eager"
+                                            decoding="sync"
                                         />
                                         {images.length > 1 && (
                                             <>
@@ -160,6 +164,28 @@ const ProductPreview = ({ productId, onClose }) => {
                                         <p>Sem imagem disponível</p>
                                     </div>
                                 )}
+                                
+                                {/* Controles de visualização da imagem */}
+                                {images.length > 0 && (
+                                    <div className="image-controls">
+                                        <Button
+                                            variant={imageFit === 'contain' ? 'primary' : 'outline-primary'}
+                                            size="sm"
+                                            onClick={() => setImageFit('contain')}
+                                            title="Ajustar imagem ao container (sem cortar)"
+                                        >
+                                            📐 Ajustar
+                                        </Button>
+                                        <Button
+                                            variant={imageFit === 'cover' ? 'primary' : 'outline-primary'}
+                                            size="sm"
+                                            onClick={() => setImageFit('cover')}
+                                            title="Preencher container (pode cortar)"
+                                        >
+                                            🔍 Preencher
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Thumbnails */}
@@ -172,6 +198,8 @@ const ProductPreview = ({ productId, onClose }) => {
                                             alt={`${product.nome} ${index + 1}`}
                                             className={`thumbnail ${index === currentImageIndex ? 'active' : ''}`}
                                             onClick={() => goToImage(index)}
+                                            loading="lazy"
+                                            decoding="async"
                                         />
                                     ))}
                                 </div>

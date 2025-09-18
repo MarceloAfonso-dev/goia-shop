@@ -1,7 +1,9 @@
 package com.goiashop.controller;
 
+import com.goiashop.dto.PaginatedResponse;
 import com.goiashop.dto.ProdutoAlteracaoQuantidadeRequest; // Mudança: import do DTO de alteração de quantidade
 import com.goiashop.dto.ProdutoCadastroRequest;
+import com.goiashop.dto.ProdutoCompletoRequest;
 import com.goiashop.model.Produto;
 import com.goiashop.model.ProdutoImagem;
 import com.goiashop.service.AuthService;
@@ -26,9 +28,23 @@ public class ProdutoController {
     private AuthService authService;
 
     @GetMapping
-    public ResponseEntity<List<Produto>> listarProdutos() {
-        List<Produto> produtos = produtoService.listarTodos();
-        return ResponseEntity.ok(produtos);
+    public ResponseEntity<?> listarProdutos(
+            @RequestParam(required = false) String nome,
+            @RequestParam(required = false) Long codigo,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer pageSize) {
+        
+        // Se page foi fornecido, usar paginação
+        if (page != null) {
+            int size = pageSize != null ? pageSize : 10; // Default 10 itens por página
+            PaginatedResponse<Produto> response = produtoService.listarComPaginacao(nome, codigo, status, page, size);
+            return ResponseEntity.ok(response);
+        } else {
+            // Compatibilidade com versão anterior (sem paginação)
+            List<Produto> produtos = produtoService.listarTodos();
+            return ResponseEntity.ok(produtos);
+        }
     }
 
     @GetMapping("/{id}")
@@ -184,6 +200,41 @@ public class ProdutoController {
         }
     }
 
+    /**
+     * Edita um produto existente
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<?> editarProduto(
+            @PathVariable Long id,
+            @Valid @RequestBody ProdutoCadastroRequest request,
+            @RequestHeader("Authorization") String token) {
+        try {
+            // Validar token e obter usuário
+            if (token == null || !token.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body("Token de autorização necessário");
+            }
+            
+            String tokenValue = token.substring(7);
+            var user = authService.validateSession(tokenValue);
+            if (user == null) {
+                return ResponseEntity.status(401).body("Sessão inválida");
+            }
+            
+            // Verificar se é admin
+            if (!authService.isAdmin(tokenValue)) {
+                return ResponseEntity.status(403).body("Apenas administradores podem editar produtos");
+            }
+            
+            Produto produto = produtoService.editarProduto(id, request, user.getId());
+            return ResponseEntity.ok(produto);
+            
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Erro ao editar produto: " + e.getMessage());
+        }
+    }
+
     // MUDANÇA: Novo endpoint para alterar quantidade em estoque
     /**
      * Altera a quantidade em estoque de um produto
@@ -219,5 +270,150 @@ public class ProdutoController {
             return ResponseEntity.badRequest().body("Erro ao alterar quantidade: " + e.getMessage());
         }
     }
+    
+    /**
+     * Atualiza um produto completo com gerenciamento de imagens
+     */
+    @PutMapping("/{id}/completo")
+    public ResponseEntity<?> atualizarProdutoCompleto(
+            @PathVariable Long id,
+            @Valid @RequestBody ProdutoCompletoRequest request,
+            @RequestHeader("Authorization") String token) {
+        
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body("Token de autorização necessário");
+            }
+            
+            String tokenValue = token.substring(7);
+            var user = authService.validateSession(tokenValue);
+            if (user == null) {
+                return ResponseEntity.status(401).body("Sessão inválida");
+            }
+            
+            // Apenas administradores podem editar produtos completos
+            if (!authService.isAdmin(tokenValue)) {
+                return ResponseEntity.status(403).body("Apenas administradores podem editar produtos completos");
+            }
+            
+            Produto produto = produtoService.atualizarProdutoCompleto(id, request, user.getId());
+            return ResponseEntity.ok(produto);
+            
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Erro ao atualizar produto: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Adiciona novas imagens a um produto
+     */
+    @PostMapping("/{id}/imagens")
+    public ResponseEntity<?> adicionarImagens(
+            @PathVariable Long id,
+            @RequestParam("arquivos") List<MultipartFile> arquivos,
+            @RequestHeader("Authorization") String token) {
+        
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body("Token de autorização necessário");
+            }
+            
+            String tokenValue = token.substring(7);
+            var user = authService.validateSession(tokenValue);
+            if (user == null) {
+                return ResponseEntity.status(401).body("Sessão inválida");
+            }
+            
+            // Apenas administradores podem adicionar imagens
+            if (!authService.isAdmin(tokenValue)) {
+                return ResponseEntity.status(403).body("Apenas administradores podem adicionar imagens");
+            }
+            
+            if (arquivos == null || arquivos.isEmpty()) {
+                return ResponseEntity.badRequest().body("Nenhum arquivo fornecido");
+            }
+            
+            List<ProdutoImagem> imagens = produtoService.adicionarImagensProduto(id, arquivos, user.getId());
+            return ResponseEntity.ok(imagens);
+            
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Erro ao adicionar imagens: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Remove uma imagem de um produto
+     */
+    @DeleteMapping("/{id}/imagens/{imagemId}")
+    public ResponseEntity<?> removerImagem(
+            @PathVariable Long id,
+            @PathVariable Long imagemId,
+            @RequestHeader("Authorization") String token) {
+        
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body("Token de autorização necessário");
+            }
+            
+            String tokenValue = token.substring(7);
+            var user = authService.validateSession(tokenValue);
+            if (user == null) {
+                return ResponseEntity.status(401).body("Sessão inválida");
+            }
+            
+            // Apenas administradores podem remover imagens
+            if (!authService.isAdmin(tokenValue)) {
+                return ResponseEntity.status(403).body("Apenas administradores podem remover imagens");
+            }
+            
+            produtoService.removerImagemProduto(id, imagemId, user.getId());
+            return ResponseEntity.ok().body("Imagem removida com sucesso");
+            
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Erro ao remover imagem: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Define uma imagem como principal
+     */
+    @PutMapping("/{id}/imagens/{imagemId}/principal")
+    public ResponseEntity<?> definirImagemPrincipal(
+            @PathVariable Long id,
+            @PathVariable Long imagemId,
+            @RequestHeader("Authorization") String token) {
+        
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body("Token de autorização necessário");
+            }
+            
+            String tokenValue = token.substring(7);
+            var user = authService.validateSession(tokenValue);
+            if (user == null) {
+                return ResponseEntity.status(401).body("Sessão inválida");
+            }
+            
+            // Apenas administradores podem definir imagem principal
+            if (!authService.isAdmin(tokenValue)) {
+                return ResponseEntity.status(403).body("Apenas administradores podem definir imagem principal");
+            }
+            
+            produtoService.definirImagemPrincipal(id, imagemId, user.getId());
+            return ResponseEntity.ok().body("Imagem definida como principal com sucesso");
+            
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Erro ao definir imagem principal: " + e.getMessage());
+        }
+    }
+    
     // FIM DA MUDANÇA
 }
