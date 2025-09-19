@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Row, Col, Alert, Spinner } from 'react-bootstrap';
 import api from '../utils/api';
+import { useAuth } from '../hooks/useAuth';
+import { validarCPF } from '../utils/crypto';
 
 const UsuarioAlteracaoModal = ({ show, onHide, usuario, onUsuarioAlterado }) => {
+    const { user: currentUser } = useAuth();
     const [formData, setFormData] = useState({
         nome: '',
         cpf: '',
@@ -13,6 +16,9 @@ const UsuarioAlteracaoModal = ({ show, onHide, usuario, onUsuarioAlterado }) => 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    
+    // Verifica se o usuário está tentando alterar a si mesmo
+    const isEditingSelf = currentUser && usuario && currentUser.id === usuario.id;
 
     // Preenche o formulário quando o usuário é carregado
     useEffect(() => {
@@ -37,10 +43,6 @@ const UsuarioAlteracaoModal = ({ show, onHide, usuario, onUsuarioAlterado }) => 
         setSuccess('');
     };
 
-    const validarCPF = (cpf) => {
-        const cpfLimpo = cpf.replace(/\D/g, '');
-        return cpfLimpo.length === 11 && /^\d{11}$/.test(cpfLimpo);
-    };
 
     const formatCPF = (value) => {
         if (!value) return '';
@@ -70,7 +72,7 @@ const UsuarioAlteracaoModal = ({ show, onHide, usuario, onUsuarioAlterado }) => 
                 throw new Error('Nome é obrigatório');
             }
             if (!validarCPF(formData.cpf)) {
-                throw new Error('CPF deve conter exatamente 11 dígitos');
+                throw new Error('CPF inválido. Verifique se o número está correto');
             }
             
             // Validar senha apenas se foi fornecida
@@ -79,6 +81,11 @@ const UsuarioAlteracaoModal = ({ show, onHide, usuario, onUsuarioAlterado }) => 
             }
             if (formData.senha && formData.senha !== formData.confirmaSenha) {
                 throw new Error('As senhas não coincidem');
+            }
+            
+            // Impedir que admin altere seu próprio grupo de acesso
+            if (isEditingSelf && formData.grupo !== usuario.grupo) {
+                throw new Error('Você não pode alterar seu próprio grupo de acesso');
             }
 
             // Preparar dados para envio
@@ -208,12 +215,17 @@ const UsuarioAlteracaoModal = ({ show, onHide, usuario, onUsuarioAlterado }) => 
                             value={formData.grupo}
                             onChange={handleInputChange}
                             required
+                            disabled={isEditingSelf}
+                            className={isEditingSelf ? 'bg-light' : ''}
                         >
                             <option value="ESTOQUISTA">Estoquista</option>
                             <option value="ADMIN">Administrador</option>
                         </Form.Select>
                         <Form.Text className="text-muted">
-                            Escolha o nível de acesso do usuário no sistema
+                            {isEditingSelf 
+                                ? '⚠️ Você não pode alterar seu próprio grupo de acesso'
+                                : 'Escolha o nível de acesso do usuário no sistema'
+                            }
                         </Form.Text>
                     </Form.Group>
 
@@ -224,6 +236,9 @@ const UsuarioAlteracaoModal = ({ show, onHide, usuario, onUsuarioAlterado }) => 
                             <li>Deixe a senha em branco se não quiser alterá-la</li>
                             <li>Se alterar a senha, ela será criptografada com segurança</li>
                             <li>Não é possível alterar para um CPF já existente</li>
+                            {isEditingSelf && (
+                                <li><strong>Você não pode alterar seu próprio grupo de acesso</strong></li>
+                            )}
                         </ul>
                     </Alert>
                 </Modal.Body>

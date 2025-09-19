@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Button, Form, Row, Col, Alert, Spinner } from 'react-bootstrap';
 import api from '../utils/api';
+import { validarCPF } from '../utils/crypto';
 
 const UsuarioCadastroModal = ({ show, onHide, onUsuarioCadastrado }) => {
     const [formData, setFormData] = useState({
@@ -14,6 +15,7 @@ const UsuarioCadastroModal = ({ show, onHide, onUsuarioCadastrado }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [cpfError, setCpfError] = useState('');
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -25,10 +27,6 @@ const UsuarioCadastroModal = ({ show, onHide, onUsuarioCadastrado }) => {
         setSuccess('');
     };
 
-    const validarCPF = (cpf) => {
-        const cpfLimpo = cpf.replace(/\D/g, '');
-        return cpfLimpo.length === 11 && /^\d{11}$/.test(cpfLimpo);
-    };
 
     const validarEmail = (email) => {
         const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -47,7 +45,7 @@ const UsuarioCadastroModal = ({ show, onHide, onUsuarioCadastrado }) => {
                 throw new Error('Nome é obrigatório');
             }
             if (!validarCPF(formData.cpf)) {
-                throw new Error('CPF deve conter exatamente 11 dígitos');
+                throw new Error('CPF inválido. Verifique se o número está correto');
             }
             if (!validarEmail(formData.email)) {
                 throw new Error('Email deve ter formato válido');
@@ -113,6 +111,16 @@ const UsuarioCadastroModal = ({ show, onHide, onUsuarioCadastrado }) => {
             cpf: cpfFormatado
         }));
         setError('');
+        setCpfError('');
+        
+        // Validação em tempo real do CPF
+        if (cpfFormatado.length === 14) { // CPF formatado tem 14 caracteres
+            if (!validarCPF(cpfFormatado)) {
+                setCpfError('CPF inválido');
+            } else {
+                setCpfError('');
+            }
+        }
     };
 
     return (
@@ -150,7 +158,19 @@ const UsuarioCadastroModal = ({ show, onHide, onUsuarioCadastrado }) => {
                                     required
                                     placeholder="000.000.000-00"
                                     maxLength={14}
+                                    isInvalid={cpfError !== ''}
+                                    isValid={formData.cpf.length === 14 && cpfError === ''}
                                 />
+                                {cpfError && (
+                                    <Form.Control.Feedback type="invalid">
+                                        {cpfError}
+                                    </Form.Control.Feedback>
+                                )}
+                                {formData.cpf.length === 14 && cpfError === '' && (
+                                    <Form.Control.Feedback type="valid">
+                                        CPF válido ✓
+                                    </Form.Control.Feedback>
+                                )}
                             </Form.Group>
                         </Col>
                     </Row>
@@ -218,6 +238,7 @@ const UsuarioCadastroModal = ({ show, onHide, onUsuarioCadastrado }) => {
                         <ul className="mb-0 mt-2">
                             <li>O usuário será criado com status <strong>ATIVO</strong></li>
                             <li>A senha será criptografada com segurança SHA-256 + BCrypt</li>
+                            <li>O CPF será validado automaticamente antes do cadastro</li>
                             <li>Não é possível cadastrar CPF ou email já existente</li>
                         </ul>
                     </Alert>
