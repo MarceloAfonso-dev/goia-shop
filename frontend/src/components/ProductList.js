@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Table, Card, Badge, Spinner, Alert, Row, Col, Button, Form, InputGroup, Pagination } from 'react-bootstrap';
 import api from '../utils/api';
 import ProductCadastroModal from './ProductCadastroModal';
-import ProductEditModal from './ProductEditModal';
-import ProductEditCompleteModal from './ProductEditCompleteModal';
+import ProductEditModal from './ProductEditCompleteModal';
 import ProductPreview from './ProductPreview';
 import { useAuth } from '../hooks/useAuth';
 
@@ -17,7 +16,6 @@ const ProductList = () => {
     const [error, setError] = useState('');
     const [showCadastroModal, setShowCadastroModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
-    const [showEditCompleteModal, setShowEditCompleteModal] = useState(false);
     const [previewProductId, setPreviewProductId] = useState(null);
     const [showQuantidadeModal, setShowQuantidadeModal] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
@@ -153,11 +151,6 @@ const ProductList = () => {
     const handleEditProduct = (product) => {
         setSelectedProduct(product);
         setShowEditModal(true);
-    };
-
-    const handleEditCompleteProduct = (product) => {
-        setSelectedProduct(product);
-        setShowEditCompleteModal(true);
     };
 
     // Funções de filtro
@@ -405,22 +398,12 @@ const ProductList = () => {
                                                     <Button 
                                                         variant="warning" 
                                                         size="sm" 
-                                                        title={isAdmin() ? "Editar produto" : "Apenas administradores podem editar produtos"}
+                                                        title={isAdmin() ? "Editar produto (dados + imagens)" : "Apenas administradores podem editar produtos"}
                                                         onClick={() => isAdmin() && handleEditProduct(product)}
                                                         disabled={!isAdmin()}
                                                         className={!isAdmin() ? 'bg-light' : ''}
                                                     >
                                                         ✏️
-                                                    </Button>
-                                                    <Button 
-                                                        variant="info" 
-                                                        size="sm" 
-                                                        title={isAdmin() ? "Editar produto completo (campos + imagens)" : "Apenas administradores podem editar produtos completos"}
-                                                        onClick={() => isAdmin() && handleEditCompleteProduct(product)}
-                                                        disabled={!isAdmin()}
-                                                        className={!isAdmin() ? 'bg-light' : ''}
-                                                    >
-                                                        🖼️
                                                     </Button>
                                                     {product.status === "ATIVO" ? (
                                                         <Button 
@@ -554,14 +537,6 @@ const ProductList = () => {
                 onHide={() => setShowQuantidadeModal(false)}
                 product={selectedProduct}
                 onSuccess={fetchProducts}
-            />
-
-            {/* Modal de Edição Completa */}
-            <ProductEditCompleteModal
-                show={showEditCompleteModal}
-                onHide={() => setShowEditCompleteModal(false)}
-                product={selectedProduct}
-                onProductUpdated={fetchProducts}
             />
         </div>
     );

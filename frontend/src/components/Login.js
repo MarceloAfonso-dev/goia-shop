@@ -121,7 +121,7 @@ const Login = ({ onLoginSuccess, onBackToLanding }) => {
                         </Card.Body>
                         <Card.Footer className="text-center text-muted">
                             <small>Usuários de teste:</small><br/>
-                            <small>Admin: admin@goiashop.com / admin123</small><br/>
+                            <small>Admin: admin@goiashop.com / adm123</small><br/>
                             <small>Estoquista: estoquista@goiashop.com / estoque123</small><br/>
                             <small className="text-success">🔒 Senhas protegidas com BCrypt no servidor</small>
                         </Card.Footer>

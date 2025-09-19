@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Form, Button, Alert, Row, Col, Spinner, Card, Badge, Image } from 'react-bootstrap';
 import api from '../utils/api';
 
-const ProductEditCompleteModal = ({ show, onHide, product, onProductUpdated }) => {
+const ProductEditModal = ({ show, onHide, product, onProductUpdated }) => {
     const [formData, setFormData] = useState({
         nome: '',
         descricao: '',
@@ -16,6 +16,7 @@ const ProductEditCompleteModal = ({ show, onHide, product, onProductUpdated }) =
     const [error, setError] = useState('');
     const [uploadingImages, setUploadingImages] = useState(false);
     const [newImages, setNewImages] = useState([]);
+    const [newImagePreviews, setNewImagePreviews] = useState([]);
 
     useEffect(() => {
         if (product) {
@@ -49,59 +50,128 @@ const ProductEditCompleteModal = ({ show, onHide, product, onProductUpdated }) =
     const handleImageUpload = (e) => {
         const files = Array.from(e.target.files);
         if (files.length > 0) {
-            setNewImages(files);
+            // Validar tipos de arquivo
+            const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            const invalidFiles = files.filter(file => !validTypes.includes(file.type));
+            
+            if (invalidFiles.length > 0) {
+                setError('Apenas imagens (JPEG, PNG, GIF, WebP) são permitidas');
+                return;
+            }
+            
+            // Validar tamanho (5MB por arquivo)
+            const oversizedFiles = files.filter(file => file.size > 5 * 1024 * 1024);
+            
+            if (oversizedFiles.length > 0) {
+                setError('Cada imagem deve ter no máximo 5MB');
+                return;
+            }
+
+            // Verificar se não excede 5 imagens totais (existentes + novas)
+            const totalImages = imagens.length + newImagePreviews.length + files.length;
+            if (totalImages > 5) {
+                setError(`Máximo 5 imagens permitidas. Você já tem ${imagens.length + newImagePreviews.length} imagens.`);
+                return;
+            }
+
+            setNewImages(prev => [...prev, ...files]);
+            
+            // Criar previews para as novas imagens
+            const newPreviews = files.map((file, index) => ({
+                id: `new_${Date.now()}_${index}`,
+                file: file,
+                url: URL.createObjectURL(file),
+                nomeArquivo: file.name,
+                isPrincipal: (imagens.length === 0 && newImagePreviews.length === 0 && index === 0), // Primeira imagem é principal se não há outras
+                ordem: imagens.length + newImagePreviews.length + index,
+                isNew: true
+            }));
+            
+            setNewImagePreviews(prev => [...prev, ...newPreviews]);
+            setError('');
         }
     };
 
-    const handleMoveImage = (fromIndex, toIndex) => {
-        const items = Array.from(imagens);
-        const [reorderedItem] = items.splice(fromIndex, 1);
-        items.splice(toIndex, 0, reorderedItem);
-
-        // Atualizar ordem das imagens
-        const updatedImages = items.map((img, index) => ({
-            ...img,
-            ordem: index
-        }));
-
-        setImagens(updatedImages);
+    // Função para obter todas as imagens (existentes + novas) em ordem
+    const getAllImages = () => {
+        const existingImages = imagens.map(img => ({ ...img, isNew: false }));
+        const newImagesWithFlag = newImagePreviews.map(img => ({ ...img, isNew: true }));
+        return [...existingImages, ...newImagesWithFlag].sort((a, b) => a.ordem - b.ordem);
     };
 
-    const handleMoveToFirst = (imagemId) => {
-        const mainImage = imagens.find(img => img.id === imagemId);
-        if (!mainImage) return;
-
-        // Mover para primeira posição e definir como principal
-        const otherImages = imagens.filter(img => img.id !== imagemId);
-        const updatedImages = [
-            { ...mainImage, isPrincipal: true, ordem: 0 },
-            ...otherImages.map((img, index) => ({
-                ...img,
-                isPrincipal: false,
-                ordem: index + 1
-            }))
-        ];
-        
-        setImagens(updatedImages);
+    // Função para atualizar uma imagem específica
+    const updateImage = (imageId, updates) => {
+        setImagens(prev => prev.map(img => 
+            img.id === imageId ? { ...img, ...updates } : img
+        ));
+        setNewImagePreviews(prev => prev.map(img => 
+            img.id === imageId ? { ...img, ...updates } : img
+        ));
     };
 
-    const handleSetMainImage = (imagemId) => {
-        // Encontrar a imagem que será definida como principal
-        const mainImage = imagens.find(img => img.id === imagemId);
-        if (!mainImage) return;
+    // Função para remover uma imagem (existente ou nova)
+    const removeImage = (imageId, isNew) => {
+        if (isNew) {
+            // Remover das novas imagens
+            const imageToRemove = newImagePreviews.find(img => img.id === imageId);
+            if (imageToRemove) {
+                URL.revokeObjectURL(imageToRemove.url); // Limpar URL do blob
+                setNewImagePreviews(prev => prev.filter(img => img.id !== imageId));
+                setNewImages(prev => prev.filter(file => file.name !== imageToRemove.nomeArquivo));
+                
+                // Reordenar as imagens restantes
+                reorderAllImages();
+            }
+        } else {
+            // Remover imagem existente (mesma lógica anterior)
+            handleRemoveImage(imageId);
+        }
+    };
 
-        // Reordenar: imagem principal vai para primeira posição
-        const otherImages = imagens.filter(img => img.id !== imagemId);
-        const updatedImages = [
-            { ...mainImage, isPrincipal: true, ordem: 0 },
-            ...otherImages.map((img, index) => ({
-                ...img,
-                isPrincipal: false,
-                ordem: index + 1
-            }))
-        ];
+    // Função para reordenar todas as imagens
+    const reorderAllImages = () => {
+        const allImages = getAllImages();
         
-        setImagens(updatedImages);
+        allImages.forEach((img, index) => {
+            updateImage(img.id, { ordem: index });
+        });
+        
+        // Se não há imagem principal, definir a primeira como principal
+        if (allImages.length > 0 && !allImages.some(img => img.isPrincipal)) {
+            updateImage(allImages[0].id, { isPrincipal: true });
+        }
+    };
+
+    // Função para mover imagem (funciona para existentes e novas)
+    const moveImage = (fromIndex, toIndex) => {
+        const allImages = getAllImages();
+        const [movedImage] = allImages.splice(fromIndex, 1);
+        allImages.splice(toIndex, 0, movedImage);
+        
+        // Atualizar ordem de todas as imagens
+        allImages.forEach((img, index) => {
+            updateImage(img.id, { ordem: index });
+        });
+    };
+
+    // Função para definir imagem como principal (funciona para existentes e novas)
+    const setMainImage = (imageId) => {
+        const allImages = getAllImages();
+        
+        // Remover principal de todas as imagens
+        allImages.forEach(img => {
+            updateImage(img.id, { isPrincipal: false });
+        });
+        
+        // Definir a nova principal
+        updateImage(imageId, { isPrincipal: true });
+        
+        // Mover para primeira posição
+        const targetImage = allImages.find(img => img.id === imageId);
+        if (targetImage) {
+            const currentIndex = allImages.findIndex(img => img.id === imageId);
+            moveImage(currentIndex, 0);
+        }
     };
 
     const handleRemoveImage = async (imagemId) => {
@@ -142,7 +212,7 @@ const ProductEditCompleteModal = ({ show, onHide, product, onProductUpdated }) =
         setError('');
 
         try {
-            // Validações
+            // Validações (melhoradas do modal básico)
             if (!formData.nome.trim()) {
                 throw new Error('Nome do produto é obrigatório');
             }
@@ -150,13 +220,17 @@ const ProductEditCompleteModal = ({ show, onHide, product, onProductUpdated }) =
                 throw new Error('Preço deve ser maior que zero');
             }
             if (!formData.quantidadeEstoque || parseInt(formData.quantidadeEstoque) <= 0) {
-                throw new Error('Quantidade em estoque deve ser maior que zero');
+                throw new Error('Quantidade em estoque deve ser maior que zero. Para zerar o estoque, use a opção de inativar o produto.');
             }
             if (formData.avaliacao && (parseFloat(formData.avaliacao) < 1 || parseFloat(formData.avaliacao) > 5)) {
                 throw new Error('Avaliação deve estar entre 1 e 5');
             }
 
-            // Preparar dados do produto
+            // Preparar dados do produto com todas as imagens (existentes + novas)
+            const allImages = getAllImages();
+            const existingImages = allImages.filter(img => !img.isNew);
+            const newImagesInOrder = allImages.filter(img => img.isNew);
+
             const productData = {
                 nome: formData.nome.trim(),
                 descricao: formData.descricao.trim(),
@@ -164,30 +238,34 @@ const ProductEditCompleteModal = ({ show, onHide, product, onProductUpdated }) =
                 quantidadeEstoque: parseInt(formData.quantidadeEstoque),
                 avaliacao: formData.avaliacao ? parseFloat(formData.avaliacao) : null,
                 status: formData.status,
-                imagens: imagens.map((img, index) => ({
+                imagens: existingImages.map((img, index) => ({
                     imagemId: img.id,
-                    ordem: index,
+                    ordem: img.ordem,
                     isPrincipal: img.isPrincipal
                 }))
             };
 
-            // Upload de novas imagens primeiro
-            if (newImages.length > 0) {
+            // Upload de novas imagens na ordem correta
+            if (newImagesInOrder.length > 0) {
                 setUploadingImages(true);
-                const formData = new FormData();
-                newImages.forEach(file => {
-                    formData.append('arquivos', file);
-                });
+                
+                for (let i = 0; i < newImagesInOrder.length; i++) {
+                    const imageData = newImagesInOrder[i];
+                    const file = newImages.find(f => f.name === imageData.nomeArquivo);
+                    
+                    if (file) {
+                        const formDataImg = new FormData();
+                        formDataImg.append('file', file);
+                        formDataImg.append('isPrincipal', imageData.isPrincipal ? 'true' : 'false');
+                        formDataImg.append('ordem', imageData.ordem.toString());
 
-                await api.post(`/produtos/${product.id}/imagens`, formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data'
+                        await api.post(`/produtos/${product.id}/images`, formDataImg);
                     }
-                });
+                }
                 setUploadingImages(false);
             }
 
-            // Atualizar produto
+            // Atualizar produto com dados básicos e reordenação das imagens existentes
             await api.put(`/produtos/${product.id}/completo`, productData);
 
             onProductUpdated();
@@ -201,16 +279,62 @@ const ProductEditCompleteModal = ({ show, onHide, product, onProductUpdated }) =
         }
     };
 
+    const handleClose = () => {
+        // Prevenir fechamento acidental durante upload
+        if (loading || uploadingImages) {
+            return;
+        }
+        
+        // Limpar URLs dos blobs das novas imagens
+        newImagePreviews.forEach(img => {
+            if (img.url) {
+                URL.revokeObjectURL(img.url);
+            }
+        });
+        
+        // Reset do formulário
+        setFormData({
+            nome: '',
+            descricao: '',
+            preco: '',
+            quantidadeEstoque: '',
+            avaliacao: '',
+            status: 'ATIVO'
+        });
+        setImagens([]);
+        setNewImages([]);
+        setNewImagePreviews([]);
+        setError('');
+        onHide();
+    };
+
     return (
-        <Modal show={show} onHide={onHide} size="xl" centered>
+        <Modal 
+            show={show} 
+            onHide={handleClose} 
+            size="xl" 
+            centered 
+            backdrop="static"
+            style={{ zIndex: 1050 }}
+        >
             <Modal.Header closeButton>
-                <Modal.Title>✏️ Editar Produto Completo</Modal.Title>
+                <Modal.Title>✏️ Editar Produto</Modal.Title>
             </Modal.Header>
             <Form onSubmit={handleSubmit}>
                 <Modal.Body>
                     {error && <Alert variant="danger">{error}</Alert>}
                     
+                    {/* Informações do que pode ser editado */}
+                    <Alert variant="info" className="mb-4">
+                        <strong>📝 Neste modal você pode editar:</strong>
+                        <ul className="mb-0 mt-2">
+                            <li><strong>Dados básicos:</strong> Nome, descrição, preço, quantidade, avaliação e status</li>
+                            <li><strong>Imagens:</strong> Adicionar novas, remover existentes, definir principal e reordenar</li>
+                        </ul>
+                    </Alert>
+                    
                     {/* Informações Básicas */}
+                    <h5>📋 Dados Básicos</h5>
                     <Row>
                         <Col md={6}>
                             <Form.Group className="mb-3">
@@ -221,6 +345,7 @@ const ProductEditCompleteModal = ({ show, onHide, product, onProductUpdated }) =
                                     value={formData.nome}
                                     onChange={handleInputChange}
                                     required
+                                    placeholder="Nome do produto"
                                 />
                             </Form.Group>
                         </Col>
@@ -234,6 +359,7 @@ const ProductEditCompleteModal = ({ show, onHide, product, onProductUpdated }) =
                                     value={formData.preco}
                                     onChange={handleInputChange}
                                     required
+                                    placeholder="0.00"
                                 />
                             </Form.Group>
                         </Col>
@@ -247,6 +373,7 @@ const ProductEditCompleteModal = ({ show, onHide, product, onProductUpdated }) =
                             name="descricao"
                             value={formData.descricao}
                             onChange={handleInputChange}
+                            placeholder="Descrição do produto"
                         />
                     </Form.Group>
 
@@ -261,6 +388,7 @@ const ProductEditCompleteModal = ({ show, onHide, product, onProductUpdated }) =
                                     onChange={handleInputChange}
                                     required
                                     min="1"
+                                    placeholder="1"
                                 />
                             </Form.Group>
                         </Col>
@@ -275,7 +403,11 @@ const ProductEditCompleteModal = ({ show, onHide, product, onProductUpdated }) =
                                     name="avaliacao"
                                     value={formData.avaliacao}
                                     onChange={handleInputChange}
+                                    placeholder="1.0 - 5.0"
                                 />
+                                <Form.Text className="text-muted">
+                                    Opcional - de 1 a 5
+                                </Form.Text>
                             </Form.Group>
                         </Col>
                         <Col md={4}>
@@ -294,120 +426,158 @@ const ProductEditCompleteModal = ({ show, onHide, product, onProductUpdated }) =
                     </Row>
 
                     {/* Gerenciamento de Imagens */}
-                    <hr />
+                    <hr className="my-4" />
                     <h5>🖼️ Gerenciamento de Imagens</h5>
                     
                     {/* Upload de Novas Imagens */}
-                    <Form.Group className="mb-3">
-                        <Form.Label>Adicionar Novas Imagens</Form.Label>
+                    <Form.Group className="mb-4">
+                        <Form.Label>📤 Adicionar Novas Imagens</Form.Label>
                         <Form.Control
                             type="file"
                             multiple
-                            accept="image/*"
+                            accept="image/jpeg,image/png,image/gif,image/webp"
                             onChange={handleImageUpload}
                         />
                         <Form.Text className="text-muted">
-                            Selecione uma ou mais imagens para adicionar ao produto
+                            Selecione uma ou mais imagens. Formatos aceitos: JPEG, PNG, GIF, WebP (máx. 5MB cada)
                         </Form.Text>
                     </Form.Group>
 
-                    {/* Lista de Imagens Existentes */}
-                    {imagens.length > 0 && (
+                    {/* Lista de Todas as Imagens (Existentes + Novas) */}
+                    {(imagens.length > 0 || newImagePreviews.length > 0) && (
                         <div className="mb-3">
-                            <h6>Imagens do Produto</h6>
-                            <div className="d-flex flex-wrap gap-2">
-                                {imagens.map((imagem, index) => (
-                                    <Card
-                                        key={imagem.id}
-                                        className="position-relative"
-                                        style={{ width: '120px', height: '120px' }}
-                                    >
-                                        <Image
-                                            src={imagem.urlArquivo}
-                                            alt={imagem.nomeArquivo}
-                                            style={{
-                                                width: '100%',
-                                                height: '100%',
-                                                objectFit: 'cover'
-                                            }}
-                                        />
-                                        {imagem.isPrincipal && (
-                                            <Badge
-                                                bg="primary"
-                                                className="position-absolute top-0 start-0 m-1"
-                                            >
-                                                Principal
-                                            </Badge>
-                                        )}
-                                        <div className="position-absolute top-0 end-0 m-1">
-                                            <Button
-                                                variant="danger"
-                                                size="sm"
-                                                onClick={() => handleRemoveImage(imagem.id)}
-                                                style={{ padding: '2px 6px' }}
-                                            >
-                                                ×
-                                            </Button>
-                                        </div>
-                                        <div className="position-absolute bottom-0 start-0 end-0 p-1">
-                                            <div className="d-flex gap-1 justify-content-center">
+                            <h6>📸 Imagens do Produto</h6>
+                            <Alert variant="info" className="small mb-3">
+                                <strong>💡 Como usar:</strong>
+                                <ul className="mb-0 mt-1">
+                                    <li>Clique em <strong>"⭐ Definir como Principal"</strong> para escolher a imagem de destaque</li>
+                                    <li>Use ↑↓ para reordenar as imagens</li>
+                                    <li>Clique no ❌ para remover uma imagem</li>
+                                    <li><span className="badge bg-info">NOVA</span> indica imagens que serão adicionadas quando salvar</li>
+                                </ul>
+                            </Alert>
+                            <Row className="g-3">
+                                {getAllImages().map((imagem, index) => (
+                                    <Col key={imagem.id} md={4} lg={3}>
+                                        <Card className="h-100">
+                                            <div className="position-relative">
+                                                <Image
+                                                    src={imagem.isNew ? imagem.url : imagem.urlArquivo}
+                                                    alt={imagem.nomeArquivo}
+                                                    style={{
+                                                        width: '100%',
+                                                        height: '200px',
+                                                        objectFit: 'cover'
+                                                    }}
+                                                />
+                                                {/* Badge de Principal */}
+                                                {imagem.isPrincipal && (
+                                                    <Badge
+                                                        bg="success"
+                                                        className="position-absolute top-0 start-0 m-2"
+                                                        style={{ fontSize: '0.8rem' }}
+                                                    >
+                                                        ⭐ PRINCIPAL
+                                                    </Badge>
+                                                )}
+                                                {/* Badge de Nova Imagem */}
+                                                {imagem.isNew && (
+                                                    <Badge
+                                                        bg="info"
+                                                        className="position-absolute top-0 start-50 translate-middle-x m-2"
+                                                        style={{ fontSize: '0.7rem' }}
+                                                    >
+                                                        NOVA
+                                                    </Badge>
+                                                )}
+                                                {/* Botão Remover */}
                                                 <Button
-                                                    variant={imagem.isPrincipal ? "success" : "outline-primary"}
+                                                    variant="danger"
                                                     size="sm"
-                                                    onClick={() => handleSetMainImage(imagem.id)}
-                                                    style={{ fontSize: '0.7rem', padding: '2px 6px' }}
+                                                    className="position-absolute top-0 end-0 m-2"
+                                                    onClick={() => removeImage(imagem.id, imagem.isNew)}
+                                                    style={{ width: '30px', height: '30px', padding: '0' }}
+                                                    title="Remover imagem"
                                                 >
-                                                    {imagem.isPrincipal ? 'Principal' : 'Definir Principal'}
+                                                    ❌
                                                 </Button>
-                                                {!imagem.isPrincipal && (
+                                            </div>
+                                            <Card.Body className="p-2">
+                                                <small className="text-muted d-block mb-2" title={imagem.nomeArquivo}>
+                                                    {imagem.nomeArquivo.length > 20 ? 
+                                                        imagem.nomeArquivo.substring(0, 20) + '...' : 
+                                                        imagem.nomeArquivo
+                                                    }
+                                                    {imagem.isNew && <span className="text-info"> (nova)</span>}
+                                                </small>
+                                                
+                                                {/* Botão Principal - Redesenhado */}
+                                                {!imagem.isPrincipal ? (
                                                     <Button
                                                         variant="outline-warning"
                                                         size="sm"
-                                                        onClick={() => handleMoveToFirst(imagem.id)}
-                                                        style={{ fontSize: '0.7rem', padding: '2px 6px' }}
-                                                        title="Mover para primeira posição e definir como principal"
+                                                        className="w-100 mb-2"
+                                                        onClick={() => setMainImage(imagem.id)}
                                                     >
-                                                        ⬆️
+                                                        ⭐ Definir como Principal
+                                                    </Button>
+                                                ) : (
+                                                    <Button
+                                                        variant="success"
+                                                        size="sm"
+                                                        className="w-100 mb-2"
+                                                        disabled
+                                                    >
+                                                        ✅ Imagem Principal
                                                     </Button>
                                                 )}
-                                            </div>
-                                        </div>
-                                        {/* Botões de ordenação */}
-                                        <div className="position-absolute start-0 top-50 translate-middle-y">
-                                            {index > 0 && (
-                                                <Button
-                                                    variant="outline-secondary"
-                                                    size="sm"
-                                                    onClick={() => handleMoveImage(index, index - 1)}
-                                                    style={{ padding: '1px 4px', fontSize: '0.6rem' }}
-                                                >
-                                                    ↑
-                                                </Button>
-                                            )}
-                                        </div>
-                                        <div className="position-absolute end-0 top-50 translate-middle-y">
-                                            {index < imagens.length - 1 && (
-                                                <Button
-                                                    variant="outline-secondary"
-                                                    size="sm"
-                                                    onClick={() => handleMoveImage(index, index + 1)}
-                                                    style={{ padding: '1px 4px', fontSize: '0.6rem' }}
-                                                >
-                                                    ↓
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </Card>
+                                                
+                                                {/* Botões de Ordenação */}
+                                                <div className="d-flex gap-1 justify-content-center">
+                                                    {index > 0 && (
+                                                        <Button
+                                                            variant="outline-secondary"
+                                                            size="sm"
+                                                            onClick={() => moveImage(index, index - 1)}
+                                                            title="Mover para cima"
+                                                            style={{ flex: 1 }}
+                                                        >
+                                                            ↑
+                                                        </Button>
+                                                    )}
+                                                    {index < getAllImages().length - 1 && (
+                                                        <Button
+                                                            variant="outline-secondary"
+                                                            size="sm"
+                                                            onClick={() => moveImage(index, index + 1)}
+                                                            title="Mover para baixo"
+                                                            style={{ flex: 1 }}
+                                                        >
+                                                            ↓
+                                                        </Button>
+                                                    )}
+                                                    {!imagem.isPrincipal && (
+                                                        <Button
+                                                            variant="outline-primary"
+                                                            size="sm"
+                                                            onClick={() => setMainImage(imagem.id)}
+                                                            title="Mover para primeira posição e definir como principal"
+                                                            style={{ flex: 1 }}
+                                                        >
+                                                            ⬆️ Topo
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </Card.Body>
+                                        </Card>
+                                    </Col>
                                 ))}
-                            </div>
-                            <small className="text-muted">
-                                💡 Use os botões ↑↓ para reordenar as imagens. Clique em "Definir Principal" para escolher a imagem principal (ela irá automaticamente para a primeira posição). Use ⬆️ para mover uma imagem para o topo e definir como principal.
-                            </small>
+                            </Row>
                         </div>
                     )}
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={onHide} disabled={loading || uploadingImages}>
+                    <Button variant="secondary" onClick={handleClose} disabled={loading || uploadingImages}>
                         Cancelar
                     </Button>
                     <Button variant="primary" type="submit" disabled={loading || uploadingImages}>
@@ -417,7 +587,7 @@ const ProductEditCompleteModal = ({ show, onHide, product, onProductUpdated }) =
                                 {uploadingImages ? 'Enviando imagens...' : 'Salvando...'}
                             </>
                         ) : (
-                            'Salvar Alterações'
+                            '💾 Salvar Alterações'
                         )}
                     </Button>
                 </Modal.Footer>
@@ -426,4 +596,4 @@ const ProductEditCompleteModal = ({ show, onHide, product, onProductUpdated }) =
     );
 };
 
-export default ProductEditCompleteModal;
+export default ProductEditModal;
