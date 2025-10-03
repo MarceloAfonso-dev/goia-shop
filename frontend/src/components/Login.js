@@ -61,74 +61,119 @@ const Login = ({ onLoginSuccess, onBackToLanding }) => {
     };
 
     return (
-        <Container className="d-flex align-items-center justify-content-center" style={{ minHeight: '100vh' }}>
-            <Row className="w-100">
-                <Col md={6} className="mx-auto">
-                    <Card className="shadow">
-                        <Card.Header className="bg-primary text-white text-center">
-                            <div className="d-flex justify-content-between align-items-center">
-                                <Button 
-                                    variant="outline-light" 
-                                    size="sm" 
-                                    onClick={onBackToLanding}
-                                    className="me-2"
-                                >
-                                    ← Voltar
-                                </Button>
-                                <div className="flex-grow-1">
-                                    <h3>GOIA Shop - Backoffice</h3>
-                                    <p className="mb-0">Faça login para acessar o sistema</p>
-                                </div>
-                            </div>
-                        </Card.Header>
-                        <Card.Body>
-                            {error && <Alert variant="danger">{error}</Alert>}
-                            
-                            <Form onSubmit={handleSubmit}>
-                                <Form.Group className="mb-3">
-                                    <Form.Label>Email</Form.Label>
-                                    <Form.Control
-                                        type="email"
-                                        name="email"
-                                        value={formData.email}
-                                        onChange={handleChange}
-                                        placeholder="Digite seu email"
-                                        required
-                                    />
-                                </Form.Group>
+        <div style={{ minHeight: '100vh', backgroundColor: '#F1F2F4', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', padding: '0', margin: '0' }}>
+            {/* GOI Header */}
+            <header className="goi-header" style={{ width: '100%' }}>
+                <div className="goi-logo">
+                    <h1>GOIA Shop</h1>
+                </div>
+                <button 
+                    className="btn btn-secondary" 
+                    onClick={onBackToLanding}
+                    style={{ marginLeft: 'auto' }}
+                >
+                    ← Voltar à página inicial
+                </button>
+            </header>
 
-                                <Form.Group className="mb-3">
-                                    <Form.Label>Senha</Form.Label>
-                                    <Form.Control
-                                        type="password"
-                                        name="senha"
-                                        value={formData.senha}
-                                        onChange={handleChange}
-                                        placeholder="Digite sua senha"
-                                        required
-                                    />
-                                </Form.Group>
+            <div className="container" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ 
+                    backgroundColor: '#ffffff', 
+                    padding: '40px', 
+                    borderRadius: '12px', 
+                    border: '1px solid #eee',
+                    boxShadow: '0 1px 5px rgba(0,0,0,0.05)', 
+                    width: '100%', 
+                    maxWidth: '400px',
+                    marginTop: '60px',
+                    marginBottom: '60px'
+                }}>
+                    <h2 style={{ 
+                        fontSize: '24px', 
+                        fontWeight: '600', 
+                        marginBottom: '8px',
+                        color: '#1c1c1c',
+                        textAlign: 'left'
+                    }}>
+                        Acesso ao Sistema
+                    </h2>
+                    <p style={{ 
+                        fontSize: '14px', 
+                        color: '#555', 
+                        marginBottom: '24px',
+                        textAlign: 'left'
+                    }}>
+                        Faça login para acessar o backoffice
+                    </p>
 
-                                <Button 
-                                    variant="primary" 
-                                    type="submit" 
-                                    className="w-100"
-                                    disabled={loading}
-                                >
-                                    {loading ? 'Entrando...' : 'Entrar'}
-                                </Button>
-                            </Form>
-                        </Card.Body>
-                        <Card.Footer className="text-center text-muted">
-                            <small>Usuários de teste:</small><br/>
-                            <small>Admin: admin@goiashop.com / adm123</small><br/>
-                            <small>Estoquista: estoquista@goiashop.com / estoque123</small><br/>
-                            <small className="text-success">🔒 Senhas protegidas com BCrypt no servidor</small>
-                        </Card.Footer>
-                    </Card>
-                </Col>
-            </Row>
-        </Container>
+                    {error && (
+                        <div style={{ 
+                            backgroundColor: '#ffe6e6', 
+                            color: '#d90000', 
+                            padding: '12px', 
+                            borderRadius: '8px', 
+                            marginBottom: '20px',
+                            border: '1px solid #ffcccc'
+                        }}>
+                            {error}
+                        </div>
+                    )}
+                    
+                    <form onSubmit={handleSubmit}>
+                        <div className="form-group">
+                            <label>Email</label>
+                            <input
+                                type="email"
+                                name="email"
+                                className="form-control"
+                                value={formData.email}
+                                onChange={handleChange}
+                                placeholder="Digite seu email"
+                                required
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Senha</label>
+                            <input
+                                type="password"
+                                name="senha"
+                                className="form-control"
+                                value={formData.senha}
+                                onChange={handleChange}
+                                placeholder="Digite sua senha"
+                                required
+                            />
+                        </div>
+
+                        <button 
+                            type="submit" 
+                            className="btn btn-primary"
+                            disabled={loading}
+                            style={{ width: '100%', marginTop: '10px' }}
+                        >
+                            {loading ? 'Entrando...' : 'Entrar'}
+                        </button>
+                    </form>
+
+                    <div style={{ 
+                        textAlign: 'center', 
+                        marginTop: '30px', 
+                        padding: '20px', 
+                        backgroundColor: '#f9f9f9', 
+                        borderRadius: '8px',
+                        border: '1px solid #eee'
+                    }}>
+                        <small style={{ color: '#555', fontSize: '12px' }}>
+                            <strong>Usuários de teste:</strong><br/>
+                            Admin: admin@goiashop.com / adm123<br/>
+                            Estoquista: estoquista@goiashop.com / estoque123<br/>
+                            <span style={{ color: '#007e33', fontWeight: '500' }}>🔒 Senhas protegidas com BCrypt</span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 };
 

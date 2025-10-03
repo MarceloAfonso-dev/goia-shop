@@ -86,24 +86,24 @@ const LandingPage = ({ onLoginClick }) => {
   const featuredProducts = [
     {
       image: 'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=400&h=300&fit=crop',
-      title: 'iPhone pra Sempre',
-      description: 'Um iPhone novo para chamar de seu em 21x sem frete grátis.',
+      title: 'iPhone pra Hoje',
+      description: 'O iPhone mais novo com desconto especial para clientes GOIA. Aproveite agora!',
       linkTitle: 'iPhone',
-      linkDescription: 'Apple iPhone 15 Pro Max em até 21x sem juros.'
+      linkDescription: 'Apple iPhone 15 Pro Max com desconto exclusivo GOIA.'
     },
     {
       image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=300&fit=crop',
-      title: 'Loja Samsung no GOIAA',
-      description: 'Diversos produtos em até 21x sem juros com frete grátis.',
-      linkTitle: 'Loja Samsung',
-      linkDescription: 'Samsung Galaxy S24, TV, fones e mais com desconto exclusivo.'
+      title: 'Produtos Samsung',
+      description: 'Toda linha Samsung com os melhores preços e parcelamento exclusivo.',
+      linkTitle: 'Produtos Samsung',
+      linkDescription: 'Samsung Galaxy, TVs, fones e mais com cashback GOIA.'
     },
     {
-      image: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=400&h=300&fit=crop',
-      title: 'Clube de Vinhos no GOIAA Shop',
-      description: 'Com planos a partir de R$ 81,90. Receba em casa vinhos selecionados.',
-      linkTitle: 'Clube de Vinhos',
-      linkDescription: 'Vinhos premium entregues diretamente na sua casa.'
+      image: 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=400&h=300&fit=crop',
+      title: 'Ganhe R$ 1.500 de Boas-Vindas',
+      description: 'Abra sua conta no GOIA Bank e receba R$ 1.500 para usar no GOIA Shop.',
+      linkTitle: 'Conta GOIA Bank',
+      linkDescription: 'Conta digital gratuita com R$ 1.500 de bônus para suas compras.'
     }
   ];
 
@@ -131,12 +131,13 @@ const LandingPage = ({ onLoginClick }) => {
       {/* Header */}
       <header className="header">
         <div className="logo">
-          <img src="/assets/img/GOIA-icon-header.png" alt="GOIA" />
-          GOIA
+          <img src="/assets/img/goia-icon-header.png" alt="GOIA" />
+          GOIA Shop
         </div>
         <nav className="navi">
           <a href="#benefits">Para você</a>
-          <a href="#categories">Para empresas</a>
+          <a href="#categories">Vantagens</a>
+          <a href="#featured-products">Marketplace</a>
           <a href="#faq">Ajuda</a>
         </nav>
         <div className="header-right">
@@ -156,8 +157,10 @@ const LandingPage = ({ onLoginClick }) => {
       >
         <div className="hero-content">
           <h1>GOIA Shop</h1>
-          <p>Um shopping completo no app, com cashback, ofertas exclusivas e mais.</p>
-          <button className="btn-hero">Aproveitar no app</button>
+          <p>Um shopping completo online, com cashback, ofertas exclusivas e produtos incríveis para toda família.</p>
+          <button className="btn-hero" onClick={() => handlePopupOpen('GOIA Shop Marketplace', 'Acesse nosso marketplace online e aproveite todas as vantagens: cashback, ofertas exclusivas e parcelamento sem juros!')}>
+            Acessar Marketplace
+          </button>
         </div>
       </section>
 
@@ -203,8 +206,8 @@ const LandingPage = ({ onLoginClick }) => {
       </section>
 
       {/* Produtos Destacados */}
-      <section className="featured-products">
-        <h2>Aqui tem muito mais vantagens</h2>
+      <section className="featured-products" id="featured-products">
+        <h2>Marketplace - Aqui tem muito mais vantagens</h2>
         <div className="products-grid">
           {featuredProducts.map((product, index) => (
             <div key={index} className="product-item">

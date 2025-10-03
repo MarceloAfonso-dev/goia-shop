@@ -1,0 +1,26 @@
+{
+  "short_name": "GOIA Shop",
+  "name": "GOIA Shop - Shopping Completo",
+  "icons": [
+    {
+      "src": "/assets/img/goia-icon-header.png",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/img/goia-icon-header.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/assets/img/goia-icon-header.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#FF4F5A",
+  "background_color": "#F1F2F4",
+  "description": "Shopping completo no app com cashback e ofertas exclusivas"
+}

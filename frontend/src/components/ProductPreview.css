@@ -1,4 +1,6 @@
-/* Product Preview Styles */
+/* GOI Product Preview Styles */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+
 .product-preview-overlay {
     position: fixed;
     top: 0;
@@ -11,16 +13,17 @@
     align-items: center;
     justify-content: center;
     padding: 20px;
+    font-family: 'Outfit', sans-serif;
 }
 
 .product-preview-container {
-    background: white;
+    background: #ffffff;
     border-radius: 12px;
     width: 100%;
-    max-width: 1200px;
+    max-width: 1150px;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 .product-preview-header {
@@ -28,19 +31,22 @@
     justify-content: space-between;
     align-items: center;
     padding: 20px 30px;
-    border-bottom: 1px solid #e9ecef;
-    background: #f8f9fa;
+    border-bottom: 1px solid #eee;
+    background: #F1F2F4;
     border-radius: 12px 12px 0 0;
 }
 
 .product-preview-header h2 {
     margin: 0;
-    color: #333;
-    font-size: 1.5rem;
+    color: #1c1c1c;
+    font-size: 22px;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
 }
 
 .product-preview-content {
     padding: 30px;
+    background: #ffffff;
 }
 
 /* Image Gallery Styles */
