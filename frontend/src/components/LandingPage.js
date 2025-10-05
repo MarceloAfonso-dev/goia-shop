@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './LandingPage.css';
 
-const LandingPage = ({ onLoginClick }) => {
+const LandingPage = ({ onLoginClick, onGoToMarketplace }) => {
   const [showPopup, setShowPopup] = useState(false);
   const [popupData, setPopupData] = useState({ title: '', description: '' });
   const [openFaq, setOpenFaq] = useState(null);
@@ -137,7 +137,7 @@ const LandingPage = ({ onLoginClick }) => {
         <nav className="navi">
           <a href="#benefits">Para você</a>
           <a href="#categories">Vantagens</a>
-          <a href="#featured-products">Marketplace</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); onGoToMarketplace(); }}>Marketplace</a>
           <a href="#faq">Ajuda</a>
         </nav>
         <div className="header-right">
@@ -158,7 +158,7 @@ const LandingPage = ({ onLoginClick }) => {
         <div className="hero-content">
           <h1>GOIA Shop</h1>
           <p>Um shopping completo online, com cashback, ofertas exclusivas e produtos incríveis para toda família.</p>
-          <button className="btn-hero" onClick={() => handlePopupOpen('GOIA Shop Marketplace', 'Acesse nosso marketplace online e aproveite todas as vantagens: cashback, ofertas exclusivas e parcelamento sem juros!')}>
+          <button className="btn-hero" onClick={onGoToMarketplace}>
             Acessar Marketplace
           </button>
         </div>

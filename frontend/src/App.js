@@ -3,11 +3,12 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import LandingPage from './components/LandingPage';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
+import PublicProductGrid from './components/PublicProductGrid';
 import { useAuth } from './hooks/useAuth';
 
 function App() {
   const { user, loading, login, logout } = useAuth();
-  const [currentPage, setCurrentPage] = useState('landing'); // 'landing', 'login', 'dashboard'
+  const [currentPage, setCurrentPage] = useState('landing'); // 'landing', 'login', 'dashboard', 'marketplace'
 
   // Quando o usuário for carregado do localStorage, ir direto para o dashboard
   useEffect(() => {
@@ -51,15 +52,28 @@ function App() {
     setCurrentPage('landing');
   };
 
+  const handleGoToMarketplace = () => {
+    setCurrentPage('marketplace');
+  };
+
   return (
     <div className="App">
       {currentPage === 'landing' && (
-        <LandingPage onLoginClick={handleLoginClick} />
+        <LandingPage 
+          onLoginClick={handleLoginClick} 
+          onGoToMarketplace={handleGoToMarketplace}
+        />
       )}
       {currentPage === 'login' && (
         <Login 
           onLoginSuccess={handleLoginSuccess}
           onBackToLanding={handleBackToLanding}
+        />
+      )}
+      {currentPage === 'marketplace' && (
+        <PublicProductGrid 
+          onBackToLanding={handleBackToLanding}
+          onLoginClick={handleLoginClick}
         />
       )}
       {currentPage === 'dashboard' && user && (
