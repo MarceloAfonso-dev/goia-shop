@@ -2,11 +2,38 @@ import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
 import './PublicProductGrid.css';
 
+// Componentes de ícones PNG - Usando os ícones fornecidos
+const AddToCartIcon = ({ size = 16 }) => (
+  <img 
+    src="/assets/img/add-to-cart.png" 
+    alt="Adicionar ao carrinho" 
+    style={{ 
+      width: size, 
+      height: size,
+      filter: 'brightness(0) saturate(100%) invert(100%)',
+      display: 'block',
+      margin: 'auto'
+    }} 
+  />
+);
+const CartIcon = ({ size = 24 }) => (
+  <img 
+    src="/assets/img/cart.png" 
+    alt="Carrinho" 
+    style={{ 
+      width: size, 
+      height: size,
+      filter: 'brightness(0) saturate(100%) invert(42%) sepia(82%) saturate(3174%) hue-rotate(336deg) brightness(101%) contrast(102%)'
+    }} 
+  />
+);
+
 const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [cart, setCart] = useState([]);
 
   // Função para converter URL absoluta do backend em URL relativa
   const getImageUrl = (urlArquivo) => {
@@ -15,8 +42,62 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
     return urlArquivo.replace('http://localhost:8080', '');
   };
 
+  // Funções do carrinho
+  const loadCartFromStorage = () => {
+    const savedCart = localStorage.getItem('goia-shop-cart');
+    return savedCart ? JSON.parse(savedCart) : [];
+  };
+
+  const saveCartToStorage = (cartItems) => {
+    localStorage.setItem('goia-shop-cart', JSON.stringify(cartItems));
+  };
+
+  const addToCart = (product) => {
+    const currentCart = loadCartFromStorage();
+    const existingItem = currentCart.find(item => item.id === product.id);
+    
+    let updatedCart;
+    if (existingItem) {
+      updatedCart = currentCart.map(item => 
+        item.id === product.id 
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      );
+    } else {
+      updatedCart = [...currentCart, { ...product, quantity: 1 }];
+    }
+    
+    setCart(updatedCart);
+    saveCartToStorage(updatedCart);
+    
+    // Calcular total de itens no carrinho
+    const totalItems = updatedCart.reduce((total, item) => total + item.quantity, 0);
+    alert(`${product.nome} adicionado ao carrinho!\n\nVocê tem ${totalItems} ${totalItems === 1 ? 'item' : 'itens'} no carrinho.`);
+  };
+
+  const getCartItemsCount = () => {
+    const currentCart = loadCartFromStorage();
+    return currentCart.reduce((total, item) => total + item.quantity, 0);
+  };
+
+  const showCartSummary = () => {
+    const currentCart = loadCartFromStorage();
+    const totalItems = currentCart.reduce((total, item) => total + item.quantity, 0);
+    
+    if (totalItems === 0) {
+      alert('Seu carrinho está vazio!');
+      return;
+    }
+    
+    const cartSummary = currentCart.map(item => `• ${item.nome} (${item.quantity}x)`);
+    const totalValue = currentCart.reduce((total, item) => total + (item.preco * item.quantity), 0);
+    
+    alert(`🛒 CARRINHO DE COMPRAS\n\n${cartSummary.join('\n')}\n\nTotal: ${totalItems} ${totalItems === 1 ? 'item' : 'itens'}\nValor: R$ ${totalValue.toFixed(2).replace('.', ',')}`);
+  };
+
   useEffect(() => {
     fetchProducts();
+    setCart(loadCartFromStorage());
   }, []);
 
   const fetchProducts = async () => {
@@ -117,17 +198,44 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
     <div style={{ minHeight: '100vh', backgroundColor: '#F1F2F4' }}>
       {/* GOI Header */}
       <header className="goi-header">
-        <div className="goi-logo">
+        <div className="goi-logo" onClick={onBackToLanding} style={{ cursor: 'pointer' }}>
           <img src="/assets/img/goia-icon-header.png" alt="GOIA" style={{ width: '52px', height: '52px' }} />
           <h1>GOIA Shop</h1>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button 
-            className="btn btn-secondary" 
-            onClick={onBackToLanding}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {/* Carrinho */}
+          <div 
+            style={{ position: 'relative', cursor: 'pointer', padding: '8px' }}
+            onClick={showCartSummary}
+            title="Ver carrinho"
           >
-            ← Voltar
-          </button>
+            <div style={{ 
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <CartIcon size={28} color="#FF4F5A" />
+              {getCartItemsCount() > 0 && (
+                <span style={{
+                  backgroundColor: '#FF4F5A',
+                  color: 'white',
+                  borderRadius: '50%',
+                  width: '20px',
+                  height: '20px',
+                  fontSize: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 'bold',
+                  position: 'absolute',
+                  top: '0px',
+                  right: '0px'
+                }}>
+                  {getCartItemsCount()}
+                </span>
+              )}
+            </div>
+          </div>
           <button 
             className="btn btn-primary" 
             onClick={onLoginClick}
@@ -217,13 +325,32 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
                   {formatPrice(product.preco)}
                 </div>
                 
-                <button 
-                  className="btn btn-primary"
-                  onClick={() => handleProductClick(product)}
-                  style={{ width: '100%' }}
-                >
-                  Ver Detalhes
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button 
+                    className="btn btn-primary"
+                    onClick={() => handleProductClick(product)}
+                    style={{ flex: 2 }}
+                  >
+                    Ver Detalhes
+                  </button>
+                  <button 
+                    className="btn btn-secondary" 
+                    onClick={() => addToCart(product)}
+                    style={{ 
+                      flex: 1,
+                      fontSize: '14px',
+                      padding: '8px 12px',
+                      backgroundColor: '#28a745',
+                      border: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title="Adicionar ao carrinho"
+                  >
+                    <AddToCartIcon size={16} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -337,6 +464,24 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
                 gap: '12px', 
                 flexWrap: 'wrap' 
               }}>
+                <button 
+                  className="btn btn-secondary" 
+                  onClick={() => addToCart(selectedProduct)}
+                  style={{ 
+                    fontSize: '16px', 
+                    padding: '16px 32px',
+                    backgroundColor: '#28a745',
+                    border: 'none',
+                    minWidth: '200px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <AddToCartIcon size={18} />
+                  Adicionar ao Carrinho
+                </button>
                 <button 
                   className="btn btn-primary"
                   style={{ flex: 1, minWidth: '200px' }}
