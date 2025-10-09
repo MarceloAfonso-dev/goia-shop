@@ -33,4 +33,14 @@ public interface ProdutoRepository extends JpaRepository<Produto, Long> {
                                 @Param("codigo") Long codigo, 
                                 @Param("status") Produto.ProdutoStatus status, 
                                 Pageable pageable);
+    
+    // ===== MÉTODOS PARA E-COMMERCE =====
+    
+    List<Produto> findByStatusOrderByIdDesc(Produto.ProdutoStatus status);
+    
+    List<Produto> findByStatusAndCategoriaContainingIgnoreCaseOrderByIdDesc(
+        Produto.ProdutoStatus status, String categoria);
+    
+    List<Produto> findByStatusAndNomeContainingIgnoreCaseOrderByIdDesc(
+        Produto.ProdutoStatus status, String nome);
 }

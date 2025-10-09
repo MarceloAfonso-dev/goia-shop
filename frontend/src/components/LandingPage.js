@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './LandingPage.css';
 
-const LandingPage = ({ onLoginClick, onGoToMarketplace }) => {
+const LandingPage = () => {
+  const navigate = useNavigate();
   const [showPopup, setShowPopup] = useState(false);
   const [popupData, setPopupData] = useState({ title: '', description: '' });
   const [openFaq, setOpenFaq] = useState(null);
@@ -137,11 +139,11 @@ const LandingPage = ({ onLoginClick, onGoToMarketplace }) => {
         <nav className="navi">
           <a href="#benefits">Para você</a>
           <a href="#categories">Vantagens</a>
-          <a href="#" onClick={(e) => { e.preventDefault(); onGoToMarketplace(); }}>Marketplace</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/produtos'); }}>Produtos</a>
           <a href="#faq">Ajuda</a>
         </nav>
         <div className="header-right">
-          <button className="btn-login" onClick={onLoginClick}>
+          <button className="btn-login" onClick={() => navigate('/login')}>
             Login
           </button>
           <button className="btn-cta">Abrir conta</button>
@@ -158,7 +160,7 @@ const LandingPage = ({ onLoginClick, onGoToMarketplace }) => {
         <div className="hero-content">
           <h1>GOIA Shop</h1>
           <p>Um shopping completo online, com cashback, ofertas exclusivas e produtos incríveis para toda família.</p>
-          <button className="btn-hero" onClick={onGoToMarketplace}>
+          <button className="btn-hero" onClick={() => navigate('/produtos')}>
             Acessar Marketplace
           </button>
         </div>

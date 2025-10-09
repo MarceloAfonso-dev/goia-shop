@@ -38,8 +38,8 @@ public class Produto {
     
     @NotNull(message = "Preço é obrigatório")
     @Positive(message = "Preço deve ser positivo")
-    @Column(name = "preco", nullable = false, precision = 10)
-    private Double preco;
+    @Column(name = "preco", nullable = false, precision = 10, scale = 2)
+    private java.math.BigDecimal preco;
     
     @NotNull(message = "Estoque é obrigatório")
     @Positive(message = "Estoque deve ser positivo")
@@ -75,7 +75,7 @@ public class Produto {
     public Produto() {}
     
     // Constructor with fields
-    public Produto(String nome, String descricao, Double preco, Integer quantidadeEstoque) {
+    public Produto(String nome, String descricao, java.math.BigDecimal preco, Integer quantidadeEstoque) {
         this.nome = nome;
         this.descricao = descricao;
         this.preco = preco;
@@ -107,11 +107,11 @@ public class Produto {
         this.descricao = descricao;
     }
     
-    public Double getPreco() {
+    public java.math.BigDecimal getPreco() {
         return preco;
     }
     
-    public void setPreco(Double preco) {
+    public void setPreco(java.math.BigDecimal preco) {
         this.preco = preco;
     }
     
@@ -191,6 +191,15 @@ public class Produto {
                 .filter(ProdutoImagem::getIsPrincipal)
                 .findFirst()
                 .orElse(imagens.isEmpty() ? null : imagens.get(0));
+    }
+    
+    // Métodos de compatibilidade para quantidade
+    public Integer getQuantidade() {
+        return quantidadeEstoque;
+    }
+    
+    public void setQuantidade(Integer quantidade) {
+        this.quantidadeEstoque = quantidade;
     }
     
     @Override

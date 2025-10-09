@@ -56,6 +56,50 @@ public class ProdutoController {
         return ResponseEntity.notFound().build();
     }
     
+    // ===== ENDPOINTS PÚBLICOS PARA E-COMMERCE =====
+    
+    /**
+     * Lista produtos para o e-commerce (sem autenticação)
+     * Apenas produtos ativos são retornados
+     */
+    @GetMapping("/public")
+    public ResponseEntity<List<Produto>> listarProdutosPublico() {
+        List<Produto> produtos = produtoService.listarProdutosAtivos();
+        return ResponseEntity.ok(produtos);
+    }
+    
+    /**
+     * Busca produto por ID para o e-commerce (sem autenticação)
+     * Apenas produtos ativos são retornados
+     */
+    @GetMapping("/public/{id}")
+    public ResponseEntity<Produto> buscarProdutoPublico(@PathVariable Long id) {
+        try {
+            Produto produto = produtoService.buscarProdutoPublico(id);
+            return ResponseEntity.ok(produto);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    /**
+     * Busca produtos por categoria (sem autenticação)
+     */
+    @GetMapping("/public/categoria/{categoria}")
+    public ResponseEntity<List<Produto>> listarPorCategoria(@PathVariable String categoria) {
+        List<Produto> produtos = produtoService.listarPorCategoria(categoria);
+        return ResponseEntity.ok(produtos);
+    }
+    
+    /**
+     * Busca produtos por nome (sem autenticação)
+     */
+    @GetMapping("/public/buscar")
+    public ResponseEntity<List<Produto>> buscarProdutos(@RequestParam String termo) {
+        List<Produto> produtos = produtoService.buscarPorNome(termo);
+        return ResponseEntity.ok(produtos);
+    }
+    
     /**
      * Lista imagens de um produto
      */

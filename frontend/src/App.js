@@ -1,25 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import LandingPage from './components/LandingPage';
-import Login from './components/Login';
+import AuthPage from './components/AuthPage';
 import Dashboard from './components/Dashboard';
+import MyAccountPage from './components/MyAccountPage';
 import PublicProductGrid from './components/PublicProductGrid';
+import ProductDetailPage from './components/ProductDetailPage';
+import CartPage from './components/CartPage';
 import { useAuth } from './hooks/useAuth';
 
 function App() {
   const { user, loading, login, logout } = useAuth();
-  const [currentPage, setCurrentPage] = useState('landing'); // 'landing', 'login', 'dashboard', 'marketplace'
-
-  // Quando o usuário for carregado do localStorage, ir direto para o dashboard
-  useEffect(() => {
-    if (user) {
-      console.log('App - usuário logado detectado, indo para dashboard');
-      setCurrentPage('dashboard');
-    } else {
-      console.log('App - usuário não logado, ficando na landing');
-      setCurrentPage('landing');
-    }
-  }, [user]);
 
   if (loading) {
     return (
@@ -34,52 +26,70 @@ function App() {
     );
   }
 
-  const handleLoginClick = () => {
-    setCurrentPage('login');
-  };
-
   const handleLoginSuccess = (userData) => {
     login(userData);
-    setCurrentPage('dashboard');
   };
 
   const handleLogout = () => {
     logout();
-    setCurrentPage('landing');
-  };
-
-  const handleBackToLanding = () => {
-    setCurrentPage('landing');
-  };
-
-  const handleGoToMarketplace = () => {
-    setCurrentPage('marketplace');
   };
 
   return (
-    <div className="App">
-      {currentPage === 'landing' && (
-        <LandingPage 
-          onLoginClick={handleLoginClick} 
-          onGoToMarketplace={handleGoToMarketplace}
-        />
-      )}
-      {currentPage === 'login' && (
-        <Login 
-          onLoginSuccess={handleLoginSuccess}
-          onBackToLanding={handleBackToLanding}
-        />
-      )}
-      {currentPage === 'marketplace' && (
-        <PublicProductGrid 
-          onBackToLanding={handleBackToLanding}
-          onLoginClick={handleLoginClick}
-        />
-      )}
-      {currentPage === 'dashboard' && user && (
-        <Dashboard user={user} onLogout={handleLogout} />
-      )}
-    </div>
+    <Router>
+      <div className="App">
+        <Routes>
+          {/* Rota principal - Landing Page */}
+          <Route path="/" element={<LandingPage />} />
+          
+          {/* Rota de autenticação (login/cadastro) */}
+          <Route path="/login" element={<AuthPage onLoginSuccess={handleLoginSuccess} />} />
+          
+          {/* Rotas do e-commerce público */}
+          <Route path="/produtos" element={<PublicProductGrid />} />
+          <Route path="/produto/:id" element={<ProductDetailPage />} />
+          <Route path="/carrinho" element={<CartPage />} />
+          
+          {/* Rota da área do usuário */}
+          <Route 
+            path="/minha-conta" 
+            element={
+              user && user.grupo !== 'ADMIN' ? (
+                <MyAccountPage />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            } 
+          />
+          
+          {/* Rota do dashboard (protegida) */}
+          <Route 
+            path="/dashboard" 
+            element={
+              user ? (
+                <Dashboard user={user} onLogout={handleLogout} />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            } 
+          />
+          
+          {/* Redirect para dashboard se já logado, senão para landing */}
+          <Route 
+            path="/admin" 
+            element={
+              user ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            } 
+          />
+          
+          {/* Rota catch-all - redireciona para landing */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 

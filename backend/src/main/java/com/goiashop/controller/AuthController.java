@@ -1,8 +1,12 @@
 package com.goiashop.controller;
 
+import com.goiashop.dto.ClienteRegistroRequest;
 import com.goiashop.dto.LoginRequest;
 import com.goiashop.dto.LoginResponse;
+import com.goiashop.model.Cliente;
 import com.goiashop.service.AuthService;
+import com.goiashop.service.ClienteService;
+import com.goiashop.service.ClienteSessionService;
 import com.goiashop.service.PasswordService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +26,12 @@ public class AuthController {
     
     @Autowired
     private PasswordService passwordService;
+    
+    @Autowired
+    private ClienteService clienteService;
+    
+    @Autowired
+    private ClienteSessionService clienteSessionService;
     
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
@@ -61,6 +71,108 @@ public class AuthController {
             return ResponseEntity.ok(isAdmin);
         }
         return ResponseEntity.ok(false);
+    }
+    
+    // ===== ENDPOINTS PARA CLIENTES =====
+    
+    @PostMapping("/register")
+    public ResponseEntity<Map<String, Object>> registrarCliente(@Valid @RequestBody ClienteRegistroRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            Cliente cliente = clienteService.registrarCliente(request);
+            
+            // Criar sessão automática após registro
+            String token = clienteSessionService.createSession(cliente);
+            
+            response.put("success", true);
+            response.put("message", "Cliente registrado com sucesso");
+            response.put("token", token);
+            response.put("cliente", Map.of(
+                "id", cliente.getId(),
+                "nome", cliente.getNome(),
+                "email", cliente.getEmail(),
+                "tipo", "CLIENTE"
+            ));
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    @PostMapping("/login-cliente")
+    public ResponseEntity<Map<String, Object>> loginCliente(@Valid @RequestBody LoginRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            Cliente cliente = clienteService.autenticarCliente(request.getEmail(), request.getSenha());
+            String token = clienteSessionService.createSession(cliente);
+            
+            response.put("success", true);
+            response.put("message", "Login realizado com sucesso");
+            response.put("token", token);
+            response.put("user", Map.of(
+                "id", cliente.getId(),
+                "nome", cliente.getNome(),
+                "email", cliente.getEmail(),
+                "tipo", "CLIENTE"
+            ));
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    @PostMapping("/logout-cliente")
+    public ResponseEntity<Map<String, String>> logoutCliente(@RequestHeader("Authorization") String token) {
+        Map<String, String> response = new HashMap<>();
+        
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+            clienteSessionService.removeSession(token);
+        }
+        
+        response.put("message", "Logout realizado com sucesso");
+        return ResponseEntity.ok(response);
+    }
+    
+    @GetMapping("/validate-cliente")
+    public ResponseEntity<Map<String, Object>> validateClienteToken(@RequestHeader("Authorization") String token) {
+        Map<String, Object> response = new HashMap<>();
+        
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+            Long clienteId = clienteSessionService.validateSession(token);
+            
+            if (clienteId != null) {
+                try {
+                    Cliente cliente = clienteService.buscarPorId(clienteId);
+                    response.put("valid", true);
+                    response.put("cliente", Map.of(
+                        "id", cliente.getId(),
+                        "nome", cliente.getNome(),
+                        "email", cliente.getEmail(),
+                        "tipo", "CLIENTE"
+                    ));
+                } catch (Exception e) {
+                    response.put("valid", false);
+                }
+            } else {
+                response.put("valid", false);
+            }
+        } else {
+            response.put("valid", false);
+        }
+        
+        return ResponseEntity.ok(response);
     }
     
 }

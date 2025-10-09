@@ -1,5 +1,6 @@
 package com.goiashop.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -85,7 +86,7 @@ public class ProdutoService {
         Produto produto = new Produto();
         produto.setNome(request.getNome());
         produto.setDescricao(request.getDescricao());
-        produto.setPreco(request.getPreco());
+        produto.setPreco(BigDecimal.valueOf(request.getPreco()));
         produto.setQuantidadeEstoque(request.getQuantidadeEstoque());
         produto.setAvaliacao(request.getAvaliacao());
         produto.setCreatedAt(LocalDateTime.now());
@@ -130,7 +131,7 @@ public class ProdutoService {
         // Atualizar campos
         produto.setNome(request.getNome());
         produto.setDescricao(request.getDescricao());
-        produto.setPreco(request.getPreco());
+        produto.setPreco(BigDecimal.valueOf(request.getPreco()));
         produto.setQuantidadeEstoque(request.getQuantidadeEstoque());
         produto.setAvaliacao(request.getAvaliacao());
         produto.setUpdatedAt(LocalDateTime.now());
@@ -349,7 +350,7 @@ public class ProdutoService {
         // Atualizar campos do produto
         produto.setNome(request.getNome());
         produto.setDescricao(request.getDescricao());
-        produto.setPreco(request.getPreco());
+        produto.setPreco(BigDecimal.valueOf(request.getPreco()));
         produto.setQuantidadeEstoque(request.getQuantidadeEstoque());
         produto.setStatus(Produto.ProdutoStatus.valueOf(request.getStatus()));
         produto.setAvaliacao(request.getAvaliacao());
@@ -596,5 +597,44 @@ public class ProdutoService {
     }
     
     // FIM DAS MUDANÇAS
+    
+    // ===== MÉTODOS PÚBLICOS PARA E-COMMERCE =====
+    
+    /**
+     * Lista apenas produtos ativos para o e-commerce
+     */
+    public List<Produto> listarProdutosAtivos() {
+        return produtoRepository.findByStatusOrderByIdDesc(Produto.ProdutoStatus.ATIVO);
+    }
+    
+    /**
+     * Busca produto ativo por ID para o e-commerce
+     */
+    public Produto buscarProdutoPublico(Long id) {
+        Produto produto = produtoRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Produto não encontrado"));
+        
+        if (produto.getStatus() != Produto.ProdutoStatus.ATIVO) {
+            throw new RuntimeException("Produto não disponível");
+        }
+        
+        return produto;
+    }
+    
+    /**
+     * Lista produtos por categoria
+     */
+    public List<Produto> listarPorCategoria(String categoria) {
+        return produtoRepository.findByStatusAndCategoriaContainingIgnoreCaseOrderByIdDesc(
+            Produto.ProdutoStatus.ATIVO, categoria);
+    }
+    
+    /**
+     * Busca produtos por nome
+     */
+    public List<Produto> buscarPorNome(String termo) {
+        return produtoRepository.findByStatusAndNomeContainingIgnoreCaseOrderByIdDesc(
+            Produto.ProdutoStatus.ATIVO, termo);
+    }
 
 }

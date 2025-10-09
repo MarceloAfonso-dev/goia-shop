@@ -3,7 +3,7 @@ import { Table, Card, Badge, Spinner, Alert, Row, Col, Button, Form, InputGroup,
 import api from '../utils/api';
 import ProductCadastroModal from './ProductCadastroModal';
 import ProductEditModal from './ProductEditCompleteModal';
-import ProductPreview from './ProductPreview';
+import ProductDetailPage from './ProductDetailPage';
 import { useAuth } from '../hooks/useAuth';
 
 // Ativar/Inativar produto
@@ -16,7 +16,7 @@ const ProductList = () => {
     const [error, setError] = useState('');
     const [showCadastroModal, setShowCadastroModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
-    const [previewProductId, setPreviewProductId] = useState(null);
+    // Preview removido - agora usa página dedicada
     const [showQuantidadeModal, setShowQuantidadeModal] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
     
@@ -111,14 +111,7 @@ const ProductList = () => {
             <Badge bg="secondary">{status}</Badge>;
     };
 
-    // Preview do produto
-    const handlePreviewProduct = (productId) => {
-        setPreviewProductId(productId);
-    };
-
-    const handleClosePreview = () => {
-        setPreviewProductId(null);
-    };
+    // Preview do produto - Removido, agora usa página dedicada
 
     // Ativar/Inativar produto
     const handleActivate = async (id) => {
@@ -390,8 +383,8 @@ const ProductList = () => {
                                                     <Button 
                                                         variant="info" 
                                                         size="sm" 
-                                                        onClick={() => handlePreviewProduct(product.id)}
-                                                        title="Visualizar produto"
+                                                        onClick={() => window.open(`/produto/${product.id}`, '_blank')}
+                                                        title="Ver detalhes do produto"
                                                     >
                                                         👁️
                                                     </Button>
@@ -523,13 +516,7 @@ const ProductList = () => {
                 onProductUpdated={fetchProducts}
             />
 
-            {/* Product Preview */}
-            {previewProductId && (
-                <ProductPreview
-                    productId={previewProductId}
-                    onClose={handleClosePreview}
-                />
-            )}
+            {/* Product Preview - Removido, agora usa página dedicada */}
             
             {/* Modal de Edição de Quantidade */}
             <ProductQuantidadeModal
