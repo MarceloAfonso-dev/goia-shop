@@ -173,6 +173,11 @@ const LandingPage = () => {
             Login
           </button>
           <button className="btn-cta">Abrir conta</button>
+          <small style={{marginLeft: '10px'}}>
+            <a href="/admin" style={{color: '#666', fontSize: '12px', textDecoration: 'none'}}>
+              Admin
+            </a>
+          </small>
         </div>
       </header>
 

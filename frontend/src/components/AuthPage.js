@@ -110,6 +110,19 @@ const AuthPage = ({ onLoginSuccess }) => {
         setError('');
 
         try {
+            // Verificar se há usuário do backoffice logado
+            const existingUser = localStorage.getItem('user');
+            const existingUserType = localStorage.getItem('userType');
+            
+            if (existingUser && existingUserType === 'backoffice') {
+                const userData = JSON.parse(existingUser);
+                if (userData.grupo === 'ADMIN' || userData.grupo === 'ESTOQUISTA') {
+                    setError('Há um usuário do backoffice logado. Faça logout do backoffice primeiro.');
+                    setLoading(false);
+                    return;
+                }
+            }
+
             // Login de cliente - usar endpoint específico
             const response = await fetch('http://localhost:8080/api/auth/login-cliente', {
                 method: 'POST',
@@ -122,9 +135,13 @@ const AuthPage = ({ onLoginSuccess }) => {
             const result = await response.json();
 
             if (response.ok && result.success) {
-                // Salvar token e dados do usuário
+                // Limpar qualquer sessão anterior
+                localStorage.clear();
+                
+                // Salvar token e dados do cliente
                 localStorage.setItem('token', result.token);
                 localStorage.setItem('user', JSON.stringify(result.user));
+                localStorage.setItem('userType', 'cliente');
                 
                 // Notificar sobre o login
                 onLoginSuccess(result.user);

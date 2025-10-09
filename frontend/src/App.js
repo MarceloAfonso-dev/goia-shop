@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import 'bootstrap/dist/css/bootstrap.min.css';
 import LandingPage from './components/LandingPage';
 import AuthPage from './components/AuthPage';
+import AdminLogin from './components/AdminLogin';
 import Dashboard from './components/Dashboard';
 import MyAccountPage from './components/MyAccountPage';
 import PublicProductGrid from './components/PublicProductGrid';
@@ -13,7 +14,7 @@ import { useAuth } from './hooks/useAuth';
 import { CartProvider } from './hooks/useCart';
 
 function App() {
-  const { user, loading, login, logout } = useAuth();
+  const { user, loading, login, logout, isBackofficeUser, isClienteUser, getUserType } = useAuth();
 
   if (loading) {
     return (
@@ -44,20 +45,51 @@ function App() {
           {/* Rota principal - Landing Page */}
           <Route path="/" element={<LandingPage />} />
           
-          {/* Rota de autenticação (login/cadastro) */}
-          <Route path="/login" element={<AuthPage onLoginSuccess={handleLoginSuccess} />} />
+          {/* Rota de autenticação (login/cadastro) - apenas para clientes */}
+          <Route path="/login" element={
+            isBackofficeUser() ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <AuthPage onLoginSuccess={handleLoginSuccess} />
+            )
+          } />
+          
+          {/* Rota de login administrativo - apenas para backoffice */}
+          <Route path="/admin" element={
+            isClienteUser() ? (
+              <Navigate to="/" replace />
+            ) : isBackofficeUser() ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <AdminLogin />
+            )
+          } />
           
           {/* Rotas do e-commerce público */}
           <Route path="/produtos" element={<PublicProductGrid />} />
           <Route path="/produto/:id" element={<ProductDetailPage />} />
-          <Route path="/carrinho" element={<CartPage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/carrinho" element={
+            isBackofficeUser() ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <CartPage />
+            )
+          } />
+          <Route path="/checkout" element={
+            isBackofficeUser() ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <CheckoutPage />
+            )
+          } />
           
-          {/* Rota da área do usuário */}
+          {/* Rota da área do usuário - apenas para clientes */}
           <Route 
             path="/minha-conta" 
             element={
-              user && user.grupo !== 'ADMIN' ? (
+              isBackofficeUser() ? (
+                <Navigate to="/dashboard" replace />
+              ) : user && isClienteUser() ? (
                 <MyAccountPage />
               ) : (
                 <Navigate to="/login" replace />
@@ -65,29 +97,21 @@ function App() {
             } 
           />
           
-          {/* Rota do dashboard (protegida) */}
+          {/* Rota do dashboard (protegida - apenas backoffice) */}
           <Route 
             path="/dashboard" 
             element={
-              user ? (
+              user && isBackofficeUser() ? (
                 <Dashboard user={user} onLogout={handleLogout} />
+              ) : user && isClienteUser() ? (
+                <Navigate to="/" replace />
               ) : (
-                <Navigate to="/login" replace />
+                <Navigate to="/admin" replace />
               )
             } 
           />
           
-          {/* Redirect para dashboard se já logado, senão para landing */}
-          <Route 
-            path="/admin" 
-            element={
-              user ? (
-                <Navigate to="/dashboard" replace />
-              ) : (
-                <Navigate to="/" replace />
-              )
-            } 
-          />
+
           
           {/* Rota catch-all - redireciona para landing */}
           <Route path="*" element={<Navigate to="/" replace />} />
