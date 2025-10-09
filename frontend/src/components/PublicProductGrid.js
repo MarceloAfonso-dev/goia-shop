@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
+import { useCart } from '../hooks/useCart';
 import './PublicProductGrid.css';
 
 // Componentes de ícones PNG - Usando os ícones fornecidos
@@ -29,11 +31,12 @@ const CartIcon = ({ size = 24 }) => (
 );
 
 const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [cart, setCart] = useState([]);
+  const { cart, addToCart, cartCount } = useCart();
 
   // Função para converter URL absoluta do backend em URL relativa
   const getImageUrl = (urlArquivo) => {
@@ -42,62 +45,20 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
     return urlArquivo.replace('http://localhost:8080', '');
   };
 
-  // Funções do carrinho
-  const loadCartFromStorage = () => {
-    const savedCart = localStorage.getItem('goia-shop-cart');
-    return savedCart ? JSON.parse(savedCart) : [];
+  // Função personalizada para adicionar ao carrinho e redirecionar
+  const handleAddToCart = (product) => {
+    addToCart(product, 1); // Sempre adicionar 1 unidade
+    // Redirecionar para o carrinho
+    window.location.href = '/carrinho';
   };
 
-  const saveCartToStorage = (cartItems) => {
-    localStorage.setItem('goia-shop-cart', JSON.stringify(cartItems));
-  };
-
-  const addToCart = (product) => {
-    const currentCart = loadCartFromStorage();
-    const existingItem = currentCart.find(item => item.id === product.id);
-    
-    let updatedCart;
-    if (existingItem) {
-      updatedCart = currentCart.map(item => 
-        item.id === product.id 
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      );
-    } else {
-      updatedCart = [...currentCart, { ...product, quantity: 1 }];
-    }
-    
-    setCart(updatedCart);
-    saveCartToStorage(updatedCart);
-    
-    // Calcular total de itens no carrinho
-    const totalItems = updatedCart.reduce((total, item) => total + item.quantity, 0);
-    alert(`${product.nome} adicionado ao carrinho!\n\nVocê tem ${totalItems} ${totalItems === 1 ? 'item' : 'itens'} no carrinho.`);
-  };
-
-  const getCartItemsCount = () => {
-    const currentCart = loadCartFromStorage();
-    return currentCart.reduce((total, item) => total + item.quantity, 0);
-  };
-
-  const showCartSummary = () => {
-    const currentCart = loadCartFromStorage();
-    const totalItems = currentCart.reduce((total, item) => total + item.quantity, 0);
-    
-    if (totalItems === 0) {
-      alert('Seu carrinho está vazio!');
-      return;
-    }
-    
-    const cartSummary = currentCart.map(item => `• ${item.nome} (${item.quantity}x)`);
-    const totalValue = currentCart.reduce((total, item) => total + (item.preco * item.quantity), 0);
-    
-    alert(`🛒 CARRINHO DE COMPRAS\n\n${cartSummary.join('\n')}\n\nTotal: ${totalItems} ${totalItems === 1 ? 'item' : 'itens'}\nValor: R$ ${totalValue.toFixed(2).replace('.', ',')}`);
+  // Função para navegar para a home
+  const handleGoToHome = () => {
+    navigate('/');
   };
 
   useEffect(() => {
     fetchProducts();
-    setCart(loadCartFromStorage());
   }, []);
 
   const fetchProducts = async () => {
@@ -147,7 +108,7 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
           </div>
           <button 
             className="btn btn-secondary" 
-            onClick={onBackToLanding}
+            onClick={handleGoToHome}
           >
             ← Voltar
           </button>
@@ -172,7 +133,7 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
           </div>
           <button 
             className="btn btn-secondary" 
-            onClick={onBackToLanding}
+            onClick={handleGoToHome}
           >
             ← Voltar
           </button>
@@ -198,7 +159,7 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
     <div style={{ minHeight: '100vh', backgroundColor: '#F1F2F4' }}>
       {/* GOI Header */}
       <header className="goi-header">
-        <div className="goi-logo" onClick={onBackToLanding} style={{ cursor: 'pointer' }}>
+        <div className="goi-logo" onClick={handleGoToHome} style={{ cursor: 'pointer' }}>
           <img src="/assets/img/goia-icon-header.png" alt="GOIA" style={{ width: '52px', height: '52px' }} />
           <h1>GOIA Shop</h1>
         </div>
@@ -206,7 +167,7 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
           {/* Carrinho */}
           <div 
             style={{ position: 'relative', cursor: 'pointer', padding: '8px' }}
-            onClick={showCartSummary}
+            onClick={() => window.location.href = '/carrinho'}
             title="Ver carrinho"
           >
             <div style={{ 
@@ -215,7 +176,7 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
               gap: '8px'
             }}>
               <CartIcon size={28} color="#FF4F5A" />
-              {getCartItemsCount() > 0 && (
+              {cartCount > 0 && (
                 <span style={{
                   backgroundColor: '#FF4F5A',
                   color: 'white',
@@ -231,17 +192,11 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
                   top: '0px',
                   right: '0px'
                 }}>
-                  {getCartItemsCount()}
+                  {cartCount}
                 </span>
               )}
             </div>
           </div>
-          <button 
-            className="btn btn-primary" 
-            onClick={onLoginClick}
-          >
-            Entrar/Gerenciar
-          </button>
         </div>
       </header>
 
@@ -335,7 +290,7 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
                   </button>
                   <button 
                     className="btn btn-secondary" 
-                    onClick={() => addToCart(product)}
+                    onClick={() => handleAddToCart(product)}
                     style={{ 
                       flex: 1,
                       fontSize: '14px',
@@ -466,7 +421,7 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
               }}>
                 <button 
                   className="btn btn-secondary" 
-                  onClick={() => addToCart(selectedProduct)}
+                  onClick={() => handleAddToCart(selectedProduct)}
                   style={{ 
                     fontSize: '16px', 
                     padding: '16px 32px',

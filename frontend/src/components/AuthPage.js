@@ -20,9 +20,11 @@ const AuthPage = ({ onLoginSuccess }) => {
     const [registerData, setRegisterData] = useState({
         nome: '',
         email: '',
+        cpf: '',
+        telefone: '',
+        dataNascimento: '',
         senha: '',
         confirmarSenha: '',
-        telefone: '',
         endereco: {
             cep: '',
             logradouro: '',
@@ -43,20 +45,59 @@ const AuthPage = ({ onLoginSuccess }) => {
 
     const handleRegisterChange = (e) => {
         const { name, value } = e.target;
+        let formattedValue = value;
+        
+        // Formatação automática
+        if (name === 'cpf') {
+            // Remove tudo que não é dígito
+            const numbers = value.replace(/\D/g, '');
+            // Aplica máscara: 000.000.000-00
+            formattedValue = numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        } else if (name === 'telefone') {
+            // Remove tudo que não é dígito e limita a 11 dígitos
+            const numbers = value.replace(/\D/g, '').substring(0, 11);
+            // Aplica máscara: (00) 00000-0000 ou (00) 0000-0000
+            if (numbers.length <= 10) {
+                formattedValue = numbers.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+            } else {
+                formattedValue = numbers.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+            }
+        } else if (name === 'dataNascimento') {
+            // Remove tudo que não é dígito e limita a 8 dígitos
+            const numbers = value.replace(/\D/g, '').substring(0, 8);
+            // Aplica máscara: DD/MM/AAAA
+            if (numbers.length >= 2) {
+                if (numbers.length >= 4) {
+                    formattedValue = numbers.replace(/(\d{2})(\d{2})(\d{4})/, '$1/$2/$3');
+                } else {
+                    formattedValue = numbers.replace(/(\d{2})(\d{2})/, '$1/$2');
+                }
+            } else {
+                formattedValue = numbers;
+            }
+        }
         
         if (name.startsWith('endereco.')) {
             const field = name.split('.')[1];
+            let enderecoValue = formattedValue;
+            
+            // Formatação do CEP
+            if (field === 'cep') {
+                const numbers = formattedValue.replace(/\D/g, '');
+                enderecoValue = numbers.replace(/(\d{5})(\d{3})/, '$1-$2');
+            }
+            
             setRegisterData({
                 ...registerData,
                 endereco: {
                     ...registerData.endereco,
-                    [field]: value
+                    [field]: enderecoValue
                 }
             });
         } else {
             setRegisterData({
                 ...registerData,
-                [name]: value
+                [name]: formattedValue
             });
         }
     };
@@ -67,8 +108,8 @@ const AuthPage = ({ onLoginSuccess }) => {
         setError('');
 
         try {
-            // Implementar lógica de login
-            const response = await fetch('http://localhost:8080/api/auth/login', {
+            // Login de cliente - usar endpoint específico
+            const response = await fetch('http://localhost:8080/api/auth/login-cliente', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -86,9 +127,9 @@ const AuthPage = ({ onLoginSuccess }) => {
                 // Notificar sobre o login
                 onLoginSuccess(result.user);
                 
-                // Verificar se é admin ou usuário comum
-                if (result.user.grupo === 'ADMIN') {
-                    navigate('/dashboard');
+                // Para clientes, navegar para a página inicial ou conta
+                if (result.user.tipo === 'CLIENTE') {
+                    navigate('/');
                 } else {
                     navigate('/minha-conta');
                 }
@@ -110,6 +151,19 @@ const AuthPage = ({ onLoginSuccess }) => {
         setSuccess('');
 
         // Validações básicas
+        if (!registerData.nome || !registerData.email || !registerData.cpf || !registerData.telefone || !registerData.dataNascimento) {
+            setError('Todos os campos obrigatórios devem ser preenchidos');
+            setLoading(false);
+            return;
+        }
+
+        // Validar nome
+        if (registerData.nome.trim().length < 2) {
+            setError('Nome deve ter pelo menos 2 caracteres');
+            setLoading(false);
+            return;
+        }
+
         if (registerData.senha !== registerData.confirmarSenha) {
             setError('As senhas não coincidem');
             setLoading(false);
@@ -122,14 +176,81 @@ const AuthPage = ({ onLoginSuccess }) => {
             return;
         }
 
+        // Validar CPF (básico)
+        const cpfNumbers = registerData.cpf.replace(/\D/g, '');
+        if (cpfNumbers.length !== 11) {
+            setError('CPF deve ter 11 dígitos');
+            setLoading(false);
+            return;
+        }
+
+        // Validar telefone
+        const phoneNumbers = registerData.telefone.replace(/\D/g, '');
+        if (phoneNumbers.length < 10 || phoneNumbers.length > 11) {
+            setError('Telefone deve ter 10 ou 11 dígitos');
+            setLoading(false);
+            return;
+        }
+
+        // Validar data de nascimento
+        const dateNumbers = registerData.dataNascimento.replace(/\D/g, '');
+        if (dateNumbers.length !== 8) {
+            setError('Data de nascimento deve ter 8 dígitos (DD/MM/AAAA)');
+            setLoading(false);
+            return;
+        }
+
+        // Verificar se é uma data válida
+        if (registerData.dataNascimento.includes('/')) {
+            const [dia, mes, ano] = registerData.dataNascimento.split('/');
+            const data = new Date(ano, mes - 1, dia);
+            if (data.getDate() != dia || data.getMonth() + 1 != mes || data.getFullYear() != ano) {
+                setError('Data de nascimento inválida');
+                setLoading(false);
+                return;
+            }
+        }
+
+        // Validar campos de endereço obrigatórios
+        if (!registerData.endereco.cep || !registerData.endereco.logradouro || 
+            !registerData.endereco.numero || !registerData.endereco.bairro || 
+            !registerData.endereco.cidade || !registerData.endereco.uf) {
+            setError('Todos os campos de endereço são obrigatórios');
+            setLoading(false);
+            return;
+        }
+
+        // Validar formato do CEP
+        const cepNumbers = registerData.endereco.cep.replace(/\D/g, '');
+        if (cepNumbers.length !== 8) {
+            setError('CEP deve ter 8 dígitos');
+            setLoading(false);
+            return;
+        }
+
         try {
+            // Converter data de DD/MM/AAAA para AAAA-MM-DD
+            let dataFormatada = registerData.dataNascimento;
+            if (registerData.dataNascimento.includes('/')) {
+                const [dia, mes, ano] = registerData.dataNascimento.split('/');
+                dataFormatada = `${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+            }
+
             const cadastroData = {
                 nome: registerData.nome,
                 email: registerData.email,
-                senha: registerData.senha,
+                cpf: registerData.cpf.replace(/\D/g, ''), // Remove formatação
                 telefone: registerData.telefone,
-                grupo: 'CLIENTE', // Definir como cliente por padrão
-                endereco: registerData.endereco
+                dataNascimento: dataFormatada,
+                senha: registerData.senha,
+                // Campos de endereço no nível raiz
+                cep: registerData.endereco.cep, // Manter formatação XXXXX-XXX
+                logradouro: registerData.endereco.logradouro,
+                numero: registerData.endereco.numero,
+                complemento: registerData.endereco.complemento,
+                bairro: registerData.endereco.bairro,
+                cidade: registerData.endereco.cidade,
+                estado: registerData.endereco.uf
             };
 
             const response = await fetch('http://localhost:8080/api/auth/register', {
@@ -149,9 +270,11 @@ const AuthPage = ({ onLoginSuccess }) => {
                 setRegisterData({
                     nome: '',
                     email: '',
+                    cpf: '',
+                    telefone: '',
+                    dataNascimento: '',
                     senha: '',
                     confirmarSenha: '',
-                    telefone: '',
                     endereco: {
                         cep: '',
                         logradouro: '',
@@ -180,11 +303,14 @@ const AuthPage = ({ onLoginSuccess }) => {
                 const data = await response.json();
                 
                 if (!data.erro) {
+                    // Formatar CEP para XXXXX-XXX
+                    const cepFormatado = cep.replace(/(\d{5})(\d{3})/, '$1-$2');
+                    
                     setRegisterData({
                         ...registerData,
                         endereco: {
                             ...registerData.endereco,
-                            cep: cep,
+                            cep: cepFormatado,
                             logradouro: data.logradouro,
                             bairro: data.bairro,
                             cidade: data.localidade,
@@ -304,14 +430,46 @@ const AuthPage = ({ onLoginSuccess }) => {
                                 </div>
 
                                 <div className="form-group">
-                                    <label htmlFor="register-telefone">Telefone</label>
+                                    <label htmlFor="register-cpf">CPF *</label>
+                                    <input
+                                        type="text"
+                                        id="register-cpf"
+                                        name="cpf"
+                                        value={registerData.cpf}
+                                        onChange={handleRegisterChange}
+                                        required
+                                        placeholder="000.000.000-00"
+                                        maxLength={14}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label htmlFor="register-dataNascimento">Data de Nascimento *</label>
+                                    <input
+                                        type="text"
+                                        id="register-dataNascimento"
+                                        name="dataNascimento"
+                                        value={registerData.dataNascimento}
+                                        onChange={handleRegisterChange}
+                                        required
+                                        placeholder="DD/MM/AAAA"
+                                        maxLength={10}
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label htmlFor="register-telefone">Telefone *</label>
                                     <input
                                         type="tel"
                                         id="register-telefone"
                                         name="telefone"
                                         value={registerData.telefone}
                                         onChange={handleRegisterChange}
+                                        required
                                         placeholder="(11) 99999-9999"
+                                        maxLength={15}
                                     />
                                 </div>
                             </div>
@@ -364,7 +522,7 @@ const AuthPage = ({ onLoginSuccess }) => {
                                 
                                 <div className="form-row">
                                     <div className="form-group form-group-small">
-                                        <label htmlFor="register-cep">CEP</label>
+                                        <label htmlFor="register-cep">CEP *</label>
                                         <input
                                             type="text"
                                             id="register-cep"
@@ -377,18 +535,21 @@ const AuthPage = ({ onLoginSuccess }) => {
                                                     buscarCEP(cep);
                                                 }
                                             }}
+                                            required
                                             placeholder="00000-000"
+                                            maxLength={9}
                                         />
                                     </div>
 
                                     <div className="form-group">
-                                        <label htmlFor="register-logradouro">Logradouro</label>
+                                        <label htmlFor="register-logradouro">Logradouro *</label>
                                         <input
                                             type="text"
                                             id="register-logradouro"
                                             name="endereco.logradouro"
                                             value={registerData.endereco.logradouro}
                                             onChange={handleRegisterChange}
+                                            required
                                             placeholder="Rua, Avenida..."
                                         />
                                     </div>
@@ -396,13 +557,14 @@ const AuthPage = ({ onLoginSuccess }) => {
 
                                 <div className="form-row">
                                     <div className="form-group form-group-small">
-                                        <label htmlFor="register-numero">Número</label>
+                                        <label htmlFor="register-numero">Número *</label>
                                         <input
                                             type="text"
                                             id="register-numero"
                                             name="endereco.numero"
                                             value={registerData.endereco.numero}
                                             onChange={handleRegisterChange}
+                                            required
                                             placeholder="123"
                                         />
                                     </div>
@@ -422,36 +584,39 @@ const AuthPage = ({ onLoginSuccess }) => {
 
                                 <div className="form-row">
                                     <div className="form-group">
-                                        <label htmlFor="register-bairro">Bairro</label>
+                                        <label htmlFor="register-bairro">Bairro *</label>
                                         <input
                                             type="text"
                                             id="register-bairro"
                                             name="endereco.bairro"
                                             value={registerData.endereco.bairro}
                                             onChange={handleRegisterChange}
+                                            required
                                             placeholder="Nome do bairro"
                                         />
                                     </div>
 
                                     <div className="form-group">
-                                        <label htmlFor="register-cidade">Cidade</label>
+                                        <label htmlFor="register-cidade">Cidade *</label>
                                         <input
                                             type="text"
                                             id="register-cidade"
                                             name="endereco.cidade"
                                             value={registerData.endereco.cidade}
                                             onChange={handleRegisterChange}
+                                            required
                                             placeholder="Nome da cidade"
                                         />
                                     </div>
 
                                     <div className="form-group form-group-small">
-                                        <label htmlFor="register-uf">UF</label>
+                                        <label htmlFor="register-uf">UF *</label>
                                         <select
                                             id="register-uf"
                                             name="endereco.uf"
                                             value={registerData.endereco.uf}
                                             onChange={handleRegisterChange}
+                                            required
                                         >
                                             <option value="">UF</option>
                                             <option value="AC">AC</option>

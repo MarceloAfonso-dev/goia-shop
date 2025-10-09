@@ -38,9 +38,6 @@ public interface ProdutoRepository extends JpaRepository<Produto, Long> {
     
     List<Produto> findByStatusOrderByIdDesc(Produto.ProdutoStatus status);
     
-    List<Produto> findByStatusAndCategoriaContainingIgnoreCaseOrderByIdDesc(
-        Produto.ProdutoStatus status, String categoria);
-    
     List<Produto> findByStatusAndNomeContainingIgnoreCaseOrderByIdDesc(
         Produto.ProdutoStatus status, String nome);
 }

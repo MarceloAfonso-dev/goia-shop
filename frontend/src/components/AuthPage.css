@@ -12,6 +12,7 @@
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   border: 2px solid rgba(255, 79, 90, 0.08);
+  padding: 20px;
 }
 
 /* Tabs */

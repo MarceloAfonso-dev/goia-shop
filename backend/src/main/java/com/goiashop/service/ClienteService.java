@@ -3,6 +3,7 @@ package com.goiashop.service;
 import com.goiashop.dto.ClienteRegistroRequest;
 import com.goiashop.model.Cliente;
 import com.goiashop.repository.ClienteRepository;
+import com.goiashop.util.CPFValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -25,8 +26,13 @@ public class ClienteService {
             throw new RuntimeException("Email já está em uso");
         }
         
+        // Validar formato do CPF
+        if (!CPFValidator.isValid(request.getCpf())) {
+            throw new RuntimeException("CPF inválido");
+        }
+        
         // Verificar se CPF já existe
-        String cpfLimpo = request.getCpf().replaceAll("\\D", "");
+        String cpfLimpo = CPFValidator.cleanCPF(request.getCpf());
         if (clienteRepository.existsByCpf(cpfLimpo)) {
             throw new RuntimeException("CPF já está cadastrado");
         }
@@ -101,8 +107,15 @@ public class ClienteService {
             throw new RuntimeException("Email já está em uso");
         }
         
+        // Validar formato do CPF se mudou
+        if (!cliente.getCpf().equals(CPFValidator.cleanCPF(request.getCpf()))) {
+            if (!CPFValidator.isValid(request.getCpf())) {
+                throw new RuntimeException("CPF inválido");
+            }
+        }
+        
         // Verificar se CPF mudou e se já existe
-        String cpfLimpo = request.getCpf().replaceAll("\\D", "");
+        String cpfLimpo = CPFValidator.cleanCPF(request.getCpf());
         if (!cliente.getCpf().equals(cpfLimpo) && 
             clienteRepository.existsByCpf(cpfLimpo)) {
             throw new RuntimeException("CPF já está cadastrado");
@@ -138,5 +151,19 @@ public class ClienteService {
         cliente.setEstado(request.getEstado());
         
         return clienteRepository.save(cliente);
+    }
+    
+    /**
+     * Verifica se já existe um cliente com o CPF informado
+     */
+    public boolean existsByCpf(String cpf) {
+        return clienteRepository.existsByCpf(cpf);
+    }
+    
+    /**
+     * Verifica se já existe um cliente com o email informado
+     */
+    public boolean existsByEmail(String email) {
+        return clienteRepository.existsByEmail(email);
     }
 }

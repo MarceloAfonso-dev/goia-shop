@@ -83,15 +83,6 @@ public class ProdutoController {
     }
     
     /**
-     * Busca produtos por categoria (sem autenticação)
-     */
-    @GetMapping("/public/categoria/{categoria}")
-    public ResponseEntity<List<Produto>> listarPorCategoria(@PathVariable String categoria) {
-        List<Produto> produtos = produtoService.listarPorCategoria(categoria);
-        return ResponseEntity.ok(produtos);
-    }
-    
-    /**
      * Busca produtos por nome (sem autenticação)
      */
     @GetMapping("/public/buscar")

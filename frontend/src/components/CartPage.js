@@ -134,7 +134,7 @@ const CartPage = () => {
                 <span>{formatPrice(getCartTotal())}</span>
               </div>
 
-              <button className="btn-checkout">
+              <button className="btn-checkout" onClick={() => navigate('/checkout')}>
                 Finalizar Compra
               </button>
               

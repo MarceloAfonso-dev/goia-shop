@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext, createContext } from 'react';
 
-export const useCart = () => {
+const CartContext = createContext();
+
+export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState(() => {
     // Carregar carrinho do localStorage
     const savedCart = localStorage.getItem('goia-shop-cart');
@@ -85,7 +87,7 @@ export const useCart = () => {
     return item ? item.quantidade : 0;
   };
 
-  return {
+  const value = {
     cart,
     cartCount,
     addToCart,
@@ -96,4 +98,20 @@ export const useCart = () => {
     isInCart,
     getProductQuantity
   };
+
+  return (
+    <CartContext.Provider value={value}>
+      {children}
+    </CartContext.Provider>
+  );
 };
+
+export const useCart = () => {
+  const context = useContext(CartContext);
+  if (!context) {
+    throw new Error('useCart deve ser usado dentro de um CartProvider');
+  }
+  return context;
+};
+
+

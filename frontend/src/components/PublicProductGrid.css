@@ -2,7 +2,7 @@
 
 .ecommerce-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  background: linear-gradient(135deg, #fafbfc 0%, #f1f5f9 100%);
 }
 
 /* Loading e Error States */
@@ -117,29 +117,30 @@
   font-size: 1.1rem;
 }
 
-/* Products Grid */
+/* Products Grid - Layout mais suave */
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 40px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 30px;
   margin-bottom: 50px;
+  padding: 20px;
 }
 
-/* Product Card */
+/* Product Card - Visual mais suave */
 .product-card {
   background: white;
-  border-radius: 25px;
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
   overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: all 0.3s ease;
   position: relative;
-  border: 2px solid transparent;
+  border: 1px solid rgba(226, 232, 240, 0.8);
 }
 
 .product-card:hover {
-  transform: translateY(-15px) scale(1.03);
-  box-shadow: 0 25px 60px rgba(255, 79, 90, 0.2);
-  border-color: rgba(255, 79, 90, 0.15);
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(102, 126, 234, 0.15);
+  border-color: rgba(102, 126, 234, 0.2);
 }
 
 /* Product Image */

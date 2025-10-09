@@ -62,8 +62,8 @@
 }
 
 .user-avatar {
-  width: 60px;
-  height: 60px;
+  width: 40px;
+  height: 40px;
   background: linear-gradient(135deg, #FF4F5A, #FF8E95);
   color: white;
   border-radius: 50%;

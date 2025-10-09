@@ -8,7 +8,9 @@ import MyAccountPage from './components/MyAccountPage';
 import PublicProductGrid from './components/PublicProductGrid';
 import ProductDetailPage from './components/ProductDetailPage';
 import CartPage from './components/CartPage';
+import CheckoutPage from './components/CheckoutPage';
 import { useAuth } from './hooks/useAuth';
+import { CartProvider } from './hooks/useCart';
 
 function App() {
   const { user, loading, login, logout } = useAuth();
@@ -35,9 +37,10 @@ function App() {
   };
 
   return (
-    <Router>
-      <div className="App">
-        <Routes>
+    <CartProvider>
+      <Router>
+        <div className="App">
+          <Routes>
           {/* Rota principal - Landing Page */}
           <Route path="/" element={<LandingPage />} />
           
@@ -48,6 +51,7 @@ function App() {
           <Route path="/produtos" element={<PublicProductGrid />} />
           <Route path="/produto/:id" element={<ProductDetailPage />} />
           <Route path="/carrinho" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
           
           {/* Rota da área do usuário */}
           <Route 
@@ -87,9 +91,10 @@ function App() {
           
           {/* Rota catch-all - redireciona para landing */}
           <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </div>
-    </Router>
+          </Routes>
+        </div>
+      </Router>
+    </CartProvider>
   );
 }
 

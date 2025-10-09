@@ -622,14 +622,6 @@ public class ProdutoService {
     }
     
     /**
-     * Lista produtos por categoria
-     */
-    public List<Produto> listarPorCategoria(String categoria) {
-        return produtoRepository.findByStatusAndCategoriaContainingIgnoreCaseOrderByIdDesc(
-            Produto.ProdutoStatus.ATIVO, categoria);
-    }
-    
-    /**
      * Busca produtos por nome
      */
     public List<Produto> buscarPorNome(String termo) {

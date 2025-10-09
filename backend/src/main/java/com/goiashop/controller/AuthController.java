@@ -8,6 +8,7 @@ import com.goiashop.service.AuthService;
 import com.goiashop.service.ClienteService;
 import com.goiashop.service.ClienteSessionService;
 import com.goiashop.service.PasswordService;
+import com.goiashop.util.CPFValidator;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -173,6 +174,52 @@ public class AuthController {
         }
         
         return ResponseEntity.ok(response);
+    }
+    
+    /**
+     * Valida se um CPF já existe no banco de dados
+     */
+    @PostMapping("/validate-cpf")
+    public ResponseEntity<Map<String, Object>> validateCPF(@RequestBody Map<String, String> request) {
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            String cpf = request.get("cpf");
+            
+            if (cpf == null || cpf.trim().isEmpty()) {
+                response.put("valid", false);
+                response.put("message", "CPF é obrigatório");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // Validar formato do CPF
+            if (!CPFValidator.isValid(cpf)) {
+                response.put("valid", false);
+                response.put("message", "CPF inválido");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // Limpar CPF (remover formatação)
+            String cpfLimpo = CPFValidator.cleanCPF(cpf);
+            
+            // Verificar se já existe
+            boolean exists = clienteService.existsByCpf(cpfLimpo);
+            
+            if (exists) {
+                response.put("valid", false);
+                response.put("message", "CPF já está cadastrado");
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("valid", true);
+                response.put("message", "CPF disponível");
+                return ResponseEntity.ok(response);
+            }
+            
+        } catch (Exception e) {
+            response.put("valid", false);
+            response.put("message", "Erro interno: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
     }
     
 }
