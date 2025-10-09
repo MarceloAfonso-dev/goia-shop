@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EcommerceHeader from './EcommerceHeader';
+import { useAuth } from '../hooks/useAuth';
 import './AuthPage.css';
 
 const AuthPage = ({ onLoginSuccess }) => {
     const navigate = useNavigate();
+    const { user, logout } = useAuth();
     const [activeTab, setActiveTab] = useState('login'); // 'login' ou 'register'
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -296,6 +298,14 @@ const AuthPage = ({ onLoginSuccess }) => {
         }
     };
 
+    const handleLogout = () => {
+        logout();
+        setSuccess('Logout realizado com sucesso!');
+        setTimeout(() => {
+            navigate('/');
+        }, 1500);
+    };
+
     const buscarCEP = async (cep) => {
         if (cep.length === 8) {
             try {
@@ -323,6 +333,54 @@ const AuthPage = ({ onLoginSuccess }) => {
             }
         }
     };
+
+    // Se usuário já está logado, mostrar interface de logout
+    if (user) {
+        return (
+            <div className="ecommerce-page">
+                <EcommerceHeader />
+                
+                <div className="auth-container">
+                    <div className="auth-card logged-in-card">
+                        <div className="user-info">
+                            <div className="user-avatar">
+                                <div className="avatar-circle">
+                                    {user.nome?.charAt(0).toUpperCase() || 'U'}
+                                </div>
+                            </div>
+                            
+                            <h2>Olá, {user.nome}!</h2>
+                            <p className="user-email">{user.email}</p>
+                            <p className="user-type">
+                                {user.tipo === 'CLIENTE' ? '👤 Cliente' :
+                                 user.tipo === 'ADMIN' ? '👑 Administrador' : 
+                                 '📦 Estoquista'}
+                            </p>
+                            
+                            {success && <div className="success-message">{success}</div>}
+                            
+                            <div className="logout-actions">
+                                <button 
+                                    className="btn-primary btn-large logout-btn"
+                                    onClick={handleLogout}
+                                    disabled={loading}
+                                >
+                                    {loading ? 'Saindo...' : '🚪 Sair da Conta'}
+                                </button>
+                                
+                                <button 
+                                    className="btn-secondary btn-large"
+                                    onClick={() => navigate('/')}
+                                >
+                                    🏠 Voltar ao Início
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="ecommerce-page">
