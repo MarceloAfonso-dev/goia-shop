@@ -87,8 +87,11 @@ const ProductList = () => {
                 setProducts([]);
             }
         } catch (err) {
-            if (err.response?.data?.message) {
+            console.error('Erro ao carregar produtos:', err);
+            if (err.response?.data?.message && typeof err.response.data.message === 'string') {
                 setError('Erro ao carregar produtos: ' + err.response.data.message);
+            } else if (err.response?.data && typeof err.response.data === 'string') {
+                setError('Erro ao carregar produtos: ' + err.response.data);
             } else {
                 setError('Erro ao conectar com o servidor');
             }
@@ -205,6 +208,17 @@ const ProductList = () => {
 
     return (
         <div>
+            {/* Informação para Estoquista */}
+            {isEstoquista() && (
+                <Alert variant="info" className="mb-3">
+                    <Alert.Heading>👤 Área do Estoquista</Alert.Heading>
+                    <p className="mb-0">
+                        Como <strong>ESTOQUISTA</strong>, você pode apenas <strong>alterar quantidades em estoque</strong> dos produtos. 
+                        Para outras operações (cadastrar, editar, ativar/inativar), contacte um administrador.
+                    </p>
+                </Alert>
+            )}
+            
             <Row className="mb-3">
                 <Col>
                     <Card>
@@ -320,13 +334,15 @@ const ProductList = () => {
             <Card>
                 <Card.Header className="d-flex justify-content-between align-items-center">
                     <h5 className="mb-0">Lista de Produtos</h5>
-                    <Button 
-                        variant="primary" 
-                        onClick={() => setShowCadastroModal(true)}
-                        size="sm"
-                    >
-                        + Novo Produto
-                    </Button>
+                    {isAdmin() && (
+                        <Button 
+                            variant="primary" 
+                            onClick={() => setShowCadastroModal(true)}
+                            size="sm"
+                        >
+                            + Novo Produto
+                        </Button>
+                    )}
                 </Card.Header>
                 <Card.Body>
                     <div className="table-responsive">
@@ -380,55 +396,53 @@ const ProductList = () => {
                                             <td>{getStatusBadge(product.status)}</td>
                                             <td>
                                                 <div className="d-flex flex-wrap gap-1">
-                                                    <Button 
-                                                        variant="info" 
-                                                        size="sm" 
-                                                        onClick={() => window.open(`/produto/${product.id}`, '_blank')}
-                                                        title="Ver detalhes do produto"
-                                                    >
-                                                        👁️
-                                                    </Button>
-                                                    <Button 
-                                                        variant="warning" 
-                                                        size="sm" 
-                                                        title={isAdmin() ? "Editar produto (dados + imagens)" : "Apenas administradores podem editar produtos"}
-                                                        onClick={() => isAdmin() && handleEditProduct(product)}
-                                                        disabled={!isAdmin()}
-                                                        className={!isAdmin() ? 'bg-light' : ''}
-                                                    >
-                                                        ✏️
-                                                    </Button>
-                                                    {product.status === "ATIVO" ? (
-                                                        <Button 
-                                                            variant="secondary" 
-                                                            size="sm" 
-                                                            onClick={() => isAdmin() && handleDeactivate(product.id)}
-                                                            title={isAdmin() ? "Inativar produto" : "Apenas administradores podem inativar produtos"}
-                                                            disabled={!isAdmin()}
-                                                            className={!isAdmin() ? 'bg-light' : ''}
-                                                        >
-                                                            ⏸️
-                                                        </Button>
-                                                    ) : (
-                                                        <Button 
-                                                            variant="success" 
-                                                            size="sm" 
-                                                            onClick={() => isAdmin() && handleActivate(product.id)}
-                                                            title={isAdmin() ? "Ativar produto" : "Apenas administradores podem ativar produtos"}
-                                                            disabled={!isAdmin()}
-                                                            className={!isAdmin() ? 'bg-light' : ''}
-                                                        >
-                                                            ▶️
-                                                        </Button>
+                                                    {isAdmin() && (
+                                                        <>
+                                                            <Button 
+                                                                variant="info" 
+                                                                size="sm" 
+                                                                onClick={() => window.open(`/produto/${product.id}`, '_blank')}
+                                                                title="Ver detalhes do produto"
+                                                            >
+                                                                👁️
+                                                            </Button>
+                                                            <Button 
+                                                                variant="warning" 
+                                                                size="sm" 
+                                                                title="Editar produto (dados + imagens)"
+                                                                onClick={() => handleEditProduct(product)}
+                                                            >
+                                                                ✏️
+                                                            </Button>
+                                                            {product.status === "ATIVO" ? (
+                                                                <Button 
+                                                                    variant="secondary" 
+                                                                    size="sm" 
+                                                                    onClick={() => handleDeactivate(product.id)}
+                                                                    title="Inativar produto"
+                                                                >
+                                                                    ⏸️
+                                                                </Button>
+                                                            ) : (
+                                                                <Button 
+                                                                    variant="success" 
+                                                                    size="sm" 
+                                                                    onClick={() => handleActivate(product.id)}
+                                                                    title="Ativar produto"
+                                                                >
+                                                                    ▶️
+                                                                </Button>
+                                                            )}
+                                                        </>
                                                     )}
-                                                    {(isAdmin() || isEstoquista()) && (
+                                                    {isEstoquista() && (
                                                         <Button
-                                                            variant="outline-primary"
+                                                            variant="primary"
                                                             size="sm"
                                                             onClick={() => handleEditQuantidade(product)}
                                                             title="Alterar quantidade em estoque"
                                                         >
-                                                            📦
+                                                            📦 Quantidade
                                                         </Button>
                                                     )}
                                                 </div>
@@ -502,19 +516,24 @@ const ProductList = () => {
             </Card>
             
             {/* Modal de Cadastro */}
-            <ProductCadastroModal
-                show={showCadastroModal}
-                onHide={() => setShowCadastroModal(false)}
-                onSuccess={fetchProducts}
-            />
+            {/* Modal de Cadastro - Apenas para Admin */}
+            {isAdmin() && (
+                <ProductCadastroModal
+                    show={showCadastroModal}
+                    onHide={() => setShowCadastroModal(false)}
+                    onSuccess={fetchProducts}
+                />
+            )}
 
-            {/* Modal de Edição */}
-            <ProductEditModal
-                show={showEditModal}
-                onHide={() => setShowEditModal(false)}
-                product={selectedProduct}
-                onProductUpdated={fetchProducts}
-            />
+            {/* Modal de Edição - Apenas para Admin */}
+            {isAdmin() && (
+                <ProductEditModal
+                    show={showEditModal}
+                    onHide={() => setShowEditModal(false)}
+                    product={selectedProduct}
+                    onProductUpdated={fetchProducts}
+                />
+            )}
 
             {/* Product Preview - Removido, agora usa página dedicada */}
             

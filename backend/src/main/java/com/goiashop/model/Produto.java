@@ -17,6 +17,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -42,7 +43,7 @@ public class Produto {
     private java.math.BigDecimal preco;
     
     @NotNull(message = "Estoque é obrigatório")
-    @Positive(message = "Estoque deve ser positivo")
+    @Min(value = 0, message = "Estoque deve ser maior ou igual a zero")
     @Column(name = "quantidade_estoque", nullable = false)
     private Integer quantidadeEstoque;
     

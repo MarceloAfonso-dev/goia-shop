@@ -46,23 +46,35 @@ const ProductDetailPage = () => {
 
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
-    return `http://localhost:8080/api/produtos/imagem/${imagePath}`;
+    // Se já é uma URL completa, usar diretamente
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    // Caso contrário, construir a URL
+    return `http://localhost:8080/uploads/${imagePath}`;
   };
 
   const getMainImage = () => {
     if (!produto?.imagens || produto.imagens.length === 0) return null;
     
     // Procura pela imagem principal
-    const mainImage = produto.imagens.find(img => img.principal === true || img.principal === 1);
-    if (mainImage) return getImageUrl(mainImage.caminho);
+    const mainImage = produto.imagens.find(img => img.isPrincipal === true || img.isPrincipal === 1);
+    if (mainImage) {
+      // Prioriza urlArquivo se disponível, senão usa caminhoArquivo
+      return getImageUrl(mainImage.urlArquivo || mainImage.caminhoArquivo);
+    }
     
     // Se não encontrar, usa a primeira imagem
-    return getImageUrl(produto.imagens[0].caminho);
+    const firstImage = produto.imagens[0];
+    return getImageUrl(firstImage.urlArquivo || firstImage.caminhoArquivo);
   };
 
   const getAllImages = () => {
     if (!produto?.imagens) return [];
-    return produto.imagens.map(img => getImageUrl(img.caminho)).filter(Boolean);
+    return produto.imagens
+      .sort((a, b) => (a.ordem || 0) - (b.ordem || 0)) // Ordenar por ordem
+      .map(img => getImageUrl(img.urlArquivo || img.caminhoArquivo))
+      .filter(Boolean);
   };
 
   const handleImageChange = (index) => {

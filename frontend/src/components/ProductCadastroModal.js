@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Form, Button, Alert, Row, Col, Card } from 'react-bootstrap';
 import api from '../utils/api';
+import { useAuth } from '../hooks/useAuth';
 
 const ProductCadastroModal = ({ show, onHide, onSuccess }) => {
+    const { isAdmin, isEstoquista } = useAuth();
+    
     const [formData, setFormData] = useState({
         nome: '',
         descricao: '',
         preco: '',
         quantidadeEstoque: '',
         avaliacao: '',
-        status: 'ATIVO'
+        status: 'ATIVO' // Admin sempre cadastra como ativo
     });
     const [files, setFiles] = useState([]);
     const [principalImageIndex, setPrincipalImageIndex] = useState(0);
@@ -64,7 +67,9 @@ const ProductCadastroModal = ({ show, onHide, onSuccess }) => {
         }
 
         console.log('📁 Definindo files com:', selectedFiles.length, 'arquivos');
-        setFiles(selectedFiles);
+        console.log('📁 Testando se o primeiro arquivo é válido:', selectedFiles[0] instanceof File);
+        
+        setFiles([...selectedFiles]); // Criar nova array para evitar problemas de referência
         setError('');
         setPrincipalImageIndex(0); // Primeira imagem como principal por padrão
         
@@ -99,7 +104,8 @@ const ProductCadastroModal = ({ show, onHide, onSuccess }) => {
                 throw new Error('Preço deve ser maior que zero');
             }
             
-            if (!formData.quantidadeEstoque || parseInt(formData.quantidadeEstoque) <= 0) {
+            // Validação de quantidade apenas para não-admin
+            if (!isAdmin() && (!formData.quantidadeEstoque || parseInt(formData.quantidadeEstoque) <= 0)) {
                 throw new Error('Quantidade em estoque deve ser maior que zero');
             }
             
@@ -112,9 +118,9 @@ const ProductCadastroModal = ({ show, onHide, onSuccess }) => {
                 nome: formData.nome.trim(),
                 descricao: formData.descricao.trim(),
                 preco: parseFloat(formData.preco),
-                quantidadeEstoque: parseInt(formData.quantidadeEstoque),
+                quantidadeEstoque: isAdmin() ? 0 : parseInt(formData.quantidadeEstoque),
                 avaliacao: formData.avaliacao ? parseFloat(formData.avaliacao) : null,
-                status: formData.status
+                status: 'ATIVO' // Admin sempre cadastra produto ativo
             };
 
             const produtoResponse = await api.post('/produtos', produtoData);
@@ -123,6 +129,12 @@ const ProductCadastroModal = ({ show, onHide, onSuccess }) => {
             // 2. Fazer upload das imagens (se houver)
             if (files.length > 0) {
                 console.log(`Iniciando upload de ${files.length} imagens para produto ID ${produto.id}`);
+                console.log('🔍 Estado dos arquivos antes do upload:', files.map(f => ({ 
+                    name: f.name, 
+                    type: f.type, 
+                    size: f.size,
+                    constructor: f.constructor.name
+                })));
                 
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
@@ -134,14 +146,38 @@ const ProductCadastroModal = ({ show, onHide, onSuccess }) => {
                     formDataImg.append('ordem', i.toString());
 
                     console.log(`Fazendo upload da imagem ${i + 1}/${files.length}: ${file.name}`);
+                    console.log('🔍 Debug do arquivo:', {
+                        name: file.name,
+                        type: file.type,
+                        size: file.size,
+                        lastModified: file.lastModified
+                    });
+                    console.log('🔍 FormData entries:', Array.from(formDataImg.entries()));
+                    console.log('🔍 File object:', file);
                     
                     try {
-                        // Não definir Content-Type para FormData - o browser define automaticamente
-                        const uploadResponse = await api.post(`/produtos/${produto.id}/images`, formDataImg);
-                        console.log(`Upload da imagem ${i + 1} concluído:`, uploadResponse.data);
+                        // Usar fetch diretamente para ter controle total do upload
+                        const token = localStorage.getItem('token');
+                        const uploadResponse = await fetch(`http://localhost:8080/api/produtos/${produto.id}/images`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                                // NÃO definir Content-Type - deixar o browser fazer automaticamente
+                            },
+                            body: formDataImg
+                        });
+                        
+                        if (!uploadResponse.ok) {
+                            const errorText = await uploadResponse.text();
+                            throw new Error(`HTTP ${uploadResponse.status}: ${errorText}`);
+                        }
+                        
+                        const responseData = await uploadResponse.json();
+                        console.log(`Upload da imagem ${i + 1} concluído:`, responseData);
                     } catch (uploadError) {
                         console.error(`Erro no upload da imagem ${i + 1}:`, uploadError);
-                        throw new Error(`Erro ao fazer upload da imagem ${file.name}: ${uploadError.response?.data || uploadError.message}`);
+                        const uploadErrorMsg = uploadError.response?.data || uploadError.message || 'Erro desconhecido';
+                        throw new Error(`Erro ao fazer upload da imagem ${file.name}: ${uploadErrorMsg}`);
                     }
                 }
                 
@@ -163,7 +199,15 @@ const ProductCadastroModal = ({ show, onHide, onSuccess }) => {
             }, 500);
             
         } catch (err) {
-            const errorMsg = err.response?.data || err.message || 'Erro ao cadastrar produto';
+            console.error('Erro no cadastro:', err);
+            let errorMsg = 'Erro ao cadastrar produto';
+            
+            if (err.response?.data?.message && typeof err.response.data.message === 'string') {
+                errorMsg = err.response.data.message;
+            } else if (typeof err.message === 'string') {
+                errorMsg = err.message;
+            }
+            
             setError(errorMsg);
         } finally {
             setLoading(false);
@@ -181,7 +225,7 @@ const ProductCadastroModal = ({ show, onHide, onSuccess }) => {
             nome: '',
             descricao: '',
             preco: '',
-            quantidadeEstoque: '',
+            quantidadeEstoque: '', // Admin cadastra com 0, estoquista define depois
             avaliacao: '',
             status: 'ATIVO'
         });
@@ -210,7 +254,8 @@ const ProductCadastroModal = ({ show, onHide, onSuccess }) => {
             setError('Preço deve ser maior que zero');
             return;
         }
-        if (!formData.quantidadeEstoque || parseInt(formData.quantidadeEstoque) <= 0) {
+        // Admin não precisa definir quantidade (será sempre 0)
+        if (!isAdmin() && (!formData.quantidadeEstoque || parseInt(formData.quantidadeEstoque) <= 0)) {
             setError('Quantidade em estoque deve ser maior que zero');
             return;
         }
@@ -280,12 +325,19 @@ const ProductCadastroModal = ({ show, onHide, onSuccess }) => {
                                         <Form.Control
                                             type="number"
                                             name="quantidadeEstoque"
-                                            value={formData.quantidadeEstoque}
+                                            value={isAdmin() ? "0" : formData.quantidadeEstoque}
                                             onChange={handleInputChange}
-                                            required
+                                            required={!isAdmin()}
                                             min="1"
-                                            placeholder="1"
+                                            placeholder={isAdmin() ? "Definido pelo estoquista" : "1"}
+                                            disabled={isAdmin()}
+                                            className={isAdmin() ? "bg-light" : ""}
                                         />
+                                        {isAdmin() && (
+                                            <Form.Text className="text-muted">
+                                                Apenas estoquistas podem definir quantidades
+                                            </Form.Text>
+                                        )}
                                     </Form.Group>
                                 </Col>
                                 <Col md={4}>
@@ -308,14 +360,30 @@ const ProductCadastroModal = ({ show, onHide, onSuccess }) => {
                                 <Col md={4}>
                                     <Form.Group className="mb-3">
                                         <Form.Label>Status</Form.Label>
-                                        <Form.Select
-                                            name="status"
-                                            value={formData.status}
-                                            onChange={handleInputChange}
-                                        >
-                                            <option value="ATIVO">Ativo</option>
-                                            <option value="INATIVO">Inativo</option>
-                                        </Form.Select>
+                                        {isAdmin() ? (
+                                            // Admin sempre cadastra como ATIVO
+                                            <Form.Control
+                                                type="text"
+                                                value="ATIVO"
+                                                disabled
+                                                className="bg-light"
+                                            />
+                                        ) : (
+                                            // Estoquista pode escolher o status
+                                            <Form.Select
+                                                name="status"
+                                                value={formData.status}
+                                                onChange={handleInputChange}
+                                            >
+                                                <option value="ATIVO">Ativo</option>
+                                                <option value="INATIVO">Inativo</option>
+                                            </Form.Select>
+                                        )}
+                                        {isAdmin() && (
+                                            <Form.Text className="text-muted">
+                                                Administradores sempre cadastram produtos ativos
+                                            </Form.Text>
+                                        )}
                                     </Form.Group>
                                 </Col>
                             </Row>

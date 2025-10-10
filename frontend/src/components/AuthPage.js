@@ -153,11 +153,16 @@ const AuthPage = ({ onLoginSuccess }) => {
                     navigate('/minha-conta');
                 }
             } else {
-                setError(result.message || 'Email ou senha incorretos');
+                const errorMsg = typeof result.message === 'string' ? result.message : 'Email ou senha incorretos';
+                setError(errorMsg);
             }
         } catch (err) {
             console.error('Erro no login:', err);
-            setError('Erro ao conectar com o servidor');
+            if (err.response?.data?.message && typeof err.response.data.message === 'string') {
+                setError(err.response.data.message);
+            } else {
+                setError('Erro ao conectar com o servidor');
+            }
         } finally {
             setLoading(false);
         }
@@ -305,11 +310,16 @@ const AuthPage = ({ onLoginSuccess }) => {
                     }
                 });
             } else {
-                setError(result.message || 'Erro ao criar conta');
+                const errorMsg = typeof result.message === 'string' ? result.message : 'Erro ao criar conta';
+                setError(errorMsg);
             }
         } catch (err) {
             console.error('Erro no cadastro:', err);
-            setError('Erro ao conectar com o servidor');
+            if (err.response?.data?.message && typeof err.response.data.message === 'string') {
+                setError(err.response.data.message);
+            } else {
+                setError('Erro ao conectar com o servidor');
+            }
         } finally {
             setLoading(false);
         }

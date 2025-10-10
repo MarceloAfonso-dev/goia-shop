@@ -144,18 +144,44 @@ public class ImageStorageFilesystem {
             byte[] header = new byte[12];
             int bytesRead = file.getInputStream().read(header);
             
+            System.out.println("🔍 Validando arquivo: " + file.getOriginalFilename());
+            System.out.println("🔍 Tamanho do arquivo: " + file.getSize());
+            System.out.println("🔍 Content-Type: " + file.getContentType());
+            System.out.println("🔍 Bytes lidos: " + bytesRead);
+            
             if (bytesRead < 4) {
+                System.out.println("❌ Arquivo muito pequeno: " + bytesRead + " bytes");
                 throw new IllegalArgumentException("Arquivo corrompido ou muito pequeno");
             }
             
+            // Log dos primeiros bytes em hex
+            StringBuilder hexString = new StringBuilder();
+            for (int i = 0; i < Math.min(bytesRead, 12); i++) {
+                hexString.append(String.format("%02X ", header[i]));
+            }
+            System.out.println("🔍 Magic bytes: " + hexString.toString());
+            
             // Verificar magic bytes para diferentes formatos
-            if (isJpeg(header) || isPng(header) || isGif(header) || isWebp(header)) {
+            boolean isJpegValid = isJpeg(header);
+            boolean isPngValid = isPng(header);
+            boolean isGifValid = isGif(header);
+            boolean isWebpValid = isWebp(header);
+            
+            System.out.println("🔍 JPEG válido: " + isJpegValid);
+            System.out.println("🔍 PNG válido: " + isPngValid);
+            System.out.println("🔍 GIF válido: " + isGifValid);
+            System.out.println("🔍 WEBP válido: " + isWebpValid);
+            
+            if (isJpegValid || isPngValid || isGifValid || isWebpValid) {
+                System.out.println("✅ Arquivo é uma imagem válida!");
                 return; // Arquivo válido
             }
             
+            System.out.println("❌ Nenhum formato válido detectado!");
             throw new IllegalArgumentException("Arquivo não é uma imagem válida");
             
         } catch (IOException e) {
+            System.out.println("❌ Erro de IO: " + e.getMessage());
             throw new IllegalArgumentException("Erro ao ler cabeçalho do arquivo");
         }
     }

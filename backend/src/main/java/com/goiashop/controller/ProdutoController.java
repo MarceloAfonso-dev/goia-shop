@@ -337,6 +337,11 @@ public class ProdutoController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
+            e.printStackTrace(); // Log completo do erro
+            System.out.println("Erro detalhado: " + e.getClass().getName() + " - " + e.getMessage());
+            if (e.getCause() != null) {
+                System.out.println("Causa: " + e.getCause().getClass().getName() + " - " + e.getCause().getMessage());
+            }
             return ResponseEntity.badRequest().body("Erro ao atualizar produto: " + e.getMessage());
         }
     }

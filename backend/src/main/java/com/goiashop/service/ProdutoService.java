@@ -352,7 +352,10 @@ public class ProdutoService {
         produto.setDescricao(request.getDescricao());
         produto.setPreco(BigDecimal.valueOf(request.getPreco()));
         produto.setQuantidadeEstoque(request.getQuantidadeEstoque());
-        produto.setStatus(Produto.ProdutoStatus.valueOf(request.getStatus()));
+        // Manter status atual se não foi fornecido um novo
+        if (request.getStatus() != null) {
+            produto.setStatus(Produto.ProdutoStatus.valueOf(request.getStatus()));
+        }
         produto.setAvaliacao(request.getAvaliacao());
         produto.setUpdatedAt(LocalDateTime.now());
         produto.setUpdatedBy(userId);
@@ -383,7 +386,11 @@ public class ProdutoService {
      */
     @Transactional
     public void gerenciarImagensProduto(Produto produto, List<ProdutoImagemRequest> imagensRequest, Long userId) {
+        System.out.println("Gerenciando imagens para produto ID: " + produto.getId());
+        System.out.println("Quantidade de imagens na request: " + imagensRequest.size());
+        
         for (ProdutoImagemRequest imgRequest : imagensRequest) {
+            System.out.println("Processando imagem ID: " + imgRequest.getImagemId());
             Optional<ProdutoImagem> imagemOpt = produtoImagemRepository.findById(imgRequest.getImagemId());
             if (imagemOpt.isPresent()) {
                 ProdutoImagem imagem = imagemOpt.get();
@@ -409,24 +416,17 @@ public class ProdutoService {
                         // Remover principal de todas as outras imagens do produto e reordenar
                         List<ProdutoImagem> todasImagens = produtoImagemRepository.findByProdutoIdOrderByOrdemAsc(produto.getId());
                         
-                        // Reordenar: nova principal vai para posição 0, outras seguem
-                        int novaOrdem = 0;
+                        // Simples: apenas remover principal de todas as outras
                         for (ProdutoImagem img : todasImagens) {
-                            if (img.getId().equals(imagem.getId())) {
-                                // Esta é a nova imagem principal - vai para posição 0
-                                img.setIsPrincipal(true);
-                                img.setOrdem(0);
-                            } else {
-                                // Outras imagens - remover principal e ajustar ordem
+                            if (!img.getId().equals(imagem.getId())) {
+                                // Outras imagens - apenas remover principal
                                 img.setIsPrincipal(false);
-                                img.setOrdem(++novaOrdem);
+                                produtoImagemRepository.save(img);
                             }
-                            produtoImagemRepository.save(img);
                         }
                         
                         // Atualizar a imagem atual
                         imagem.setIsPrincipal(true);
-                        imagem.setOrdem(0);
                     } else {
                         imagem.setIsPrincipal(false);
                     }
@@ -440,6 +440,9 @@ public class ProdutoService {
                 newData.put("is_principal", imagem.getIsPrincipal());
                 newData.put("ordem", imagem.getOrdem());
                 auditLogService.logUpdate(userId, "produto_imagens", imagem.getId(), oldData, newData);
+            } else {
+                System.out.println("❌ Imagem ID " + imgRequest.getImagemId() + " não encontrada no banco de dados!");
+                throw new IllegalArgumentException("Imagem ID " + imgRequest.getImagemId() + " não encontrada");
             }
         }
     }

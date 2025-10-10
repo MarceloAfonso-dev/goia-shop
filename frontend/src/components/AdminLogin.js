@@ -59,12 +59,15 @@ const AdminLogin = () => {
                     setError('Acesso negado. Área restrita para funcionários (ADMIN/ESTOQUISTA).');
                 }
             } else {
-                setError(response.data.message || 'Credenciais inválidas');
+                const errorMsg = typeof response.data.message === 'string' ? response.data.message : 'Credenciais inválidas';
+                setError(errorMsg);
             }
         } catch (err) {
             console.error('Erro no login admin:', err);
             if (err.response?.status === 401) {
                 setError('Email ou senha incorretos');
+            } else if (err.response?.data?.message && typeof err.response.data.message === 'string') {
+                setError(err.response.data.message);
             } else if (err.code === 'ECONNREFUSED') {
                 setError('Servidor offline. Verifique se o backend está rodando.');
             } else {

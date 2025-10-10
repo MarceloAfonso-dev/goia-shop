@@ -82,15 +82,14 @@ const Dashboard = ({ user, onLogout }) => {
 
                     {user.grupo === 'ESTOQUISTA' && (
                         <div className="product-card">
-                            <div className="icon" style={{ fontSize: '20px', marginBottom: '10px' }}>📊</div>
-                            <h3>Estatísticas</h3>
-                            <p>Visualize estatísticas de produtos e estoque</p>
+                            <div className="icon" style={{ fontSize: '20px', marginBottom: '10px' }}>�</div>
+                            <h3>Controle de Estoque</h3>
+                            <p>Gerencie quantidades dos produtos em estoque</p>
                             <button 
-                                className="btn btn-secondary"
-                                disabled
+                                className="btn btn-primary"
                                 style={{ width: '100%' }}
                             >
-                                Em Desenvolvimento
+                                Gerenciar Estoque
                             </button>
                         </div>
                     )}
@@ -100,13 +99,19 @@ const Dashboard = ({ user, onLogout }) => {
                     <div className="icon" style={{ fontSize: '20px', marginBottom: '10px' }}>📋</div>
                     <h3>Instruções</h3>
                     <p>
-                        <strong>1.</strong> Para listar produtos, clique em "Listar Produtos"<br/>
-                        {user.grupo === 'ADMIN' && (
+                        {user.grupo === 'ADMIN' ? (
                             <>
+                                <strong>1.</strong> Para listar produtos, clique em "Listar Produtos"<br/>
                                 <strong>2.</strong> Para listar usuários, clique em "Listar Usuários"<br/>
+                                <strong>3.</strong> Para voltar ao menu, use o botão "Voltar ao Menu"
+                            </>
+                        ) : (
+                            <>
+                                <strong>1.</strong> Para gerenciar estoque, clique em "Gerenciar Estoque"<br/>
+                                <strong>2.</strong> Como estoquista, você pode apenas alterar quantidades<br/>
+                                <strong>3.</strong> Para voltar ao menu, use o botão "Voltar ao Menu"
                             </>
                         )}
-                        <strong>{user.grupo === 'ADMIN' ? '3.' : '2.'}</strong> Para voltar ao menu, use o botão "Voltar ao Menu"
                     </p>
                 </div>
             </div>
