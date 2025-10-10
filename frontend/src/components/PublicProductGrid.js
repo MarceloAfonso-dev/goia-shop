@@ -30,6 +30,251 @@ const CartIcon = ({ size = 24 }) => (
   />
 );
 
+// Componente de carrossel de imagens
+const ImageCarousel = ({ product, getImageUrl }) => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  // Combinar todas as imagens (principal + outras)
+  const allImages = [];
+  
+  // Usar todas as imagens do array imagens (incluindo a principal)
+  if (product.imagens && product.imagens.length > 0) {
+    // Ordenar para colocar a imagem principal primeiro
+    const sortedImages = [...product.imagens].sort((a, b) => {
+      if (a.isPrincipal && !b.isPrincipal) return -1;
+      if (!a.isPrincipal && b.isPrincipal) return 1;
+      return a.ordem - b.ordem;
+    });
+    
+    sortedImages.forEach(img => {
+      allImages.push({
+        url: getImageUrl(img.urlArquivo || img.caminhoArquivo),
+        isPrincipal: img.isPrincipal,
+        nome: img.nomeArquivo,
+        id: img.id
+      });
+    });
+  } else if (product.imagemPrincipal?.urlArquivo) {
+    // Fallback: usar apenas a imagem principal se não há array de imagens
+    allImages.push({
+      url: getImageUrl(product.imagemPrincipal.urlArquivo),
+      isPrincipal: true,
+      nome: product.imagemPrincipal.nomeArquivo,
+      id: product.imagemPrincipal.id
+    });
+  }
+  
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
+  };
+  
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+  };
+  
+  const goToImage = (index) => {
+    setCurrentImageIndex(index);
+  };
+  
+  // Debug log
+  console.log('ImageCarousel - Product:', product.nome);
+  console.log('ImageCarousel - AllImages:', allImages);
+  console.log('ImageCarousel - CurrentIndex:', currentImageIndex);
+  
+  if (allImages.length === 0) {
+    return (
+      <div style={{ 
+        width: '100%', 
+        height: '300px', 
+        backgroundColor: '#f0f0f0', 
+        borderRadius: '8px', 
+        marginBottom: '24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#999',
+        fontSize: '48px'
+      }}>
+        📦
+      </div>
+    );
+  }
+  
+  return (
+    <div style={{ marginBottom: '24px' }}>
+      {/* Imagem principal */}
+      <div style={{ 
+        position: 'relative',
+        width: '100%', 
+        height: '300px', 
+        backgroundColor: '#f0f0f0', 
+        borderRadius: '8px', 
+        marginBottom: '16px',
+        backgroundImage: `url(${allImages[currentImageIndex].url})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      }}>
+        {/* Botões de navegação (apenas se houver mais de uma imagem) */}
+        {allImages.length > 1 && (
+          <>
+            <button
+              onClick={prevImage}
+              style={{
+                position: 'absolute',
+                left: '10px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '50%',
+                width: '45px',
+                height: '45px',
+                fontSize: '20px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+                e.target.style.transform = 'translateY(-50%) scale(1.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+                e.target.style.transform = 'translateY(-50%) scale(1)';
+              }}
+            >
+              ‹
+            </button>
+            <button
+              onClick={nextImage}
+              style={{
+                position: 'absolute',
+                right: '10px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '50%',
+                width: '45px',
+                height: '45px',
+                fontSize: '20px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+                e.target.style.transform = 'translateY(-50%) scale(1.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+                e.target.style.transform = 'translateY(-50%) scale(1)';
+              }}
+            >
+              ›
+            </button>
+          </>
+        )}
+        
+        {/* Contador de imagens */}
+        {allImages.length > 1 && (
+          <div style={{
+            position: 'absolute',
+            bottom: '10px',
+            right: '10px',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            color: 'white',
+            padding: '4px 8px',
+            borderRadius: '12px',
+            fontSize: '12px'
+          }}>
+            {currentImageIndex + 1} / {allImages.length}
+          </div>
+        )}
+      </div>
+      
+      {/* Miniaturas (apenas se houver mais de uma imagem) */}
+      {allImages.length > 1 && (
+        <div style={{ 
+          display: 'flex', 
+          gap: '12px', 
+          overflowX: 'auto',
+          paddingBottom: '8px',
+          paddingTop: '8px',
+          justifyContent: allImages.length <= 5 ? 'center' : 'flex-start'
+        }}>
+          {allImages.map((image, index) => (
+            <div
+              key={`thumb-${image.id}-${index}`}
+              onClick={() => goToImage(index)}
+              style={{
+                width: '70px',
+                height: '70px',
+                minWidth: '70px',
+                backgroundColor: '#f0f0f0',
+                borderRadius: '8px',
+                backgroundImage: `url(${image.url})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                cursor: 'pointer',
+                border: currentImageIndex === index ? '3px solid #FF4F5A' : '3px solid #e0e0e0',
+                opacity: currentImageIndex === index ? 1 : 0.6,
+                transition: 'all 0.3s ease',
+                boxShadow: currentImageIndex === index ? '0 4px 12px rgba(255, 79, 90, 0.3)' : '0 2px 6px rgba(0,0,0,0.1)',
+                transform: currentImageIndex === index ? 'scale(1.05)' : 'scale(1)',
+                position: 'relative'
+              }}
+              onMouseEnter={(e) => {
+                if (currentImageIndex !== index) {
+                  e.target.style.opacity = '0.8';
+                  e.target.style.transform = 'scale(1.02)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (currentImageIndex !== index) {
+                  e.target.style.opacity = '0.6';
+                  e.target.style.transform = 'scale(1)';
+                }
+              }}
+            >
+              {/* Indicador de imagem principal */}
+              {image.isPrincipal && (
+                <div style={{
+                  position: 'absolute',
+                  top: '-6px',
+                  right: '-6px',
+                  backgroundColor: '#FF4F5A',
+                  color: 'white',
+                  borderRadius: '50%',
+                  width: '20px',
+                  height: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '10px',
+                  fontWeight: 'bold',
+                  border: '2px solid white',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }}>
+                  ★
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
@@ -369,23 +614,7 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
             </div>
             
             <div style={{ padding: '30px' }}>
-              <div style={{ 
-                width: '100%', 
-                height: '300px', 
-                backgroundColor: '#f0f0f0', 
-                borderRadius: '8px', 
-                marginBottom: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundImage: getImageUrl(selectedProduct.imagemPrincipal?.urlArquivo) ? `url(${getImageUrl(selectedProduct.imagemPrincipal.urlArquivo)})` : 'none',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                color: '#999',
-                fontSize: '48px'
-              }}>
-                {!selectedProduct.imagemPrincipal?.urlArquivo && '📦'}
-              </div>
+              <ImageCarousel product={selectedProduct} getImageUrl={getImageUrl} />
               
               <h2 style={{ 
                 fontSize: '28px', 
@@ -427,6 +656,7 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
                     padding: '16px 32px',
                     backgroundColor: '#28a745',
                     border: 'none',
+                    flex: 1,
                     minWidth: '200px',
                     display: 'flex',
                     alignItems: 'center',
@@ -438,15 +668,9 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
                   Adicionar ao Carrinho
                 </button>
                 <button 
-                  className="btn btn-primary"
-                  style={{ flex: 1, minWidth: '200px' }}
-                  onClick={() => alert('Funcionalidade de compra será implementada em breve!')}
-                >
-                  Comprar Agora
-                </button>
-                <button 
                   className="btn btn-secondary"
                   onClick={closeProductDetails}
+                  style={{ minWidth: '120px' }}
                 >
                   Fechar
                 </button>
