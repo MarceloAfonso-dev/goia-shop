@@ -42,7 +42,19 @@ public class ProdutoController {
             return ResponseEntity.ok(response);
         } else {
             // Compatibilidade com versão anterior (sem paginação)
-            List<Produto> produtos = produtoService.listarTodos();
+            // Para clientes públicos, sempre filtrar apenas produtos ativos
+            List<Produto> produtos;
+            if (status != null) {
+                try {
+                    Produto.ProdutoStatus produtoStatus = Produto.ProdutoStatus.valueOf(status);
+                    produtos = produtoService.listarPorStatus(produtoStatus);
+                } catch (IllegalArgumentException e) {
+                    return ResponseEntity.badRequest().body("Status inválido: " + status);
+                }
+            } else {
+                // Se não especificou status, assumir ATIVO para compatibilidade
+                produtos = produtoService.listarPorStatus(Produto.ProdutoStatus.ATIVO);
+            }
             return ResponseEntity.ok(produtos);
         }
     }

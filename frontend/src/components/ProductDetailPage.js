@@ -127,6 +127,11 @@ const ProductDetailPage = () => {
     }).format(price || 0);
   };
 
+  const formatRating = (rating) => {
+    if (!rating) return 0;
+    return Math.round(rating); // Arredondar para inteiro
+  };
+
   if (loading) {
     return (
       <div className="ecommerce-page">
@@ -211,7 +216,7 @@ const ProductDetailPage = () => {
               <h1 className="product-title">{produto.nome}</h1>
               <div className="product-rating">
                 <span className="stars">⭐⭐⭐⭐⭐</span>
-                <span className="rating-count">(4.5)</span>
+                <span className="rating-count">({formatRating(produto.avaliacao)})</span>
               </div>
             </div>
 

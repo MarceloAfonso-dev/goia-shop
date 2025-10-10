@@ -38,6 +38,12 @@ const PublicProductGrid = () => {
     }).format(price);
   };
 
+  // Função para formatar avaliação como inteiro
+  const formatRating = (rating) => {
+    if (!rating) return 0;
+    return Math.round(rating); // Arredondar para inteiro
+  };
+
   // Função para navegar para detalhes do produto
   const handleViewDetails = (productId) => {
     navigate(`/produto/${productId}`);
@@ -156,8 +162,8 @@ const PublicProductGrid = () => {
                       {/* Avaliação */}
                       {product.avaliacao && (
                         <div className="product-rating">
-                          {'⭐'.repeat(Math.floor(product.avaliacao))}
-                          <span className="rating-text">({product.avaliacao})</span>
+                          {'⭐'.repeat(Math.floor(formatRating(product.avaliacao)))}
+                          <span className="rating-text">({formatRating(product.avaliacao)})</span>
                         </div>
                       )}
 
