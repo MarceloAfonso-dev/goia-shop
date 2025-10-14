@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '../utils/api';
 import './LandingPage.css';
 
-const LandingPage = ({ onLoginClick, onGoToMarketplace }) => {
+const LandingPage = () => {
+  const navigate = useNavigate();
   const [showPopup, setShowPopup] = useState(false);
   const [popupData, setPopupData] = useState({ title: '', description: '' });
   const [openFaq, setOpenFaq] = useState(null);
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
 
   const handlePopupOpen = (title, description) => {
     setPopupData({ title, description });
@@ -83,29 +88,52 @@ const LandingPage = ({ onLoginClick, onGoToMarketplace }) => {
     }
   ];
 
-  const featuredProducts = [
-    {
-      image: 'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=400&h=300&fit=crop',
-      title: 'iPhone pra Hoje',
-      description: 'O iPhone mais novo com desconto especial para clientes GOIA. Aproveite agora!',
-      linkTitle: 'iPhone',
-      linkDescription: 'Apple iPhone 15 Pro Max com desconto exclusivo GOIA.'
-    },
-    {
-      image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=300&fit=crop',
-      title: 'Produtos Samsung',
-      description: 'Toda linha Samsung com os melhores preços e parcelamento exclusivo.',
-      linkTitle: 'Produtos Samsung',
-      linkDescription: 'Samsung Galaxy, TVs, fones e mais com cashback GOIA.'
-    },
-    {
-      image: 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=400&h=300&fit=crop',
-      title: 'Ganhe R$ 1.500 de Boas-Vindas',
-      description: 'Abra sua conta no GOIA Bank e receba R$ 1.500 para usar no GOIA Shop.',
-      linkTitle: 'Conta GOIA Bank',
-      linkDescription: 'Conta digital gratuita com R$ 1.500 de bônus para suas compras.'
-    }
-  ];
+  // Função para buscar produtos reais do backend
+  useEffect(() => {
+    const fetchFeaturedProducts = async () => {
+      try {
+        setLoadingProducts(true);
+        const response = await api.get('/produtos?status=ATIVO&page=0&pageSize=4');
+        
+        if (response.data && response.data.content) {
+          // Transformar produtos do backend no formato esperado pela UI
+          const products = response.data.content.slice(0, 4).map(product => ({
+            id: product.id,
+            image: product.imagemUrl || 'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=400&h=300&fit=crop',
+            title: product.nome,
+            description: product.descricao,
+            linkTitle: product.nome,
+            linkDescription: `${product.nome} - R$ ${product.preco?.toFixed(2).replace('.', ',')}`,
+            produto: product // Manter referência ao produto original
+          }));
+          setFeaturedProducts(products);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar produtos:', error);
+        // Fallback para produtos estáticos em caso de erro
+        setFeaturedProducts([
+          {
+            image: 'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=400&h=300&fit=crop',
+            title: 'iPhone pra Hoje',
+            description: 'O iPhone mais novo com desconto especial para clientes GOIA. Aproveite agora!',
+            linkTitle: 'iPhone',
+            linkDescription: 'Apple iPhone 15 Pro Max com desconto exclusivo GOIA.'
+          },
+          {
+            image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=300&fit=crop',
+            title: 'Produtos Samsung',
+            description: 'Toda linha Samsung com os melhores preços e parcelamento exclusivo.',
+            linkTitle: 'Produtos Samsung',
+            linkDescription: 'Samsung Galaxy, TVs, fones e mais com cashback GOIA.'
+          }
+        ]);
+      } finally {
+        setLoadingProducts(false);
+      }
+    };
+
+    fetchFeaturedProducts();
+  }, []);
 
   const faqs = [
     {
@@ -137,14 +165,19 @@ const LandingPage = ({ onLoginClick, onGoToMarketplace }) => {
         <nav className="navi">
           <a href="#benefits">Para você</a>
           <a href="#categories">Vantagens</a>
-          <a href="#" onClick={(e) => { e.preventDefault(); onGoToMarketplace(); }}>Marketplace</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/produtos'); }}>Produtos</a>
           <a href="#faq">Ajuda</a>
         </nav>
         <div className="header-right">
-          <button className="btn-login" onClick={onLoginClick}>
+          <button className="btn-login" onClick={() => navigate('/login')}>
             Login
           </button>
           <button className="btn-cta">Abrir conta</button>
+          <small style={{marginLeft: '10px'}}>
+            <a href="/admin" style={{color: '#666', fontSize: '12px', textDecoration: 'none'}}>
+              Admin
+            </a>
+          </small>
         </div>
       </header>
 
@@ -158,7 +191,7 @@ const LandingPage = ({ onLoginClick, onGoToMarketplace }) => {
         <div className="hero-content">
           <h1>GOIA Shop</h1>
           <p>Um shopping completo online, com cashback, ofertas exclusivas e produtos incríveis para toda família.</p>
-          <button className="btn-hero" onClick={onGoToMarketplace}>
+          <button className="btn-hero" onClick={() => navigate('/produtos')}>
             Acessar Marketplace
           </button>
         </div>

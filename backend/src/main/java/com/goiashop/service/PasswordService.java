@@ -19,4 +19,13 @@ public class PasswordService {
     public boolean verifyPassword(String plainPassword, String bcryptFromDatabase) {
         return bCryptPasswordEncoder.matches(plainPassword, bcryptFromDatabase);
     }
+    
+    // Métodos alternativos para compatibilidade
+    public String hashPassword(String plainPassword) {
+        return encryptPassword(plainPassword);
+    }
+    
+    public boolean checkPassword(String plainPassword, String hashedPassword) {
+        return verifyPassword(plainPassword, hashedPassword);
+    }
 }

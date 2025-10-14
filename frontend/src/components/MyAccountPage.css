@@ -1,0 +1,385 @@
+/* MyAccountPage.css */
+
+.account-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 30px 25px;
+}
+
+/* Account Header */
+.account-header {
+  text-align: center;
+  margin-bottom: 40px;
+  background: white;
+  padding: 40px 30px;
+  border-radius: 25px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+}
+
+.account-header h1 {
+  color: #FF4F5A;
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, #FF4F5A, #FF8E95);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.account-header p {
+  color: #64748b;
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+/* Account Content Layout */
+.account-content {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 40px;
+}
+
+/* Sidebar */
+.account-sidebar {
+  background: white;
+  border-radius: 25px;
+  padding: 30px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+  height: fit-content;
+  position: sticky;
+  top: 100px;
+}
+
+/* User Info */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 30px;
+  padding-bottom: 25px;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #FF4F5A, #FF8E95);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  box-shadow: 0 4px 15px rgba(255, 79, 90, 0.3);
+}
+
+.user-details h3 {
+  color: #1e293b;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.user-details p {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* Navigation */
+.account-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.nav-item {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 15px 20px;
+  text-align: left;
+  color: #64748b;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 15px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-item:hover {
+  background: #f8fafc;
+  color: #334155;
+}
+
+.nav-item.active {
+  background: linear-gradient(135deg, #FF4F5A, #FF8E95);
+  color: white;
+  box-shadow: 0 4px 15px rgba(255, 79, 90, 0.3);
+}
+
+.nav-item.logout {
+  margin-top: 20px;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 20px;
+  color: #dc2626;
+}
+
+.nav-item.logout:hover {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+/* Main Content */
+.account-main {
+  background: white;
+  border-radius: 25px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.section-content {
+  padding: 40px;
+}
+
+/* Section Header */
+.section-header {
+  margin-bottom: 30px;
+  border-bottom: 2px solid #f1f5f9;
+  padding-bottom: 20px;
+}
+
+.section-header h2 {
+  color: #1e293b;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.section-header p {
+  color: #64748b;
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+/* Profile Card */
+.profile-card {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.info-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-group label {
+  color: #374151;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-value {
+  color: #1e293b;
+  font-size: 1.1rem;
+  font-weight: 500;
+  padding: 15px 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+}
+
+.btn-edit-profile {
+  background: linear-gradient(135deg, #FF4F5A, #FF8E95);
+  color: white;
+  border: none;
+  padding: 15px 25px;
+  border-radius: 15px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 15px;
+  align-self: flex-start;
+}
+
+.btn-edit-profile:hover {
+  background: linear-gradient(135deg, #e63946, #FF4F5A);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 79, 90, 0.4);
+}
+
+/* Empty States */
+.empty-orders,
+.empty-addresses {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  opacity: 0.6;
+}
+
+.empty-orders h3,
+.empty-addresses h3 {
+  color: #475569;
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+.empty-orders p,
+.empty-addresses p {
+  color: #64748b;
+  font-size: 1.1rem;
+  margin-bottom: 30px;
+}
+
+.btn-shop-now,
+.btn-add-address {
+  background: linear-gradient(135deg, #FF4F5A, #FF8E95);
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 25px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-shop-now:hover,
+.btn-add-address:hover {
+  background: linear-gradient(135deg, #e63946, #FF4F5A);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 79, 90, 0.4);
+}
+
+/* Security Card */
+.security-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.security-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 25px;
+  background: #f8fafc;
+  border-radius: 15px;
+  border: 2px solid #e2e8f0;
+}
+
+.security-info h4 {
+  color: #1e293b;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.security-info p {
+  color: #64748b;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.btn-change-password,
+.btn-view-history {
+  background: transparent;
+  color: #FF4F5A;
+  border: 2px solid #FF4F5A;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.btn-change-password:hover,
+.btn-view-history:hover {
+  background: #FF4F5A;
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .account-content {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .account-sidebar {
+    position: static;
+    order: 2;
+  }
+
+  .account-main {
+    order: 1;
+  }
+
+  .section-content {
+    padding: 30px 25px;
+  }
+
+  .account-header {
+    padding: 30px 20px;
+  }
+
+  .account-header h1 {
+    font-size: 2rem;
+  }
+
+  .user-info {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .security-item {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .account-container {
+    padding: 20px 15px;
+  }
+
+  .account-sidebar,
+  .account-main {
+    border-radius: 15px;
+  }
+
+  .section-content {
+    padding: 25px 20px;
+  }
+
+  .account-header {
+    padding: 25px 15px;
+  }
+
+  .account-header h1 {
+    font-size: 1.8rem;
+  }
+
+  .nav-item {
+    padding: 12px 15px;
+    font-size: 0.95rem;
+  }
+}

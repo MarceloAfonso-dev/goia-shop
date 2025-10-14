@@ -18,7 +18,7 @@ public class ProdutoCompletoRequest {
     private Double preco;
     
     @NotNull(message = "Estoque é obrigatório")
-    @Positive(message = "Estoque deve ser positivo")
+    // Removendo @Positive para permitir quantidade 0 para admins
     private Integer quantidadeEstoque;
     
     private String status;

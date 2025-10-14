@@ -19,7 +19,7 @@ public class ProdutoCadastroRequest {
     private Double preco;
     
     @NotNull(message = "Quantidade em estoque é obrigatória")
-    @Positive(message = "Quantidade deve ser positiva")
+    // Alterado para permitir 0 para admins
     private Integer quantidadeEstoque;
     
     private String status = "ATIVO";

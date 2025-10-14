@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
+import { useCart } from '../hooks/useCart';
 import './PublicProductGrid.css';
 
 // Componentes de ícones PNG - Usando os ícones fornecidos
@@ -28,12 +30,258 @@ const CartIcon = ({ size = 24 }) => (
   />
 );
 
+// Componente de carrossel de imagens
+const ImageCarousel = ({ product, getImageUrl }) => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  // Combinar todas as imagens (principal + outras)
+  const allImages = [];
+  
+  // Usar todas as imagens do array imagens (incluindo a principal)
+  if (product.imagens && product.imagens.length > 0) {
+    // Ordenar para colocar a imagem principal primeiro
+    const sortedImages = [...product.imagens].sort((a, b) => {
+      if (a.isPrincipal && !b.isPrincipal) return -1;
+      if (!a.isPrincipal && b.isPrincipal) return 1;
+      return a.ordem - b.ordem;
+    });
+    
+    sortedImages.forEach(img => {
+      allImages.push({
+        url: getImageUrl(img.urlArquivo || img.caminhoArquivo),
+        isPrincipal: img.isPrincipal,
+        nome: img.nomeArquivo,
+        id: img.id
+      });
+    });
+  } else if (product.imagemPrincipal?.urlArquivo) {
+    // Fallback: usar apenas a imagem principal se não há array de imagens
+    allImages.push({
+      url: getImageUrl(product.imagemPrincipal.urlArquivo),
+      isPrincipal: true,
+      nome: product.imagemPrincipal.nomeArquivo,
+      id: product.imagemPrincipal.id
+    });
+  }
+  
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
+  };
+  
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+  };
+  
+  const goToImage = (index) => {
+    setCurrentImageIndex(index);
+  };
+  
+  // Debug log
+  console.log('ImageCarousel - Product:', product.nome);
+  console.log('ImageCarousel - AllImages:', allImages);
+  console.log('ImageCarousel - CurrentIndex:', currentImageIndex);
+  
+  if (allImages.length === 0) {
+    return (
+      <div style={{ 
+        width: '100%', 
+        height: '300px', 
+        backgroundColor: '#f0f0f0', 
+        borderRadius: '8px', 
+        marginBottom: '24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#999',
+        fontSize: '48px'
+      }}>
+        📦
+      </div>
+    );
+  }
+  
+  return (
+    <div style={{ marginBottom: '24px' }}>
+      {/* Imagem principal */}
+      <div style={{ 
+        position: 'relative',
+        width: '100%', 
+        height: '300px', 
+        backgroundColor: '#f0f0f0', 
+        borderRadius: '8px', 
+        marginBottom: '16px',
+        backgroundImage: `url(${allImages[currentImageIndex].url})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      }}>
+        {/* Botões de navegação (apenas se houver mais de uma imagem) */}
+        {allImages.length > 1 && (
+          <>
+            <button
+              onClick={prevImage}
+              style={{
+                position: 'absolute',
+                left: '10px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '50%',
+                width: '45px',
+                height: '45px',
+                fontSize: '20px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+                e.target.style.transform = 'translateY(-50%) scale(1.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+                e.target.style.transform = 'translateY(-50%) scale(1)';
+              }}
+            >
+              ‹
+            </button>
+            <button
+              onClick={nextImage}
+              style={{
+                position: 'absolute',
+                right: '10px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '50%',
+                width: '45px',
+                height: '45px',
+                fontSize: '20px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+                e.target.style.transform = 'translateY(-50%) scale(1.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+                e.target.style.transform = 'translateY(-50%) scale(1)';
+              }}
+            >
+              ›
+            </button>
+          </>
+        )}
+        
+        {/* Contador de imagens */}
+        {allImages.length > 1 && (
+          <div style={{
+            position: 'absolute',
+            bottom: '10px',
+            right: '10px',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            color: 'white',
+            padding: '4px 8px',
+            borderRadius: '12px',
+            fontSize: '12px'
+          }}>
+            {currentImageIndex + 1} / {allImages.length}
+          </div>
+        )}
+      </div>
+      
+      {/* Miniaturas (apenas se houver mais de uma imagem) */}
+      {allImages.length > 1 && (
+        <div style={{ 
+          display: 'flex', 
+          gap: '12px', 
+          overflowX: 'auto',
+          paddingBottom: '8px',
+          paddingTop: '8px',
+          justifyContent: allImages.length <= 5 ? 'center' : 'flex-start'
+        }}>
+          {allImages.map((image, index) => (
+            <div
+              key={`thumb-${image.id}-${index}`}
+              onClick={() => goToImage(index)}
+              style={{
+                width: '70px',
+                height: '70px',
+                minWidth: '70px',
+                backgroundColor: '#f0f0f0',
+                borderRadius: '8px',
+                backgroundImage: `url(${image.url})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                cursor: 'pointer',
+                border: currentImageIndex === index ? '3px solid #FF4F5A' : '3px solid #e0e0e0',
+                opacity: currentImageIndex === index ? 1 : 0.6,
+                transition: 'all 0.3s ease',
+                boxShadow: currentImageIndex === index ? '0 4px 12px rgba(255, 79, 90, 0.3)' : '0 2px 6px rgba(0,0,0,0.1)',
+                transform: currentImageIndex === index ? 'scale(1.05)' : 'scale(1)',
+                position: 'relative'
+              }}
+              onMouseEnter={(e) => {
+                if (currentImageIndex !== index) {
+                  e.target.style.opacity = '0.8';
+                  e.target.style.transform = 'scale(1.02)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (currentImageIndex !== index) {
+                  e.target.style.opacity = '0.6';
+                  e.target.style.transform = 'scale(1)';
+                }
+              }}
+            >
+              {/* Indicador de imagem principal */}
+              {image.isPrincipal && (
+                <div style={{
+                  position: 'absolute',
+                  top: '-6px',
+                  right: '-6px',
+                  backgroundColor: '#FF4F5A',
+                  color: 'white',
+                  borderRadius: '50%',
+                  width: '20px',
+                  height: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '10px',
+                  fontWeight: 'bold',
+                  border: '2px solid white',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                }}>
+                  ★
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [cart, setCart] = useState([]);
+  const { cart, addToCart, cartCount } = useCart();
 
   // Função para converter URL absoluta do backend em URL relativa
   const getImageUrl = (urlArquivo) => {
@@ -42,62 +290,20 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
     return urlArquivo.replace('http://localhost:8080', '');
   };
 
-  // Funções do carrinho
-  const loadCartFromStorage = () => {
-    const savedCart = localStorage.getItem('goia-shop-cart');
-    return savedCart ? JSON.parse(savedCart) : [];
+  // Função personalizada para adicionar ao carrinho e redirecionar
+  const handleAddToCart = (product) => {
+    addToCart(product, 1); // Sempre adicionar 1 unidade
+    // Redirecionar para o carrinho
+    window.location.href = '/carrinho';
   };
 
-  const saveCartToStorage = (cartItems) => {
-    localStorage.setItem('goia-shop-cart', JSON.stringify(cartItems));
-  };
-
-  const addToCart = (product) => {
-    const currentCart = loadCartFromStorage();
-    const existingItem = currentCart.find(item => item.id === product.id);
-    
-    let updatedCart;
-    if (existingItem) {
-      updatedCart = currentCart.map(item => 
-        item.id === product.id 
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      );
-    } else {
-      updatedCart = [...currentCart, { ...product, quantity: 1 }];
-    }
-    
-    setCart(updatedCart);
-    saveCartToStorage(updatedCart);
-    
-    // Calcular total de itens no carrinho
-    const totalItems = updatedCart.reduce((total, item) => total + item.quantity, 0);
-    alert(`${product.nome} adicionado ao carrinho!\n\nVocê tem ${totalItems} ${totalItems === 1 ? 'item' : 'itens'} no carrinho.`);
-  };
-
-  const getCartItemsCount = () => {
-    const currentCart = loadCartFromStorage();
-    return currentCart.reduce((total, item) => total + item.quantity, 0);
-  };
-
-  const showCartSummary = () => {
-    const currentCart = loadCartFromStorage();
-    const totalItems = currentCart.reduce((total, item) => total + item.quantity, 0);
-    
-    if (totalItems === 0) {
-      alert('Seu carrinho está vazio!');
-      return;
-    }
-    
-    const cartSummary = currentCart.map(item => `• ${item.nome} (${item.quantity}x)`);
-    const totalValue = currentCart.reduce((total, item) => total + (item.preco * item.quantity), 0);
-    
-    alert(`🛒 CARRINHO DE COMPRAS\n\n${cartSummary.join('\n')}\n\nTotal: ${totalItems} ${totalItems === 1 ? 'item' : 'itens'}\nValor: R$ ${totalValue.toFixed(2).replace('.', ',')}`);
+  // Função para navegar para a home
+  const handleGoToHome = () => {
+    navigate('/');
   };
 
   useEffect(() => {
     fetchProducts();
-    setCart(loadCartFromStorage());
   }, []);
 
   const fetchProducts = async () => {
@@ -147,7 +353,7 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
           </div>
           <button 
             className="btn btn-secondary" 
-            onClick={onBackToLanding}
+            onClick={handleGoToHome}
           >
             ← Voltar
           </button>
@@ -172,7 +378,7 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
           </div>
           <button 
             className="btn btn-secondary" 
-            onClick={onBackToLanding}
+            onClick={handleGoToHome}
           >
             ← Voltar
           </button>
@@ -198,7 +404,7 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
     <div style={{ minHeight: '100vh', backgroundColor: '#F1F2F4' }}>
       {/* GOI Header */}
       <header className="goi-header">
-        <div className="goi-logo" onClick={onBackToLanding} style={{ cursor: 'pointer' }}>
+        <div className="goi-logo" onClick={handleGoToHome} style={{ cursor: 'pointer' }}>
           <img src="/assets/img/goia-icon-header.png" alt="GOIA" style={{ width: '52px', height: '52px' }} />
           <h1>GOIA Shop</h1>
         </div>
@@ -206,7 +412,7 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
           {/* Carrinho */}
           <div 
             style={{ position: 'relative', cursor: 'pointer', padding: '8px' }}
-            onClick={showCartSummary}
+            onClick={() => window.location.href = '/carrinho'}
             title="Ver carrinho"
           >
             <div style={{ 
@@ -215,7 +421,7 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
               gap: '8px'
             }}>
               <CartIcon size={28} color="#FF4F5A" />
-              {getCartItemsCount() > 0 && (
+              {cartCount > 0 && (
                 <span style={{
                   backgroundColor: '#FF4F5A',
                   color: 'white',
@@ -231,17 +437,11 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
                   top: '0px',
                   right: '0px'
                 }}>
-                  {getCartItemsCount()}
+                  {cartCount}
                 </span>
               )}
             </div>
           </div>
-          <button 
-            className="btn btn-primary" 
-            onClick={onLoginClick}
-          >
-            Entrar/Gerenciar
-          </button>
         </div>
       </header>
 
@@ -335,7 +535,7 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
                   </button>
                   <button 
                     className="btn btn-secondary" 
-                    onClick={() => addToCart(product)}
+                    onClick={() => handleAddToCart(product)}
                     style={{ 
                       flex: 1,
                       fontSize: '14px',
@@ -414,23 +614,7 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
             </div>
             
             <div style={{ padding: '30px' }}>
-              <div style={{ 
-                width: '100%', 
-                height: '300px', 
-                backgroundColor: '#f0f0f0', 
-                borderRadius: '8px', 
-                marginBottom: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundImage: getImageUrl(selectedProduct.imagemPrincipal?.urlArquivo) ? `url(${getImageUrl(selectedProduct.imagemPrincipal.urlArquivo)})` : 'none',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                color: '#999',
-                fontSize: '48px'
-              }}>
-                {!selectedProduct.imagemPrincipal?.urlArquivo && '📦'}
-              </div>
+              <ImageCarousel product={selectedProduct} getImageUrl={getImageUrl} />
               
               <h2 style={{ 
                 fontSize: '28px', 
@@ -466,12 +650,13 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
               }}>
                 <button 
                   className="btn btn-secondary" 
-                  onClick={() => addToCart(selectedProduct)}
+                  onClick={() => handleAddToCart(selectedProduct)}
                   style={{ 
                     fontSize: '16px', 
                     padding: '16px 32px',
                     backgroundColor: '#28a745',
                     border: 'none',
+                    flex: 1,
                     minWidth: '200px',
                     display: 'flex',
                     alignItems: 'center',
@@ -483,15 +668,9 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
                   Adicionar ao Carrinho
                 </button>
                 <button 
-                  className="btn btn-primary"
-                  style={{ flex: 1, minWidth: '200px' }}
-                  onClick={() => alert('Funcionalidade de compra será implementada em breve!')}
-                >
-                  Comprar Agora
-                </button>
-                <button 
                   className="btn btn-secondary"
                   onClick={closeProductDetails}
+                  style={{ minWidth: '120px' }}
                 >
                   Fechar
                 </button>
