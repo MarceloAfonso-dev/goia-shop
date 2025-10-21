@@ -1,3 +1,6 @@
+/* Importar a fonte Outfit */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+
 /* Header do E-commerce - GOIA Shop */
 .ecommerce-header {
   background: linear-gradient(135deg, #FF4F5A 0%, #FF6B75 50%, #FF8E95 100%);
@@ -40,9 +43,10 @@
 }
 
 .logo-text {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
   color: white;
-  font-size: 2rem;
-  font-weight: 800;
+  font-size: 26px;
   margin: 0;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   letter-spacing: -0.5px;
@@ -201,7 +205,9 @@
   }
   
   .logo-text {
-    font-size: 1.5rem;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 22px;
   }
   
   .login-text {
@@ -253,7 +259,9 @@
   }
   
   .logo-text {
-    font-size: 1.3rem;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 20px;
   }
   
   .header-actions {

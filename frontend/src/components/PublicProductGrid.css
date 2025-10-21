@@ -1,4 +1,5 @@
 /* PublicProductGrid.css - Layout em Cards Refinado */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
 
 .ecommerce-page {
   min-height: 100vh;
@@ -71,9 +72,10 @@
 }
 
 .page-header h1 {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
   color: #FF4F5A;
   font-size: 3rem;
-  font-weight: 800;
   margin-bottom: 20px;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   background: linear-gradient(135deg, #FF4F5A, #FF8E95);
@@ -83,6 +85,7 @@
 }
 
 .page-header p {
+  font-family: 'Outfit', sans-serif;
   color: #64748b;
   font-size: 1.3rem;
   margin: 0;
@@ -304,10 +307,14 @@
   }
   
   .page-header h1 {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    color: #FF4F5A;
     font-size: 2.2rem;
   }
   
   .page-header p {
+    font-family: 'Outfit', sans-serif;
     font-size: 1.1rem;
   }
   
@@ -345,6 +352,9 @@
   }
   
   .page-header h1 {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    color: #FF4F5A;
     font-size: 2rem;
   }
   

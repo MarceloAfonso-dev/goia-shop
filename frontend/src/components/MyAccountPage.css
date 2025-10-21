@@ -1,4 +1,5 @@
 /* MyAccountPage.css */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
 
 .account-container {
   max-width: 1200px;
@@ -17,9 +18,10 @@
 }
 
 .account-header h1 {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
   color: #FF4F5A;
   font-size: 2.5rem;
-  font-weight: 800;
   margin-bottom: 10px;
   background: linear-gradient(135deg, #FF4F5A, #FF8E95);
   -webkit-background-clip: text;
@@ -28,6 +30,7 @@
 }
 
 .account-header p {
+  font-family: 'Outfit', sans-serif;
   color: #64748b;
   font-size: 1.2rem;
   margin: 0;

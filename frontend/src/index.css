@@ -177,6 +177,13 @@ code {
   font-size: 14px;
 }
 
+/* Importar a fonte Outfit */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+
+* {
+  font-family: 'Outfit', sans-serif;
+}
+
 /* GOI Header System */
 .goi-header {
   height: 56px;
@@ -193,8 +200,8 @@ code {
 
 .goi-header h1 {
   font-family: 'Outfit', sans-serif;
-  font-weight: 500;
-  color: #000;
+  font-weight: 600;
+  color: #ff4f5a;
   font-size: 26px;
   margin: 0;
 }
@@ -253,6 +260,9 @@ code {
   }
   
   .goi-header h1 {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    color: #ff4f5a;
     font-size: 22px;
   }
   
