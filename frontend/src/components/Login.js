@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
 import api from '../utils/api';
 
-const Login = ({ onLoginSuccess, onBackToLanding }) => {
+const Login = ({ onLoginSuccess, onBackToLanding, onGoToSignup }) => {
     const [formData, setFormData] = useState({
         email: '',
         senha: ''
@@ -118,9 +118,22 @@ const Login = ({ onLoginSuccess, onBackToLanding }) => {
                                     {loading ? 'Entrando...' : 'Entrar'}
                                 </Button>
                             </Form>
+                            
+                            <hr />
+                            
+                            <div className="text-center">
+                                <p className="mb-2">Não tem uma conta?</p>
+                                <Button 
+                                    variant="outline-primary" 
+                                    className="w-100"
+                                    onClick={onGoToSignup}
+                                >
+                                    Cadastre-se
+                                </Button>
+                            </div>
                         </Card.Body>
                         <Card.Footer className="text-center text-muted">
-                            <small>Usuários de teste:</small><br/>
+                            <small>Usuários de teste (Backoffice):</small><br/>
                             <small>Admin: admin@goiashop.com / adm123</small><br/>
                             <small>Estoquista: estoquista@goiashop.com / estoque123</small><br/>
                             <small className="text-success">🔒 Senhas protegidas com BCrypt no servidor</small>

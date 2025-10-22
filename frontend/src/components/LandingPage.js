@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './LandingPage.css';
 
-const LandingPage = ({ onLoginClick }) => {
+const LandingPage = ({ onLoginClick, onGoToSignup }) => {
   const [showPopup, setShowPopup] = useState(false);
   const [popupData, setPopupData] = useState({ title: '', description: '' });
   const [openFaq, setOpenFaq] = useState(null);
@@ -143,7 +143,7 @@ const LandingPage = ({ onLoginClick }) => {
           <button className="btn-login" onClick={onLoginClick}>
             Login
           </button>
-          <button className="btn-cta">Abrir conta</button>
+          <button className="btn-cta" onClick={onGoToSignup}>Abrir conta</button>
         </div>
       </header>
 

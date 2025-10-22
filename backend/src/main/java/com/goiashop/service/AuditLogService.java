@@ -133,4 +133,22 @@ public class AuditLogService {
     public List<AuditLog> getLogsByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
         return auditLogRepository.findByDateRangeOrderByCreatedAtDesc(startDate, endDate);
     }
+
+    /**
+     * Registra criação de cliente
+     */
+    public void logCustomerCreation(Long customerId, String customerName) {
+        try {
+            Map<String, Object> data = new HashMap<>();
+            data.put("customer_id", customerId);
+            data.put("customer_name", customerName);
+            data.put("action_type", "CUSTOMER_SIGNUP");
+            
+            // Usa o usuário do sistema (admin padrão) como autor da ação para satisfazer a FK e NOT NULL
+            // O DataInitializer cria o admin primeiro, tipicamente com id = 1
+            logCreate(1L, "customers", customerId, data);
+        } catch (Exception e) {
+            System.err.println("Erro ao registrar criação de cliente: " + e.getMessage());
+        }
+    }
 }
