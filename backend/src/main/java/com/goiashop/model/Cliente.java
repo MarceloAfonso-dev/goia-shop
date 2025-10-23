@@ -33,6 +33,10 @@ public class Cliente {
     @Column(name = "data_nascimento")
     private LocalDate dataNascimento;
     
+    @Enumerated(EnumType.STRING)
+    @Column(name = "genero")
+    private Genero genero;
+    
     @JsonIgnore
     @NotBlank(message = "Senha é obrigatória")
     @Column(name = "senha_hash", nullable = false, length = 255)
@@ -130,6 +134,14 @@ public class Cliente {
     
     public void setDataNascimento(LocalDate dataNascimento) {
         this.dataNascimento = dataNascimento;
+    }
+    
+    public Genero getGenero() {
+        return genero;
+    }
+    
+    public void setGenero(Genero genero) {
+        this.genero = genero;
     }
     
     public String getSenhaHash() {
@@ -238,5 +250,9 @@ public class Cliente {
     
     public enum ClienteStatus {
         ATIVO, INATIVO, BLOQUEADO
+    }
+    
+    public enum Genero {
+        MASCULINO, FEMININO, OUTRO, NAO_INFORMADO
     }
 }

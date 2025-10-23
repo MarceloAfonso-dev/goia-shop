@@ -98,6 +98,7 @@ public class AuthController {
             clienteData.put("cpf", cliente.getCpf());
             clienteData.put("telefone", cliente.getTelefone());
             clienteData.put("dataNascimento", cliente.getDataNascimento() != null ? cliente.getDataNascimento().toString() : null);
+            clienteData.put("genero", cliente.getGenero() != null ? cliente.getGenero().toString() : null);
             clienteData.put("cep", cliente.getCep());
             clienteData.put("logradouro", cliente.getLogradouro());
             clienteData.put("numero", cliente.getNumero());
@@ -138,6 +139,7 @@ public class AuthController {
             userData.put("cpf", cliente.getCpf());
             userData.put("telefone", cliente.getTelefone());
             userData.put("dataNascimento", cliente.getDataNascimento() != null ? cliente.getDataNascimento().toString() : null);
+            userData.put("genero", cliente.getGenero() != null ? cliente.getGenero().toString() : null);
             userData.put("cep", cliente.getCep());
             userData.put("logradouro", cliente.getLogradouro());
             userData.put("numero", cliente.getNumero());

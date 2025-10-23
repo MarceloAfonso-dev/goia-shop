@@ -52,6 +52,18 @@ public class ClienteService {
             throw new RuntimeException("Formato de data inválido. Use yyyy-MM-dd");
         }
         
+        // Definir gênero se fornecido
+        if (request.getGenero() != null && !request.getGenero().isEmpty()) {
+            try {
+                cliente.setGenero(Cliente.Genero.valueOf(request.getGenero()));
+            } catch (IllegalArgumentException e) {
+                // Se o valor não for válido, deixa como null
+                cliente.setGenero(Cliente.Genero.NAO_INFORMADO);
+            }
+        } else {
+            cliente.setGenero(Cliente.Genero.NAO_INFORMADO);
+        }
+        
         // Hash da senha
         String senhaHash = passwordService.hashPassword(request.getSenha());
         cliente.setSenhaHash(senhaHash);
@@ -135,8 +147,27 @@ public class ClienteService {
             throw new RuntimeException("Formato de data inválido. Use yyyy-MM-dd");
         }
         
+        // Atualizar gênero se fornecido
+        if (request.getGenero() != null && !request.getGenero().isEmpty()) {
+            try {
+                cliente.setGenero(Cliente.Genero.valueOf(request.getGenero()));
+            } catch (IllegalArgumentException e) {
+                // Ignora se o valor não for válido
+            }
+        }
+        
         // Atualizar senha se fornecida
-        if (request.getSenha() != null && !request.getSenha().isEmpty()) {
+        if (request.getSenhaAtual() != null && !request.getSenhaAtual().isEmpty() &&
+            request.getNovaSenha() != null && !request.getNovaSenha().isEmpty()) {
+            // Verificar se a senha atual está correta
+            if (!passwordService.verifyPassword(request.getSenhaAtual(), cliente.getSenhaHash())) {
+                throw new RuntimeException("Senha atual incorreta");
+            }
+            // Atualizar para nova senha
+            String senhaHash = passwordService.hashPassword(request.getNovaSenha());
+            cliente.setSenhaHash(senhaHash);
+        } else if (request.getSenha() != null && !request.getSenha().isEmpty()) {
+            // Para compatibilidade com cadastro (sem verificação de senha antiga)
             String senhaHash = passwordService.hashPassword(request.getSenha());
             cliente.setSenhaHash(senhaHash);
         }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EcommerceHeader from './EcommerceHeader';
 import { useAuth } from '../hooks/useAuth';
@@ -46,6 +46,7 @@ const AuthPage = ({ onLoginSuccess }) => {
         cpf: '',
         telefone: '',
         dataNascimento: '',
+        genero: '',
         senha: '',
         confirmarSenha: '',
         endereco: {
@@ -202,9 +203,17 @@ const AuthPage = ({ onLoginSuccess }) => {
             return;
         }
 
-        // Validar nome
-        if (registerData.nome.trim().length < 2) {
-            setError('Nome deve ter pelo menos 2 caracteres');
+        // Validar nome - deve ter no mínimo duas palavras com pelo menos 3 letras cada
+        const nomePartes = registerData.nome.trim().split(/\s+/);
+        if (nomePartes.length < 2) {
+            setError('Nome completo deve ter pelo menos nome e sobrenome');
+            setLoading(false);
+            return;
+        }
+        
+        const palavrasInvalidas = nomePartes.filter(palavra => palavra.length < 3);
+        if (palavrasInvalidas.length > 0) {
+            setError('Cada palavra do nome deve ter pelo menos 3 letras');
             setLoading(false);
             return;
         }
@@ -287,6 +296,7 @@ const AuthPage = ({ onLoginSuccess }) => {
                 cpf: registerData.cpf.replace(/\D/g, ''), // Remove formatação
                 telefone: registerData.telefone,
                 dataNascimento: dataFormatada,
+                genero: registerData.genero || null,
                 senha: registerData.senha,
                 // Campos de endereço no nível raiz
                 cep: registerData.endereco.cep, // Manter formatação XXXXX-XXX
@@ -318,6 +328,7 @@ const AuthPage = ({ onLoginSuccess }) => {
                     cpf: '',
                     telefone: '',
                     dataNascimento: '',
+                    genero: '',
                     senha: '',
                     confirmarSenha: '',
                     endereco: {
@@ -412,13 +423,17 @@ const AuthPage = ({ onLoginSuccess }) => {
             email: user.email || '',
             telefone: user.telefone || '',
             dataNascimento: user.dataNascimento || '',
+            genero: user.genero || '',
             cep: user.cep || '',
             logradouro: user.logradouro || '',
             numero: user.numero || '',
             complemento: user.complemento || '',
             bairro: user.bairro || '',
             cidade: user.cidade || '',
-            uf: user.uf || ''
+            uf: user.uf || '',
+            senhaAtual: '',
+            novaSenha: '',
+            confirmarNovaSenha: ''
         });
         setShowEditModal(true);
         setError('');
@@ -463,6 +478,45 @@ const AuthPage = ({ onLoginSuccess }) => {
         setError('');
         setSuccess('');
 
+        // Validar nome - deve ter no mínimo duas palavras com pelo menos 3 letras cada
+        const nomePartes = editData.nome.trim().split(/\s+/);
+        if (nomePartes.length < 2) {
+            setError('Nome completo deve ter pelo menos nome e sobrenome');
+            setLoading(false);
+            return;
+        }
+        
+        const palavrasInvalidas = nomePartes.filter(palavra => palavra.length < 3);
+        if (palavrasInvalidas.length > 0) {
+            setError('Cada palavra do nome deve ter pelo menos 3 letras');
+            setLoading(false);
+            return;
+        }
+
+        // Validar alteração de senha se foi preenchida
+        if (editData.novaSenha || editData.confirmarNovaSenha || editData.senhaAtual) {
+            if (!editData.senhaAtual) {
+                setError('Digite sua senha atual para alterar a senha');
+                setLoading(false);
+                return;
+            }
+            if (!editData.novaSenha) {
+                setError('Digite a nova senha');
+                setLoading(false);
+                return;
+            }
+            if (editData.novaSenha.length < 6) {
+                setError('A nova senha deve ter pelo menos 6 caracteres');
+                setLoading(false);
+                return;
+            }
+            if (editData.novaSenha !== editData.confirmarNovaSenha) {
+                setError('As senhas não coincidem');
+                setLoading(false);
+                return;
+            }
+        }
+
         try {
             // Formatar data para yyyy-MM-dd se necessário
             let dataFormatada = editData.dataNascimento;
@@ -479,6 +533,7 @@ const AuthPage = ({ onLoginSuccess }) => {
                 email: editData.email,
                 telefone: editData.telefone.replace(/\D/g, ''),
                 dataNascimento: dataFormatada,
+                genero: editData.genero || null,
                 cep: editData.cep.replace(/\D/g, ''),
                 logradouro: editData.logradouro,
                 numero: editData.numero,
@@ -487,6 +542,12 @@ const AuthPage = ({ onLoginSuccess }) => {
                 cidade: editData.cidade,
                 uf: editData.uf
             };
+
+            // Se houver alteração de senha, adicionar ao payload
+            if (editData.novaSenha) {
+                payload.senhaAtual = editData.senhaAtual;
+                payload.novaSenha = editData.novaSenha;
+            }
 
             const response = await api.put(`/clientes/${user.id}`, payload);
             
@@ -753,6 +814,13 @@ const AuthPage = ({ onLoginSuccess }) => {
         }
     };
 
+    // Carregar endereços ao exibir perfil
+    useEffect(() => {
+        if (user) {
+            carregarEnderecos();
+        }
+    }, [user]);
+
     // Se usuário já está logado, mostrar interface com dados do perfil
     if (user) {
         return (
@@ -818,6 +886,11 @@ const AuthPage = ({ onLoginSuccess }) => {
                                 
                                 <div style={{ display: 'grid', gap: '12px' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                                        <span style={{ color: '#64748b', fontWeight: '500' }}>Nome Completo:</span>
+                                        <span style={{ color: '#1e293b', fontWeight: '600', textAlign: 'right' }}>{user.nome || 'Não informado'}</span>
+                                    </div>
+                                    
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
                                         <span style={{ color: '#64748b', fontWeight: '500' }}>Email:</span>
                                         <span style={{ color: '#1e293b', fontWeight: '600', textAlign: 'right' }}>{user.email || 'Não informado'}</span>
                                     </div>
@@ -836,10 +909,23 @@ const AuthPage = ({ onLoginSuccess }) => {
                                         <span style={{ color: '#64748b', fontWeight: '500' }}>Data de Nascimento:</span>
                                         <span style={{ color: '#1e293b', fontWeight: '600' }}>{formatDate(user.dataNascimento)}</span>
                                     </div>
+                                    
+                                    {user.genero && (
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                                            <span style={{ color: '#64748b', fontWeight: '500' }}>Gênero:</span>
+                                            <span style={{ color: '#1e293b', fontWeight: '600' }}>
+                                                {user.genero === 'MASCULINO' ? 'Masculino' :
+                                                 user.genero === 'FEMININO' ? 'Feminino' :
+                                                 user.genero === 'OUTRO' ? 'Outro' :
+                                                 user.genero === 'NAO_INFORMADO' ? 'Não informado' :
+                                                 'Não informado'}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
-                            {/* Endereço */}
+                            {/* Endereço de Faturamento */}
                             <div style={{
                                 backgroundColor: '#f8f9fa',
                                 borderRadius: '12px',
@@ -855,7 +941,7 @@ const AuthPage = ({ onLoginSuccess }) => {
                                     borderBottom: '2px solid #FF4F5A',
                                     paddingBottom: '8px'
                                 }}>
-                                    📍 Endereço
+                                    � Endereço de Faturamento
                                 </h3>
                                 
                                 <div style={{ display: 'grid', gap: '8px', color: '#1e293b' }}>
@@ -878,6 +964,60 @@ const AuthPage = ({ onLoginSuccess }) => {
                                     </p>
                                 </div>
                             </div>
+
+                            {/* Endereços de Entrega */}
+                            {enderecosSalvos.length > 0 && (
+                                <div style={{
+                                    backgroundColor: '#f8f9fa',
+                                    borderRadius: '12px',
+                                    padding: '24px',
+                                    marginBottom: '20px',
+                                    textAlign: 'left'
+                                }}>
+                                    <h3 style={{
+                                        fontSize: '18px',
+                                        fontWeight: '600',
+                                        color: '#1e293b',
+                                        marginBottom: '16px',
+                                        borderBottom: '2px solid #FF4F5A',
+                                        paddingBottom: '8px'
+                                    }}>
+                                        📦 Endereços de Entrega
+                                    </h3>
+                                    
+                                    <div className="row">
+                                        {enderecosSalvos.map((endereco, index) => (
+                                            <div key={endereco.id} className="col-md-6 mb-3">
+                                                <div className={`card ${endereco.isPadrao ? 'border-primary' : 'border-secondary'}`} style={{ height: '100%' }}>
+                                                    <div className="card-body">
+                                                        {endereco.isPadrao && (
+                                                            <span className="badge bg-primary mb-2">⭐ Padrão</span>
+                                                        )}
+                                                        {endereco.apelido && (
+                                                            <h6 className="card-title" style={{ fontWeight: '600', color: '#1e293b' }}>
+                                                                {endereco.apelido}
+                                                            </h6>
+                                                        )}
+                                                        <p className="card-text mb-1" style={{ fontSize: '14px' }}>
+                                                            <strong>Endereço:</strong> {endereco.logradouro}, {endereco.numero}
+                                                            {endereco.complemento && ` - ${endereco.complemento}`}
+                                                        </p>
+                                                        <p className="card-text mb-1" style={{ fontSize: '14px' }}>
+                                                            <strong>Bairro:</strong> {endereco.bairro}
+                                                        </p>
+                                                        <p className="card-text mb-1" style={{ fontSize: '14px' }}>
+                                                            <strong>Cidade:</strong> {endereco.cidade} - {endereco.estado}
+                                                        </p>
+                                                        <p className="card-text mb-0" style={{ fontSize: '14px' }}>
+                                                            <strong>CEP:</strong> {endereco.cep}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                             
                             {success && <div className="success-message">{success}</div>}
                             {error && <div className="alert alert-error" style={{ marginTop: '20px' }}>{error}</div>}
@@ -905,7 +1045,14 @@ const AuthPage = ({ onLoginSuccess }) => {
                 </div>
 
                 {/* Modal de Edição */}
-                <Modal show={showEditModal} onHide={() => setShowEditModal(false)} size="lg" centered>
+                <Modal 
+                    show={showEditModal} 
+                    onHide={() => setShowEditModal(false)} 
+                    size="lg" 
+                    centered
+                    backdrop="static"
+                    className="modal-with-backdrop"
+                >
                     <Modal.Header closeButton>
                         <Modal.Title>Editar Meus Dados</Modal.Title>
                     </Modal.Header>
@@ -969,8 +1116,69 @@ const AuthPage = ({ onLoginSuccess }) => {
                                 </div>
                             </div>
 
+                            <div className="row">
+                                <div className="col-md-12 mb-3">
+                                    <label className="form-label">Gênero</label>
+                                    <select
+                                        className="form-control"
+                                        name="genero"
+                                        value={editData.genero || ''}
+                                        onChange={handleEditChange}
+                                    >
+                                        <option value="">Selecione...</option>
+                                        <option value="MASCULINO">Masculino</option>
+                                        <option value="FEMININO">Feminino</option>
+                                        <option value="OUTRO">Outro</option>
+                                        <option value="NAO_INFORMADO">Prefiro não informar</option>
+                                    </select>
+                                </div>
+                            </div>
+
                             <hr />
-                            <h5>Endereço</h5>
+                            <h5>Alterar Senha</h5>
+                            <p className="text-muted small">Deixe em branco se não deseja alterar a senha</p>
+
+                            <div className="row">
+                                <div className="col-md-12 mb-3">
+                                    <label className="form-label">Senha Atual</label>
+                                    <input
+                                        type="password"
+                                        className="form-control"
+                                        name="senhaAtual"
+                                        value={editData.senhaAtual || ''}
+                                        onChange={handleEditChange}
+                                        placeholder="Digite sua senha atual"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="row">
+                                <div className="col-md-6 mb-3">
+                                    <label className="form-label">Nova Senha</label>
+                                    <input
+                                        type="password"
+                                        className="form-control"
+                                        name="novaSenha"
+                                        value={editData.novaSenha || ''}
+                                        onChange={handleEditChange}
+                                        placeholder="Mínimo 6 caracteres"
+                                    />
+                                </div>
+                                <div className="col-md-6 mb-3">
+                                    <label className="form-label">Confirmar Nova Senha</label>
+                                    <input
+                                        type="password"
+                                        className="form-control"
+                                        name="confirmarNovaSenha"
+                                        value={editData.confirmarNovaSenha || ''}
+                                        onChange={handleEditChange}
+                                        placeholder="Confirme a nova senha"
+                                    />
+                                </div>
+                            </div>
+
+                            <hr />
+                            <h5>Endereço de Faturamento</h5>
 
                             <div className="row">
                                 <div className="col-md-4 mb-3">
@@ -1067,6 +1275,7 @@ const AuthPage = ({ onLoginSuccess }) => {
 
                             <hr />
                             <h5>Endereços de Entrega</h5>
+                            <p className="text-muted small">Gerencie seus endereços de entrega. Você pode adicionar novos e definir qual é o padrão.</p>
                             
                             <div className="mb-3">
                                 <Button 
@@ -1081,16 +1290,16 @@ const AuthPage = ({ onLoginSuccess }) => {
 
                             {enderecosSalvos.length === 0 ? (
                                 <div className="alert alert-info">
-                                    Nenhum endereço de entrega cadastrado.
+                                    <i className="bi bi-info-circle"></i> Nenhum endereço de entrega cadastrado.
                                 </div>
                             ) : (
                                 <div className="row">
                                     {enderecosSalvos.map((endereco) => (
                                         <div key={endereco.id} className="col-md-6 mb-3">
-                                            <div className={`card ${endereco.isPadrao ? 'border-primary' : ''}`}>
+                                            <div className={`card ${endereco.isPadrao ? 'border-primary' : 'border-secondary'}`}>
                                                 <div className="card-body">
                                                     {endereco.isPadrao && (
-                                                        <span className="badge bg-primary mb-2">Padrão</span>
+                                                        <span className="badge bg-primary mb-2">⭐ Padrão</span>
                                                     )}
                                                     {endereco.apelido && (
                                                         <h6 className="card-title">{endereco.apelido}</h6>
@@ -1104,41 +1313,22 @@ const AuthPage = ({ onLoginSuccess }) => {
                                                     <p className="card-text mb-1">
                                                         <small>{endereco.bairro}</small>
                                                     </p>
-                                                    <p className="card-text mb-2">
+                                                    <p className="card-text mb-1">
                                                         <small>{endereco.cidade} - {endereco.estado}</small>
                                                     </p>
                                                     <p className="card-text mb-2">
                                                         <small>CEP: {endereco.cep}</small>
                                                     </p>
                                                     
-                                                    <div className="btn-group btn-group-sm" role="group">
-                                                        {!endereco.isPadrao && (
-                                                            <button
-                                                                type="button"
-                                                                className="btn btn-outline-primary"
-                                                                onClick={() => handleDefinirPadrao(endereco.id)}
-                                                                title="Definir como padrão"
-                                                            >
-                                                                <i className="bi bi-star"></i>
-                                                            </button>
-                                                        )}
+                                                    {!endereco.isPadrao && (
                                                         <button
                                                             type="button"
-                                                            className="btn btn-outline-secondary"
-                                                            onClick={() => handleEditarEndereco(endereco)}
-                                                            title="Editar"
+                                                            className="btn btn-sm btn-outline-primary w-100"
+                                                            onClick={() => handleDefinirPadrao(endereco.id)}
                                                         >
-                                                            <i className="bi bi-pencil"></i>
+                                                            <i className="bi bi-star"></i> Definir como Padrão
                                                         </button>
-                                                        <button
-                                                            type="button"
-                                                            className="btn btn-outline-danger"
-                                                            onClick={() => handleRemoverEndereco(endereco.id)}
-                                                            title="Remover"
-                                                        >
-                                                            <i className="bi bi-trash"></i>
-                                                        </button>
-                                                    </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -1157,16 +1347,16 @@ const AuthPage = ({ onLoginSuccess }) => {
                     </Modal.Footer>
                 </Modal>
 
-                {/* Modal de Adicionar/Editar Endereço */}
+                {/* Modal de Adicionar Endereço de Entrega */}
                 <Modal 
                     show={showAddEnderecoModal} 
                     onHide={() => setShowAddEnderecoModal(false)}
                     centered
+                    backdrop="static"
+                    className="modal-with-backdrop"
                 >
                     <Modal.Header closeButton>
-                        <Modal.Title>
-                            {enderecoEditando ? 'Editar Endereço' : 'Adicionar Endereço'}
-                        </Modal.Title>
+                        <Modal.Title>Adicionar Endereço de Entrega</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
                         {error && <div className="alert alert-danger">{error}</div>}
@@ -1183,6 +1373,7 @@ const AuthPage = ({ onLoginSuccess }) => {
                                     onChange={handleEnderecoFormChange}
                                     placeholder="Casa, Trabalho, etc."
                                 />
+                                <small className="text-muted">Opcional: dê um nome para identificar este endereço</small>
                             </div>
 
                             <div className="row">
@@ -1232,6 +1423,7 @@ const AuthPage = ({ onLoginSuccess }) => {
                                         name="complemento"
                                         value={enderecoForm.complemento}
                                         onChange={handleEnderecoFormChange}
+                                        placeholder="Apto, Bloco, etc."
                                     />
                                 </div>
                             </div>
@@ -1269,6 +1461,7 @@ const AuthPage = ({ onLoginSuccess }) => {
                                         onChange={handleEnderecoFormChange}
                                         maxLength="2"
                                         required
+                                        style={{ textTransform: 'uppercase' }}
                                     />
                                 </div>
                             </div>
@@ -1286,6 +1479,9 @@ const AuthPage = ({ onLoginSuccess }) => {
                                 <label className="form-check-label" htmlFor="isPadraoCheck">
                                     Definir como endereço padrão
                                 </label>
+                                {enderecosSalvos.length === 0 && (
+                                    <small className="text-muted d-block">Este será seu primeiro endereço e será definido como padrão automaticamente</small>
+                                )}
                             </div>
                         </form>
                     </Modal.Body>
@@ -1524,6 +1720,25 @@ const AuthPage = ({ onLoginSuccess }) => {
                                 </div>
                             </div>
 
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label htmlFor="register-genero">Gênero</label>
+                                    <select
+                                        id="register-genero"
+                                        name="genero"
+                                        value={registerData.genero}
+                                        onChange={handleRegisterChange}
+                                        className="form-control"
+                                    >
+                                        <option value="">Selecione...</option>
+                                        <option value="MASCULINO">Masculino</option>
+                                        <option value="FEMININO">Feminino</option>
+                                        <option value="OUTRO">Outro</option>
+                                        <option value="NAO_INFORMADO">Prefiro não informar</option>
+                                    </select>
+                                </div>
+                            </div>
+
                             <div className="form-group">
                                 <label htmlFor="register-email">Email *</label>
                                 <input
@@ -1568,7 +1783,7 @@ const AuthPage = ({ onLoginSuccess }) => {
 
                             {/* Endereço */}
                             <div className="form-section">
-                                <h3>Endereço</h3>
+                                <h3>Endereço de Faturamento</h3>
                                 
                                 <div className="form-row">
                                     <div className="form-group form-group-small">

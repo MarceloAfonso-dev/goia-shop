@@ -23,6 +23,8 @@ public class ClienteRegistroRequest {
     @NotBlank(message = "Data de nascimento é obrigatória")
     private String dataNascimento;
     
+    private String genero;
+    
     // Endereço
     @NotBlank(message = "CEP é obrigatório")
     @Pattern(regexp = "\\d{5}-\\d{3}", message = "CEP deve estar no formato XXXXX-XXX")
@@ -49,6 +51,10 @@ public class ClienteRegistroRequest {
     @NotBlank(message = "Senha é obrigatória")
     @Size(min = 6, message = "Senha deve ter pelo menos 6 caracteres")
     private String senha;
+    
+    // Campos para alteração de senha
+    private String senhaAtual;
+    private String novaSenha;
     
     // Constructors
     public ClienteRegistroRequest() {}
@@ -92,6 +98,14 @@ public class ClienteRegistroRequest {
     
     public void setDataNascimento(String dataNascimento) {
         this.dataNascimento = dataNascimento;
+    }
+    
+    public String getGenero() {
+        return genero;
+    }
+    
+    public void setGenero(String genero) {
+        this.genero = genero;
     }
     
     public String getCep() {
@@ -156,5 +170,21 @@ public class ClienteRegistroRequest {
     
     public void setSenha(String senha) {
         this.senha = senha;
+    }
+    
+    public String getSenhaAtual() {
+        return senhaAtual;
+    }
+    
+    public void setSenhaAtual(String senhaAtual) {
+        this.senhaAtual = senhaAtual;
+    }
+    
+    public String getNovaSenha() {
+        return novaSenha;
+    }
+    
+    public void setNovaSenha(String novaSenha) {
+        this.novaSenha = novaSenha;
     }
 }
