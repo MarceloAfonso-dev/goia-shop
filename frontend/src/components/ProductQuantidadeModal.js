@@ -35,11 +35,18 @@ const ProductQuantidadeModal = ({ show, onHide, product, onSuccess }) => {
             onHide();
             
         } catch (err) {
-            if (err.response?.data) {
-                setError(err.response.data);
-            } else {
-                setError('Erro ao alterar quantidade do produto');
+            console.error('Erro ao alterar quantidade:', err);
+            let errorMsg = 'Erro ao alterar quantidade do produto';
+            
+            if (typeof err.response?.data?.message === 'string') {
+                errorMsg = err.response.data.message;
+            } else if (typeof err.response?.data === 'string') {
+                errorMsg = err.response.data;
+            } else if (typeof err.message === 'string') {
+                errorMsg = err.message;
             }
+            
+            setError(errorMsg);
         } finally {
             setLoading(false);
         }

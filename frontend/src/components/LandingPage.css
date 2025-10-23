@@ -1,3 +1,6 @@
+/* GOI Design System - Landing Page */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+
 * {
   margin: 0;
   padding: 0;
@@ -5,102 +8,114 @@
 }
 
 .landing-page {
-  font-family: 'Inter', sans-serif;
-  background-color: #f9f9f9;
+  font-family: 'Outfit', sans-serif;
+  background-color: #F1F2F4;
   color: #333;
   line-height: 1.6;
 }
 
-/* Header */
+/* GOI Header */
 .header {
-  background-color: white;
-  color: #FF4F5A;
-  padding: 1rem 2rem;
+  height: 56px;
+  background-color: #ffffff;
+  padding: 0 30px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .logo {
-  font-weight: 700;
-  font-size: 1.6rem;
-  letter-spacing: 0.5px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 500;
+  font-size: 26px;
+  color: #000;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 12px;
+  margin: 0;
 }
 
 .logo img {
-  width: 32px;
-  height: 32px;
+  width: 52px;
+  height: 52px;
+}
+
+.navi {
+  display: flex;
+  align-items: center;
+  gap: 24px;
 }
 
 .navi a {
-  color: #FF4F5A;
+  color: #333;
   text-decoration: none;
-  margin-left: 1.5rem;
   font-weight: 500;
+  font-size: 14px;
   transition: color 0.3s ease;
+  position: relative;
 }
 
 .navi a:hover {
-  color: #8d353b;
+  color: #FF4F5A;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 12px;
 }
 
 .btn-login {
-  background-color: #FF4F5A;
-  color: white;
+  background: none;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 50px;
+  color: #FF4F5A;
   cursor: pointer;
-  font-weight: 600;
-  transition: all 0.3s ease;
+  font-weight: 500;
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  transition: color 0.3s ease;
 }
 
 .btn-login:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px #8d353b;
+  color: #8d353b;
 }
 
 .btn-cta {
   background-color: #FF4F5A;
   color: white;
   border: none;
-  padding: 0.5rem 1.2rem;
-  border-radius: 50px;
+  padding: 8px 16px;
+  border-radius: 10px;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 500;
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
   transition: all 0.3s ease;
 }
 
 .btn-cta:hover {
+  background-color: #8d353b;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px #8d353b;
+  box-shadow: 0 4px 12px rgba(255, 79, 90, 0.3);
 }
 
-/* Hero */
+/* GOI Hero Section */
 .hero {
+  height: 480px;
+  background: linear-gradient(135deg, #FF4F5A, #8d353b);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  height: 400px;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   overflow: hidden;
-  padding: 0 2rem;
+  width: 100%;
 }
 
 .hero::before {
@@ -110,182 +125,218 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.5);
+  background: linear-gradient(135deg, rgba(255, 79, 90, 0.85), rgba(141, 53, 59, 0.75));
   z-index: 1;
 }
 
 .hero-content {
   position: relative;
   z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  max-width: 600px;
   text-align: center;
-  height: 100%;
-  min-height: 400px;
   color: white;
-  padding: 2rem;
+  padding: 40px 24px;
 }
 
 .hero h1 {
-  font-size: 2.8rem;
-  margin-bottom: 1rem;
+  font-size: 48px;
+  line-height: 1.1;
+  margin-bottom: 20px;
   font-weight: 700;
+  color: white;
+  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+  letter-spacing: -0.5px;
 }
 
 .hero p {
-  margin-bottom: 1.5rem;
-  font-size: 1.2rem;
-  opacity: 0.9;
+  font-size: 18px;
+  color: white;
+  margin-bottom: 32px;
+  opacity: 0.95;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .btn-hero {
-  background-color: #FF4F5A;
-  color: white;
-  padding: 0.8rem 1.8rem;
+  background-color: white;
+  color: #FF4F5A;
+  padding: 16px 32px;
   border: none;
   border-radius: 50px;
   cursor: pointer;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 16px;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px #8d353b;
+  font-family: 'Outfit', sans-serif;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  text-transform: none;
+  letter-spacing: 0px;
 }
 
 .btn-hero:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px #8d353b;
+  background-color: #f8f8f8;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  color: #8d353b;
 }
 
-/* Benefícios */
+/* GOI Benefits Section */
 .benefits {
-  padding: 4rem 2rem;
+  padding: 40px 20px;
   text-align: center;
-  background-color: white;
+  background-color: #f9f9f9;
 }
 
 .benefits h2 {
-  font-size: 2rem;
-  margin-bottom: 1.5rem;
-  color: #222;
+  font-size: 22px;
+  color: #1c1c1c;
+  margin-bottom: 10px;
 }
 
 .benefits p {
-  margin-bottom: 2rem;
-  color: #666;
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 20px;
 }
 
 .benefits-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 2rem;
-  max-width: 1200px;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 20px;
+  max-width: 1150px;
   margin: 0 auto;
 }
 
+/* GOI Benefit Card */
 .benefit-item {
-  background: white;
-  padding: 1.8rem;
-  border-radius: 12px;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.05);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background-color: #ffffff;
   border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 24px;
+  width: 220px;
+  text-align: left;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
 }
 
 .benefit-item:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 24px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .benefit-icon {
-  font-size: 2.5rem;
-  color: #FF4F5A;
-  margin-bottom: 1.2rem;
-  display: inline-block;
+  font-size: 20px;
+  margin-bottom: 10px;
+  display: block;
 }
 
 .benefit-item h3 {
-  font-size: 1.3rem;
-  margin-bottom: 0.8rem;
-  color: #222;
+  font-size: 16px;
+  color: #1c1c1c;
+  margin-bottom: 10px;
+  font-weight: 600;
 }
 
 .benefit-item p {
-  color: #666;
-  font-size: 0.95rem;
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 16px;
 }
 
-/* Categorias */
+.benefit-item a {
+  color: #ff4b5c;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+  transition: color 0.3s ease;
+}
+
+.benefit-item a:hover {
+  color: #8d353b;
+}
+
+/* GOI Categories Section */
 .categories {
-  padding: 4rem 2rem;
-  background-color: #f9f9f9;
+  padding: 40px 20px;
+  background-color: #ffffff;
 }
 
 .categories h2 {
   text-align: center;
-  margin-bottom: 2.5rem;
-  font-size: 2rem;
-  color: #222;
+  font-size: 22px;
+  color: #1c1c1c;
+  margin-bottom: 20px;
   font-weight: 600;
+}
+
+.categories p {
+  text-align: center;
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 20px;
 }
 
 .carousel {
   display: flex;
-  overflow-x: auto;
-  gap: 1.2rem;
-  padding: 1rem 0;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 20px;
+  max-width: 1150px;
+  margin: 0 auto;
 }
 
-.carousel::-webkit-scrollbar {
-  display: none;
-}
-
+/* GOI Category Card (same as benefit-item) */
 .category-card {
-  flex: 0 0 calc(25% - 1rem);
-  background: white;
+  background-color: #ffffff;
+  border: 1px solid #eee;
   border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  scroll-snap-align: start;
-  transition: transform 0.3s ease;
+  padding: 24px;
+  width: 220px;
+  text-align: left;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
 }
 
 .category-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .category-card img {
   width: 100%;
-  height: 180px;
+  height: 120px;
   object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 16px;
 }
 
 .category-card .text {
-  padding: 1.2rem;
-  text-align: center;
+  padding: 0;
 }
 
 .category-card h3 {
-  font-size: 1.1rem;
-  margin-bottom: 0.6rem;
-  color: #222;
+  font-size: 16px;
+  color: #1c1c1c;
+  margin-bottom: 10px;
+  font-weight: 600;
 }
 
 .category-card p {
-  font-size: 0.9rem;
-  color: #666;
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 16px;
 }
 
 .category-card a {
-  color: #FF4F5A;
-  font-weight: 600;
+  color: #ff4b5c;
   text-decoration: none;
-  display: inline-block;
-  margin-top: 0.5rem;
+  font-weight: 500;
+  font-size: 14px;
   transition: color 0.3s ease;
 }
 
@@ -293,98 +344,121 @@
   color: #8d353b;
 }
 
-/* Produtos Destacados */
+/* GOI Featured Products */
 .featured-products {
-  padding: 4rem 2rem;
-  background-color: white;
+  padding: 40px 20px;
+  background-color: #f9f9f9;
 }
 
 .featured-products h2 {
   text-align: center;
-  margin-bottom: 2.5rem;
-  font-size: 2rem;
-  color: #222;
+  font-size: 22px;
+  color: #1c1c1c;
+  margin-bottom: 10px;
   font-weight: 600;
 }
 
+.featured-products p {
+  text-align: center;
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 20px;
+}
+
 .products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-  max-width: 1200px;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 20px;
+  max-width: 1150px;
   margin: 0 auto;
 }
 
 .product-item {
-  background: white;
+  background-color: #ffffff;
+  border: 1px solid #eee;
   border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  transition: transform 0.3s ease;
+  padding: 24px;
+  width: 220px;
+  text-align: left;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
 }
 
 .product-item:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .product-item img {
   width: 100%;
-  height: 200px;
+  height: 120px;
   object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 16px;
 }
 
 .product-item h3 {
-  padding: 1rem 1.2rem;
-  margin: 0;
-  font-size: 1.1rem;
-  color: #222;
+  font-size: 16px;
+  color: #1c1c1c;
+  margin-bottom: 10px;
+  font-weight: 600;
 }
 
 .product-item p {
-  padding: 0 1.2rem;
-  margin: 0;
-  font-size: 0.9rem;
-  color: #666;
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 16px;
+}
+
+.product-item .price {
+  font-size: 16px;
+  color: #FF4F5A;
+  font-weight: 600;
+  margin-bottom: 16px;
 }
 
 .product-item a {
-  display: block;
-  padding: 0.8rem 1.2rem;
-  text-align: center;
+  display: inline-block;
   background-color: #FF4F5A;
   color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
   text-decoration: none;
-  font-weight: 600;
-  border-radius: 0 0 12px 12px;
-  transition: background-color 0.3s ease;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.3s ease;
 }
 
 .product-item a:hover {
   background-color: #8d353b;
+  transform: translateY(-1px);
 }
 
-/* FAQ */
+/* GOI FAQ Section */
 .faq-section {
-  padding: 4rem 2rem;
-  background-color: #f9f9f9;
+  padding: 40px 20px;
+  background-color: #ffffff;
 }
 
 .faq-container {
-  max-width: 800px;
+  max-width: 1150px;
   margin: 0 auto;
   text-align: center;
 }
 
 .faq-container h2 {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-  color: #222;
+  font-size: 22px;
+  color: #1c1c1c;
+  margin-bottom: 10px;
+  font-weight: 600;
 }
 
 .faq-container p {
-  margin-bottom: 2rem;
-  color: #666;
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 20px;
 }
 
 .faq-list {
@@ -393,32 +467,44 @@
 }
 
 .faq-item {
-  margin-bottom: 1rem;
-  padding: 1rem;
-  background: white;
+  margin-bottom: 16px;
+  padding: 20px;
+  background: #ffffff;
+  border: 1px solid #eee;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 5px rgba(0,0,0,0.05);
   cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: background 0.3s ease;
+  transition: all 0.3s ease;
+  text-align: left;
 }
 
 .faq-item:hover {
-  background: #f0f0f0;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.faq-item h3 {
+  font-size: 16px;
+  color: #1c1c1c;
+  font-weight: 500;
+  margin: 0;
 }
 
 .plus {
-  font-size: 1.2rem;
+  font-size: 20px;
   color: #FF4F5A;
+  font-weight: 500;
 }
 
 .faq-answer {
-  margin-top: 0.5rem;
-  padding: 0.5rem;
-  color: #666;
-  font-size: 0.9rem;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #eee;
+  color: #555;
+  font-size: 14px;
 }
 
 .hidden {
@@ -428,8 +514,8 @@
 .contact-link a {
   color: #FF4F5A;
   text-decoration: none;
-  font-weight: 600;
-  margin-top: 1rem;
+  font-weight: 500;
+  margin-top: 16px;
   display: inline-block;
   transition: color 0.3s ease;
 }
@@ -488,26 +574,144 @@
   color: #666;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
+/* GOI Footer */
+.footer {
+  background-color: #333;
+  color: #fff;
+  padding: 40px 20px;
+  text-align: center;
+  font-family: 'Outfit', sans-serif;
+}
+
+.footer .social-icons {
+  margin-bottom: 20px;
+}
+
+.footer a {
+  color: #FF4F5A;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.footer a:hover {
+  color: #8d353b;
+}
+
+/* GOI Responsive Design */
+@media (max-width: 1024px) {
   .header {
     flex-direction: column;
-    gap: 1rem;
-    padding: 1rem;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 20px;
   }
 
   .navi {
-    display: flex;
-    gap: 1rem;
+    flex-wrap: wrap;
+    gap: 16px;
   }
 
-  .navi a {
-    margin-left: 0;
+  .header-right {
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero {
+    height: auto;
+    padding: 40px 20px;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .hero {
+    height: auto;
+    min-height: 400px;
+    padding: 60px 20px;
   }
 
   .hero h1 {
-    font-size: 2rem;
+    font-size: 32px;
   }
+
+  .hero p {
+    font-size: 16px;
+    margin-bottom: 24px;
+  }
+
+  .benefits h2,
+  .categories h2,
+  .featured-products h2,
+  .faq-container h2 {
+    font-size: 20px;
+  }
+
+  .benefits p,
+  .categories p,
+  .featured-products p,
+  .faq-container p {
+    font-size: 13px;
+  }
+
+  .benefits-grid,
+  .carousel,
+  .products-grid {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .benefit-item,
+  .category-card,
+  .product-item {
+    width: 90%;
+    max-width: 320px;
+  }
+}
+
+@media (max-width: 480px) {
+  .navi {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .header-right {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .btn-login,
+  .btn-cta,
+  .btn-hero {
+    width: 100%;
+    text-align: center;
+    margin: 4px 0;
+  }
+
+  .hero {
+    height: auto;
+    min-height: 350px;
+    padding: 40px 16px;
+  }
+
+  .hero h1 {
+    font-size: 28px;
+    margin-bottom: 16px;
+  }
+
+  .hero p {
+    font-size: 15px;
+    margin-bottom: 24px;
+  }
+
+  .btn-hero {
+    padding: 14px 28px;
+    font-size: 15px;
+  }
+}
 
   .hero p {
     font-size: 1rem;
@@ -517,15 +721,5 @@
     grid-template-columns: 1fr;
   }
 
-  .carousel {
-    flex-direction: column;
-  }
 
-  .category-card {
-    flex: none;
-  }
 
-  .products-grid {
-    grid-template-columns: 1fr;
-  }
-}

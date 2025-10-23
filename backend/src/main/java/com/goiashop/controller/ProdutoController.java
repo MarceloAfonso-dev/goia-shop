@@ -42,7 +42,19 @@ public class ProdutoController {
             return ResponseEntity.ok(response);
         } else {
             // Compatibilidade com versão anterior (sem paginação)
-            List<Produto> produtos = produtoService.listarTodos();
+            // Para clientes públicos, sempre filtrar apenas produtos ativos
+            List<Produto> produtos;
+            if (status != null) {
+                try {
+                    Produto.ProdutoStatus produtoStatus = Produto.ProdutoStatus.valueOf(status);
+                    produtos = produtoService.listarPorStatus(produtoStatus);
+                } catch (IllegalArgumentException e) {
+                    return ResponseEntity.badRequest().body("Status inválido: " + status);
+                }
+            } else {
+                // Se não especificou status, assumir ATIVO para compatibilidade
+                produtos = produtoService.listarPorStatus(Produto.ProdutoStatus.ATIVO);
+            }
             return ResponseEntity.ok(produtos);
         }
     }
@@ -54,6 +66,41 @@ public class ProdutoController {
             return ResponseEntity.ok(produto);
         }
         return ResponseEntity.notFound().build();
+    }
+    
+    // ===== ENDPOINTS PÚBLICOS PARA E-COMMERCE =====
+    
+    /**
+     * Lista produtos para o e-commerce (sem autenticação)
+     * Apenas produtos ativos são retornados
+     */
+    @GetMapping("/public")
+    public ResponseEntity<List<Produto>> listarProdutosPublico() {
+        List<Produto> produtos = produtoService.listarProdutosAtivos();
+        return ResponseEntity.ok(produtos);
+    }
+    
+    /**
+     * Busca produto por ID para o e-commerce (sem autenticação)
+     * Apenas produtos ativos são retornados
+     */
+    @GetMapping("/public/{id}")
+    public ResponseEntity<Produto> buscarProdutoPublico(@PathVariable Long id) {
+        try {
+            Produto produto = produtoService.buscarProdutoPublico(id);
+            return ResponseEntity.ok(produto);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    /**
+     * Busca produtos por nome (sem autenticação)
+     */
+    @GetMapping("/public/buscar")
+    public ResponseEntity<List<Produto>> buscarProdutos(@RequestParam String termo) {
+        List<Produto> produtos = produtoService.buscarPorNome(termo);
+        return ResponseEntity.ok(produtos);
     }
     
     /**
@@ -302,6 +349,11 @@ public class ProdutoController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
+            e.printStackTrace(); // Log completo do erro
+            System.out.println("Erro detalhado: " + e.getClass().getName() + " - " + e.getMessage());
+            if (e.getCause() != null) {
+                System.out.println("Causa: " + e.getCause().getClass().getName() + " - " + e.getCause().getMessage());
+            }
             return ResponseEntity.badRequest().body("Erro ao atualizar produto: " + e.getMessage());
         }
     }

@@ -8,8 +8,9 @@ export const useAuth = () => {
         // Verificar se há usuário logado no localStorage
         const savedUser = localStorage.getItem('user');
         const token = localStorage.getItem('token');
+        const userType = localStorage.getItem('userType');
         
-        console.log('useAuth - verificando localStorage:', { savedUser: !!savedUser, token: !!token });
+        console.log('useAuth - verificando localStorage:', { savedUser: !!savedUser, token: !!token, userType });
         
         if (savedUser && token) {
             try {
@@ -20,6 +21,7 @@ export const useAuth = () => {
                 console.error('Erro ao parsear dados do usuário:', e);
                 localStorage.removeItem('user');
                 localStorage.removeItem('token');
+                localStorage.removeItem('userType');
             }
         }
         
@@ -38,6 +40,13 @@ export const useAuth = () => {
         setUser(null);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        localStorage.removeItem('userType');
+    };
+
+    const updateUser = (updatedData) => {
+        console.log('useAuth - atualizando usuário:', updatedData);
+        setUser(updatedData);
+        localStorage.setItem('user', JSON.stringify(updatedData));
     };
 
     const isAuthenticated = () => {
@@ -54,13 +63,29 @@ export const useAuth = () => {
         return user?.grupo === 'ESTOQUISTA';
     };
 
+    const isBackofficeUser = () => {
+        return user?.grupo === 'ADMIN' || user?.grupo === 'ESTOQUISTA';
+    };
+
+    const isClienteUser = () => {
+        return user?.grupo === 'CLIENTE' || (!user?.grupo && user);
+    };
+
+    const getUserType = () => {
+        return localStorage.getItem('userType');
+    };
+
     return {
         user,
         loading,
         login,
         logout,
+        updateUser,
         isAuthenticated,
         isAdmin,
-        isEstoquista
+        isEstoquista,
+        isBackofficeUser,
+        isClienteUser,
+        getUserType
     };
 };

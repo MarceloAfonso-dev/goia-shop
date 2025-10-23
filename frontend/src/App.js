@@ -1,24 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import LandingPage from './components/LandingPage';
-import Login from './components/Login';
+import AuthPage from './components/AuthPage';
+import AdminLogin from './components/AdminLogin';
 import Dashboard from './components/Dashboard';
+import MyAccountPage from './components/MyAccountPage';
+import PublicProductGrid from './components/PublicProductGrid';
+import ProductDetailPage from './components/ProductDetailPage';
+import CartPage from './components/CartPage';
+import CheckoutPage from './components/CheckoutPage';
 import { useAuth } from './hooks/useAuth';
+import { CartProvider } from './hooks/useCart';
 
 function App() {
-  const { user, loading, login, logout } = useAuth();
-  const [currentPage, setCurrentPage] = useState('landing'); // 'landing', 'login', 'dashboard'
-
-  // Quando o usuário for carregado do localStorage, ir direto para o dashboard
-  useEffect(() => {
-    if (user) {
-      console.log('App - usuário logado detectado, indo para dashboard');
-      setCurrentPage('dashboard');
-    } else {
-      console.log('App - usuário não logado, ficando na landing');
-      setCurrentPage('landing');
-    }
-  }, [user]);
+  const { user, loading, login, logout, isBackofficeUser, isClienteUser, getUserType } = useAuth();
 
   if (loading) {
     return (
@@ -33,39 +29,96 @@ function App() {
     );
   }
 
-  const handleLoginClick = () => {
-    setCurrentPage('login');
-  };
-
   const handleLoginSuccess = (userData) => {
     login(userData);
-    setCurrentPage('dashboard');
   };
 
   const handleLogout = () => {
     logout();
-    setCurrentPage('landing');
-  };
-
-  const handleBackToLanding = () => {
-    setCurrentPage('landing');
   };
 
   return (
-    <div className="App">
-      {currentPage === 'landing' && (
-        <LandingPage onLoginClick={handleLoginClick} />
-      )}
-      {currentPage === 'login' && (
-        <Login 
-          onLoginSuccess={handleLoginSuccess}
-          onBackToLanding={handleBackToLanding}
-        />
-      )}
-      {currentPage === 'dashboard' && user && (
-        <Dashboard user={user} onLogout={handleLogout} />
-      )}
-    </div>
+    <CartProvider>
+      <Router>
+        <div className="App">
+          <Routes>
+          {/* Rota principal - Landing Page */}
+          <Route path="/" element={<LandingPage />} />
+          
+          {/* Rota de autenticação (login/cadastro) - apenas para clientes */}
+          <Route path="/login" element={
+            isBackofficeUser() ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <AuthPage onLoginSuccess={handleLoginSuccess} />
+            )
+          } />
+          
+          {/* Rota de login administrativo - apenas para backoffice */}
+          <Route path="/admin" element={
+            isClienteUser() ? (
+              <Navigate to="/" replace />
+            ) : isBackofficeUser() ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <AdminLogin />
+            )
+          } />
+          
+          {/* Rotas do e-commerce público */}
+          <Route path="/produtos" element={<PublicProductGrid />} />
+          <Route path="/produto/:id" element={<ProductDetailPage />} />
+          <Route path="/carrinho" element={
+            isBackofficeUser() ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <CartPage />
+            )
+          } />
+          <Route path="/checkout" element={
+            isBackofficeUser() ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <CheckoutPage />
+            )
+          } />
+          
+          {/* Rota da área do usuário - apenas para clientes */}
+          <Route 
+            path="/minha-conta" 
+            element={
+              isBackofficeUser() ? (
+                <Navigate to="/dashboard" replace />
+              ) : user && isClienteUser() ? (
+                <MyAccountPage />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            } 
+          />
+          
+          {/* Rota do dashboard (protegida - apenas backoffice) */}
+          <Route 
+            path="/dashboard" 
+            element={
+              user && isBackofficeUser() ? (
+                <Dashboard user={user} onLogout={handleLogout} />
+              ) : user && isClienteUser() ? (
+                <Navigate to="/" replace />
+              ) : (
+                <Navigate to="/admin" replace />
+              )
+            } 
+          />
+          
+
+          
+          {/* Rota catch-all - redireciona para landing */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+      </Router>
+    </CartProvider>
   );
 }
 

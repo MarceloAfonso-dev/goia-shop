@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Card, Badge, Spinner, Alert, Row, Col, Button, Form, InputGroup, Pagination } from 'react-bootstrap';
+import { Table, Card, Badge, Spinner, Alert, Row, Col, Button, Form, InputGroup, Pagination, Modal } from 'react-bootstrap';
 import api from '../utils/api';
 import ProductCadastroModal from './ProductCadastroModal';
 import ProductEditModal from './ProductEditCompleteModal';
-import ProductPreview from './ProductPreview';
+import ProductDetailPage from './ProductDetailPage';
 import { useAuth } from '../hooks/useAuth';
 
 // Ativar/Inativar produto
@@ -16,9 +16,10 @@ const ProductList = () => {
     const [error, setError] = useState('');
     const [showCadastroModal, setShowCadastroModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
-    const [previewProductId, setPreviewProductId] = useState(null);
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [showQuantidadeModal, setShowQuantidadeModal] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
     
     // Estados de filtro e paginação
     const [filtroNome, setFiltroNome] = useState('');
@@ -87,8 +88,11 @@ const ProductList = () => {
                 setProducts([]);
             }
         } catch (err) {
-            if (err.response?.data?.message) {
+            console.error('Erro ao carregar produtos:', err);
+            if (err.response?.data?.message && typeof err.response.data.message === 'string') {
                 setError('Erro ao carregar produtos: ' + err.response.data.message);
+            } else if (err.response?.data && typeof err.response.data === 'string') {
+                setError('Erro ao carregar produtos: ' + err.response.data);
             } else {
                 setError('Erro ao conectar com o servidor');
             }
@@ -111,14 +115,7 @@ const ProductList = () => {
             <Badge bg="secondary">{status}</Badge>;
     };
 
-    // Preview do produto
-    const handlePreviewProduct = (productId) => {
-        setPreviewProductId(productId);
-    };
-
-    const handleClosePreview = () => {
-        setPreviewProductId(null);
-    };
+    // Preview do produto - Removido, agora usa página dedicada
 
     // Ativar/Inativar produto
     const handleActivate = async (id) => {
@@ -151,6 +148,32 @@ const ProductList = () => {
     const handleEditProduct = (product) => {
         setSelectedProduct(product);
         setShowEditModal(true);
+    };
+
+    const handleViewDetails = (product) => {
+        setSelectedProduct(product);
+        setCurrentImageIndex(0); // Resetar para primeira imagem
+        setShowDetailsModal(true);
+    };
+
+    const handleNextImage = () => {
+        if (selectedProduct && selectedProduct.imagens) {
+            setCurrentImageIndex((prev) => 
+                (prev + 1) % selectedProduct.imagens.length
+            );
+        }
+    };
+
+    const handlePrevImage = () => {
+        if (selectedProduct && selectedProduct.imagens) {
+            setCurrentImageIndex((prev) => 
+                prev === 0 ? selectedProduct.imagens.length - 1 : prev - 1
+            );
+        }
+    };
+
+    const goToImage = (index) => {
+        setCurrentImageIndex(index);
     };
 
     // Funções de filtro
@@ -212,6 +235,17 @@ const ProductList = () => {
 
     return (
         <div>
+            {/* Informação para Estoquista */}
+            {isEstoquista() && (
+                <Alert variant="info" className="mb-3">
+                    <Alert.Heading>👤 Área do Estoquista</Alert.Heading>
+                    <p className="mb-0">
+                        Como <strong>ESTOQUISTA</strong>, você pode apenas <strong>alterar quantidades em estoque</strong> dos produtos. 
+                        Para outras operações (cadastrar, editar, ativar/inativar), contacte um administrador.
+                    </p>
+                </Alert>
+            )}
+            
             <Row className="mb-3">
                 <Col>
                     <Card>
@@ -327,13 +361,15 @@ const ProductList = () => {
             <Card>
                 <Card.Header className="d-flex justify-content-between align-items-center">
                     <h5 className="mb-0">Lista de Produtos</h5>
-                    <Button 
-                        variant="primary" 
-                        onClick={() => setShowCadastroModal(true)}
-                        size="sm"
-                    >
-                        + Novo Produto
-                    </Button>
+                    {isAdmin() && (
+                        <Button 
+                            variant="primary" 
+                            onClick={() => setShowCadastroModal(true)}
+                            size="sm"
+                        >
+                            + Novo Produto
+                        </Button>
+                    )}
                 </Card.Header>
                 <Card.Body>
                     <div className="table-responsive">
@@ -387,55 +423,53 @@ const ProductList = () => {
                                             <td>{getStatusBadge(product.status)}</td>
                                             <td>
                                                 <div className="d-flex flex-wrap gap-1">
-                                                    <Button 
-                                                        variant="info" 
-                                                        size="sm" 
-                                                        onClick={() => handlePreviewProduct(product.id)}
-                                                        title="Visualizar produto"
-                                                    >
-                                                        👁️
-                                                    </Button>
-                                                    <Button 
-                                                        variant="warning" 
-                                                        size="sm" 
-                                                        title={isAdmin() ? "Editar produto (dados + imagens)" : "Apenas administradores podem editar produtos"}
-                                                        onClick={() => isAdmin() && handleEditProduct(product)}
-                                                        disabled={!isAdmin()}
-                                                        className={!isAdmin() ? 'bg-light' : ''}
-                                                    >
-                                                        ✏️
-                                                    </Button>
-                                                    {product.status === "ATIVO" ? (
-                                                        <Button 
-                                                            variant="secondary" 
-                                                            size="sm" 
-                                                            onClick={() => isAdmin() && handleDeactivate(product.id)}
-                                                            title={isAdmin() ? "Inativar produto" : "Apenas administradores podem inativar produtos"}
-                                                            disabled={!isAdmin()}
-                                                            className={!isAdmin() ? 'bg-light' : ''}
-                                                        >
-                                                            ⏸️
-                                                        </Button>
-                                                    ) : (
-                                                        <Button 
-                                                            variant="success" 
-                                                            size="sm" 
-                                                            onClick={() => isAdmin() && handleActivate(product.id)}
-                                                            title={isAdmin() ? "Ativar produto" : "Apenas administradores podem ativar produtos"}
-                                                            disabled={!isAdmin()}
-                                                            className={!isAdmin() ? 'bg-light' : ''}
-                                                        >
-                                                            ▶️
-                                                        </Button>
+                                                    {isAdmin() && (
+                                                        <>
+                                                            <Button 
+                                                                variant="info" 
+                                                                size="sm" 
+                                                                onClick={() => handleViewDetails(product)}
+                                                                title="Ver detalhes do produto"
+                                                            >
+                                                                👁️
+                                                            </Button>
+                                                            <Button 
+                                                                variant="warning" 
+                                                                size="sm" 
+                                                                title="Editar produto (dados + imagens)"
+                                                                onClick={() => handleEditProduct(product)}
+                                                            >
+                                                                ✏️
+                                                            </Button>
+                                                            {product.status === "ATIVO" ? (
+                                                                <Button 
+                                                                    variant="secondary" 
+                                                                    size="sm" 
+                                                                    onClick={() => handleDeactivate(product.id)}
+                                                                    title="Inativar produto"
+                                                                >
+                                                                    ⏸️
+                                                                </Button>
+                                                            ) : (
+                                                                <Button 
+                                                                    variant="success" 
+                                                                    size="sm" 
+                                                                    onClick={() => handleActivate(product.id)}
+                                                                    title="Ativar produto"
+                                                                >
+                                                                    ▶️
+                                                                </Button>
+                                                            )}
+                                                        </>
                                                     )}
-                                                    {(isAdmin() || isEstoquista()) && (
+                                                    {isEstoquista() && (
                                                         <Button
-                                                            variant="outline-primary"
+                                                            variant="primary"
                                                             size="sm"
                                                             onClick={() => handleEditQuantidade(product)}
                                                             title="Alterar quantidade em estoque"
                                                         >
-                                                            📦
+                                                            📦 Quantidade
                                                         </Button>
                                                     )}
                                                 </div>
@@ -509,26 +543,233 @@ const ProductList = () => {
             </Card>
             
             {/* Modal de Cadastro */}
-            <ProductCadastroModal
-                show={showCadastroModal}
-                onHide={() => setShowCadastroModal(false)}
-                onSuccess={fetchProducts}
-            />
-
-            {/* Modal de Edição */}
-            <ProductEditModal
-                show={showEditModal}
-                onHide={() => setShowEditModal(false)}
-                product={selectedProduct}
-                onProductUpdated={fetchProducts}
-            />
-
-            {/* Product Preview */}
-            {previewProductId && (
-                <ProductPreview
-                    productId={previewProductId}
-                    onClose={handleClosePreview}
+            {/* Modal de Cadastro - Apenas para Admin */}
+            {isAdmin() && (
+                <ProductCadastroModal
+                    show={showCadastroModal}
+                    onHide={() => setShowCadastroModal(false)}
+                    onSuccess={fetchProducts}
                 />
+            )}
+
+            {/* Modal de Edição - Apenas para Admin */}
+            {isAdmin() && (
+                <ProductEditModal
+                    show={showEditModal}
+                    onHide={() => setShowEditModal(false)}
+                    product={selectedProduct}
+                    onProductUpdated={fetchProducts}
+                />
+            )}
+
+            {/* Modal de Detalhes do Produto - Para Administradores */}
+            {isAdmin() && (
+                <Modal 
+                    show={showDetailsModal} 
+                    onHide={() => setShowDetailsModal(false)}
+                    size="lg"
+                    centered
+                >
+                    <Modal.Header closeButton>
+                        <Modal.Title>Detalhes do Produto</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        {selectedProduct && (
+                            <div>
+                                <Row className="mb-3">
+                                    <Col md={6}>
+                                        {/* Carrossel de Imagens */}
+                                        {selectedProduct.imagens && selectedProduct.imagens.length > 0 ? (
+                                            <div>
+                                                {/* Imagem Principal com Navegação */}
+                                                <div style={{ position: 'relative', marginBottom: '16px' }}>
+                                                    <img 
+                                                        src={selectedProduct.imagens[currentImageIndex]?.urlArquivo || '/placeholder.png'} 
+                                                        alt={selectedProduct.nome}
+                                                        style={{ 
+                                                            width: '100%', 
+                                                            maxHeight: '400px', 
+                                                            objectFit: 'contain', 
+                                                            borderRadius: '8px',
+                                                            backgroundColor: '#f8f9fa'
+                                                        }}
+                                                    />
+                                                    
+                                                    {/* Botões de Navegação - apenas se houver mais de uma imagem */}
+                                                    {selectedProduct.imagens.length > 1 && (
+                                                        <>
+                                                            <Button
+                                                                variant="dark"
+                                                                size="sm"
+                                                                onClick={handlePrevImage}
+                                                                style={{
+                                                                    position: 'absolute',
+                                                                    left: '10px',
+                                                                    top: '50%',
+                                                                    transform: 'translateY(-50%)',
+                                                                    opacity: 0.7,
+                                                                    borderRadius: '50%',
+                                                                    width: '40px',
+                                                                    height: '40px',
+                                                                    padding: 0
+                                                                }}
+                                                            >
+                                                                ‹
+                                                            </Button>
+                                                            <Button
+                                                                variant="dark"
+                                                                size="sm"
+                                                                onClick={handleNextImage}
+                                                                style={{
+                                                                    position: 'absolute',
+                                                                    right: '10px',
+                                                                    top: '50%',
+                                                                    transform: 'translateY(-50%)',
+                                                                    opacity: 0.7,
+                                                                    borderRadius: '50%',
+                                                                    width: '40px',
+                                                                    height: '40px',
+                                                                    padding: 0
+                                                                }}
+                                                            >
+                                                                ›
+                                                            </Button>
+                                                            
+                                                            {/* Contador de Imagens */}
+                                                            <Badge 
+                                                                bg="dark" 
+                                                                style={{
+                                                                    position: 'absolute',
+                                                                    bottom: '10px',
+                                                                    right: '10px',
+                                                                    opacity: 0.8
+                                                                }}
+                                                            >
+                                                                {currentImageIndex + 1} / {selectedProduct.imagens.length}
+                                                            </Badge>
+                                                        </>
+                                                    )}
+                                                    
+                                                    {/* Badge de Imagem Principal */}
+                                                    {selectedProduct.imagens[currentImageIndex]?.isPrincipal && (
+                                                        <Badge 
+                                                            bg="primary" 
+                                                            style={{
+                                                                position: 'absolute',
+                                                                top: '10px',
+                                                                left: '10px'
+                                                            }}
+                                                        >
+                                                            ★ Principal
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                                
+                                                {/* Miniaturas */}
+                                                {selectedProduct.imagens.length > 1 && (
+                                                    <div style={{ 
+                                                        display: 'flex', 
+                                                        gap: '8px', 
+                                                        flexWrap: 'wrap',
+                                                        justifyContent: 'center'
+                                                    }}>
+                                                        {selectedProduct.imagens.map((img, index) => (
+                                                            <div
+                                                                key={index}
+                                                                onClick={() => goToImage(index)}
+                                                                style={{
+                                                                    width: '70px',
+                                                                    height: '70px',
+                                                                    cursor: 'pointer',
+                                                                    border: currentImageIndex === index 
+                                                                        ? '3px solid #0d6efd' 
+                                                                        : img.isPrincipal 
+                                                                            ? '2px solid #ffc107'
+                                                                            : '1px solid #dee2e6',
+                                                                    borderRadius: '4px',
+                                                                    overflow: 'hidden',
+                                                                    opacity: currentImageIndex === index ? 1 : 0.6,
+                                                                    transition: 'all 0.2s',
+                                                                    position: 'relative'
+                                                                }}
+                                                                onMouseEnter={(e) => {
+                                                                    if (currentImageIndex !== index) {
+                                                                        e.currentTarget.style.opacity = '0.8';
+                                                                    }
+                                                                }}
+                                                                onMouseLeave={(e) => {
+                                                                    if (currentImageIndex !== index) {
+                                                                        e.currentTarget.style.opacity = '0.6';
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <img 
+                                                                    src={img.urlArquivo} 
+                                                                    alt={`${selectedProduct.nome} - ${index + 1}`}
+                                                                    style={{ 
+                                                                        width: '100%', 
+                                                                        height: '100%', 
+                                                                        objectFit: 'cover'
+                                                                    }}
+                                                                />
+                                                                {img.isPrincipal && (
+                                                                    <span style={{
+                                                                        position: 'absolute',
+                                                                        top: '2px',
+                                                                        right: '2px',
+                                                                        fontSize: '12px'
+                                                                    }}>
+                                                                        ★
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div style={{ 
+                                                width: '100%', 
+                                                height: '300px', 
+                                                backgroundColor: '#f0f0f0', 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                justifyContent: 'center',
+                                                borderRadius: '8px'
+                                            }}>
+                                                <span style={{ fontSize: '48px' }}>📦</span>
+                                            </div>
+                                        )}
+                                    </Col>
+                                    <Col md={6}>
+                                        <h4>{selectedProduct.nome}</h4>
+                                        <p className="text-muted">Código: {selectedProduct.codigo}</p>
+                                        <hr />
+                                        <p><strong>Preço:</strong> <span className="text-success fs-5">{formatPrice(selectedProduct.preco)}</span></p>
+                                        <p><strong>Quantidade em Estoque:</strong> <Badge bg={selectedProduct.quantidade > 0 ? 'success' : 'danger'}>{selectedProduct.quantidade}</Badge></p>
+                                        <p><strong>Status:</strong> {getStatusBadge(selectedProduct.status)}</p>
+                                        <hr />
+                                        <h5>Descrição</h5>
+                                        <p style={{ maxHeight: '150px', overflowY: 'auto' }}>
+                                            {selectedProduct.descricao || 'Sem descrição'}
+                                        </p>
+                                    </Col>
+                                </Row>
+                            </div>
+                        )}
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={() => setShowDetailsModal(false)}>
+                            Fechar
+                        </Button>
+                        <Button variant="warning" onClick={() => {
+                            setShowDetailsModal(false);
+                            handleEditProduct(selectedProduct);
+                        }}>
+                            Editar Produto
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
             )}
             
             {/* Modal de Edição de Quantidade */}

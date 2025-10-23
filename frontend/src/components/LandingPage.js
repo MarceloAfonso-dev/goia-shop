@@ -1,10 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '../utils/api';
+import { useAuth } from '../hooks/useAuth';
 import './LandingPage.css';
 
-const LandingPage = ({ onLoginClick }) => {
+const LandingPage = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [showPopup, setShowPopup] = useState(false);
   const [popupData, setPopupData] = useState({ title: '', description: '' });
   const [openFaq, setOpenFaq] = useState(null);
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
 
   const handlePopupOpen = (title, description) => {
     setPopupData({ title, description });
@@ -83,29 +90,52 @@ const LandingPage = ({ onLoginClick }) => {
     }
   ];
 
-  const featuredProducts = [
-    {
-      image: 'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=400&h=300&fit=crop',
-      title: 'iPhone pra Sempre',
-      description: 'Um iPhone novo para chamar de seu em 21x sem frete grátis.',
-      linkTitle: 'iPhone',
-      linkDescription: 'Apple iPhone 15 Pro Max em até 21x sem juros.'
-    },
-    {
-      image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=300&fit=crop',
-      title: 'Loja Samsung no GOIAA',
-      description: 'Diversos produtos em até 21x sem juros com frete grátis.',
-      linkTitle: 'Loja Samsung',
-      linkDescription: 'Samsung Galaxy S24, TV, fones e mais com desconto exclusivo.'
-    },
-    {
-      image: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=400&h=300&fit=crop',
-      title: 'Clube de Vinhos no GOIAA Shop',
-      description: 'Com planos a partir de R$ 81,90. Receba em casa vinhos selecionados.',
-      linkTitle: 'Clube de Vinhos',
-      linkDescription: 'Vinhos premium entregues diretamente na sua casa.'
-    }
-  ];
+  // Função para buscar produtos reais do backend
+  useEffect(() => {
+    const fetchFeaturedProducts = async () => {
+      try {
+        setLoadingProducts(true);
+        const response = await api.get('/produtos?status=ATIVO&page=0&pageSize=4');
+        
+        if (response.data && response.data.content) {
+          // Transformar produtos do backend no formato esperado pela UI
+          const products = response.data.content.slice(0, 4).map(product => ({
+            id: product.id,
+            image: product.imagemUrl || 'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=400&h=300&fit=crop',
+            title: product.nome,
+            description: product.descricao,
+            linkTitle: product.nome,
+            linkDescription: `${product.nome} - R$ ${product.preco?.toFixed(2).replace('.', ',')}`,
+            produto: product // Manter referência ao produto original
+          }));
+          setFeaturedProducts(products);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar produtos:', error);
+        // Fallback para produtos estáticos em caso de erro
+        setFeaturedProducts([
+          {
+            image: 'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=400&h=300&fit=crop',
+            title: 'iPhone pra Hoje',
+            description: 'O iPhone mais novo com desconto especial para clientes GOIA. Aproveite agora!',
+            linkTitle: 'iPhone',
+            linkDescription: 'Apple iPhone 15 Pro Max com desconto exclusivo GOIA.'
+          },
+          {
+            image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=300&fit=crop',
+            title: 'Produtos Samsung',
+            description: 'Toda linha Samsung com os melhores preços e parcelamento exclusivo.',
+            linkTitle: 'Produtos Samsung',
+            linkDescription: 'Samsung Galaxy, TVs, fones e mais com cashback GOIA.'
+          }
+        ]);
+      } finally {
+        setLoadingProducts(false);
+      }
+    };
+
+    fetchFeaturedProducts();
+  }, []);
 
   const faqs = [
     {
@@ -131,19 +161,67 @@ const LandingPage = ({ onLoginClick }) => {
       {/* Header */}
       <header className="header">
         <div className="logo">
-          <img src="/assets/img/GOIA-icon-header.png" alt="GOIA" />
-          GOIA
+          <img src="/assets/img/goia-icon-header.png" alt="GOIA" />
+          GOIA Shop
         </div>
         <nav className="navi">
           <a href="#benefits">Para você</a>
-          <a href="#categories">Para empresas</a>
+          <a href="#categories">Vantagens</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/produtos'); }}>Produtos</a>
           <a href="#faq">Ajuda</a>
         </nav>
         <div className="header-right">
-          <button className="btn-login" onClick={onLoginClick}>
-            Login
+          {/* Login/Account Link */}
+          {user ? (
+            <button 
+              className="btn-login"
+              onClick={() => {
+                if (user.grupo === 'ADMIN' || user.grupo === 'ESTOQUISTA') {
+                  navigate('/dashboard');
+                } else {
+                  navigate('/minha-conta');
+                }
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <div style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                backgroundColor: '#FF4F5A',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '14px',
+                fontWeight: 'bold'
+              }}>
+                {user.nome?.charAt(0).toUpperCase()}
+              </div>
+              <span>Olá, {user.nome?.split(' ')[0]}</span>
+            </button>
+          ) : (
+            <button className="btn-login" onClick={() => navigate('/login')}>
+              Login
+            </button>
+          )}
+          
+          <button className="btn-cta" onClick={() => navigate('/cadastro')}>
+            Abrir conta
           </button>
-          <button className="btn-cta">Abrir conta</button>
+          
+          {/* Link Admin - Apenas se não for cliente */}
+          {!user || (user && user.grupo !== 'CLIENTE' && user.tipo !== 'CLIENTE') ? (
+            <small style={{marginLeft: '10px'}}>
+              <a href="/admin" style={{color: '#666', fontSize: '12px', textDecoration: 'none'}}>
+                Admin
+              </a>
+            </small>
+          ) : null}
         </div>
       </header>
 
@@ -156,8 +234,10 @@ const LandingPage = ({ onLoginClick }) => {
       >
         <div className="hero-content">
           <h1>GOIA Shop</h1>
-          <p>Um shopping completo no app, com cashback, ofertas exclusivas e mais.</p>
-          <button className="btn-hero">Aproveitar no app</button>
+          <p>Um shopping completo online, com cashback, ofertas exclusivas e produtos incríveis para toda família.</p>
+          <button className="btn-hero" onClick={() => navigate('/produtos')}>
+            Acessar Marketplace
+          </button>
         </div>
       </section>
 
@@ -203,8 +283,8 @@ const LandingPage = ({ onLoginClick }) => {
       </section>
 
       {/* Produtos Destacados */}
-      <section className="featured-products">
-        <h2>Aqui tem muito mais vantagens</h2>
+      <section className="featured-products" id="featured-products">
+        <h2>Marketplace - Aqui tem muito mais vantagens</h2>
         <div className="products-grid">
           {featuredProducts.map((product, index) => (
             <div key={index} className="product-item">

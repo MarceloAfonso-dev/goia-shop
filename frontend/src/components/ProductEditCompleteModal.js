@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Form, Button, Alert, Row, Col, Spinner, Card, Badge, Image } from 'react-bootstrap';
 import api from '../utils/api';
+import { useAuth } from '../hooks/useAuth';
 
 const ProductEditModal = ({ show, onHide, product, onProductUpdated }) => {
+    const { isAdmin, isEstoquista } = useAuth();
+    
     const [formData, setFormData] = useState({
         nome: '',
         descricao: '',
@@ -202,7 +205,11 @@ const ProductEditModal = ({ show, onHide, product, onProductUpdated }) => {
                 setImagens(reorderedImages);
             }
         } catch (err) {
-            setError('Erro ao remover imagem: ' + (err.response?.data || err.message));
+            console.error('Erro ao remover imagem:', err);
+            const errorMsg = typeof err.response?.data?.message === 'string' 
+                ? err.response.data.message 
+                : err.message || 'Erro desconhecido';
+            setError('Erro ao remover imagem: ' + errorMsg);
         }
     };
 
@@ -219,8 +226,8 @@ const ProductEditModal = ({ show, onHide, product, onProductUpdated }) => {
             if (!formData.preco || parseFloat(formData.preco) <= 0) {
                 throw new Error('Preço deve ser maior que zero');
             }
-            if (!formData.quantidadeEstoque || parseInt(formData.quantidadeEstoque) <= 0) {
-                throw new Error('Quantidade em estoque deve ser maior que zero. Para zerar o estoque, use a opção de inativar o produto.');
+            if (!isAdmin() && (!formData.quantidadeEstoque || parseInt(formData.quantidadeEstoque) < 0)) {
+                throw new Error('Quantidade em estoque deve ser maior ou igual a zero.');
             }
             if (formData.avaliacao && (parseFloat(formData.avaliacao) < 1 || parseFloat(formData.avaliacao) > 5)) {
                 throw new Error('Avaliação deve estar entre 1 e 5');
@@ -235,9 +242,11 @@ const ProductEditModal = ({ show, onHide, product, onProductUpdated }) => {
                 nome: formData.nome.trim(),
                 descricao: formData.descricao.trim(),
                 preco: parseFloat(formData.preco),
-                quantidadeEstoque: parseInt(formData.quantidadeEstoque),
                 avaliacao: formData.avaliacao ? parseFloat(formData.avaliacao) : null,
-                status: formData.status,
+                // Admin não pode alterar quantidade (sempre 0), estoquista pode
+                quantidadeEstoque: isAdmin() ? 0 : parseInt(formData.quantidadeEstoque),
+                // Admin mantém status atual, estoquista pode alterar
+                status: isAdmin() ? product.status : formData.status,
                 imagens: existingImages.map((img, index) => ({
                     imagemId: img.id,
                     ordem: img.ordem,
@@ -272,7 +281,16 @@ const ProductEditModal = ({ show, onHide, product, onProductUpdated }) => {
             onHide();
 
         } catch (err) {
-            setError(err.response?.data || err.message || 'Erro ao atualizar produto');
+            console.error('Erro ao atualizar produto:', err);
+            let errorMsg = 'Erro ao atualizar produto';
+            
+            if (typeof err.response?.data?.message === 'string') {
+                errorMsg = err.response.data.message;
+            } else if (typeof err.message === 'string') {
+                errorMsg = err.message;
+            }
+            
+            setError(errorMsg);
             setUploadingImages(false);
         } finally {
             setLoading(false);
@@ -386,10 +404,17 @@ const ProductEditModal = ({ show, onHide, product, onProductUpdated }) => {
                                     name="quantidadeEstoque"
                                     value={formData.quantidadeEstoque}
                                     onChange={handleInputChange}
-                                    required
-                                    min="1"
+                                    required={!isAdmin()}
+                                    min="0"
                                     placeholder="1"
+                                    disabled={isAdmin()}
+                                    className={isAdmin() ? "bg-light" : ""}
                                 />
+                                {isAdmin() && (
+                                    <Form.Text className="text-muted">
+                                        Apenas estoquistas podem alterar quantidades
+                                    </Form.Text>
+                                )}
                             </Form.Group>
                         </Col>
                         <Col md={4}>
@@ -413,14 +438,30 @@ const ProductEditModal = ({ show, onHide, product, onProductUpdated }) => {
                         <Col md={4}>
                             <Form.Group className="mb-3">
                                 <Form.Label>Status</Form.Label>
-                                <Form.Select
-                                    name="status"
-                                    value={formData.status}
-                                    onChange={handleInputChange}
-                                >
-                                    <option value="ATIVO">Ativo</option>
-                                    <option value="INATIVO">Inativo</option>
-                                </Form.Select>
+                                {isAdmin() ? (
+                                    // Admin não pode alterar status, apenas visualizar
+                                    <Form.Control
+                                        type="text"
+                                        value={formData.status === 'ATIVO' ? 'Ativo' : 'Inativo'}
+                                        disabled
+                                        className="bg-light"
+                                    />
+                                ) : (
+                                    // Estoquista pode alterar status
+                                    <Form.Select
+                                        name="status"
+                                        value={formData.status}
+                                        onChange={handleInputChange}
+                                    >
+                                        <option value="ATIVO">Ativo</option>
+                                        <option value="INATIVO">Inativo</option>
+                                    </Form.Select>
+                                )}
+                                {isAdmin() && (
+                                    <Form.Text className="text-muted">
+                                        Apenas estoquistas podem alterar o status
+                                    </Form.Text>
+                                )}
                             </Form.Group>
                         </Col>
                     </Row>
