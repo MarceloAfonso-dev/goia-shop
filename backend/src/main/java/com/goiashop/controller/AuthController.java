@@ -89,12 +89,25 @@ public class AuthController {
             response.put("success", true);
             response.put("message", "Cliente registrado com sucesso");
             response.put("token", token);
-            response.put("cliente", Map.of(
-                "id", cliente.getId(),
-                "nome", cliente.getNome(),
-                "email", cliente.getEmail(),
-                "tipo", "CLIENTE"
-            ));
+            
+            // Retornar todos os dados do cliente (exceto senha)
+            Map<String, Object> clienteData = new HashMap<>();
+            clienteData.put("id", cliente.getId());
+            clienteData.put("nome", cliente.getNome());
+            clienteData.put("email", cliente.getEmail());
+            clienteData.put("cpf", cliente.getCpf());
+            clienteData.put("telefone", cliente.getTelefone());
+            clienteData.put("dataNascimento", cliente.getDataNascimento() != null ? cliente.getDataNascimento().toString() : null);
+            clienteData.put("cep", cliente.getCep());
+            clienteData.put("logradouro", cliente.getLogradouro());
+            clienteData.put("numero", cliente.getNumero());
+            clienteData.put("complemento", cliente.getComplemento());
+            clienteData.put("bairro", cliente.getBairro());
+            clienteData.put("cidade", cliente.getCidade());
+            clienteData.put("uf", cliente.getEstado());
+            clienteData.put("tipo", "CLIENTE");
+            
+            response.put("cliente", clienteData);
             
             return ResponseEntity.ok(response);
             
@@ -116,12 +129,25 @@ public class AuthController {
             response.put("success", true);
             response.put("message", "Login realizado com sucesso");
             response.put("token", token);
-            response.put("user", Map.of(
-                "id", cliente.getId(),
-                "nome", cliente.getNome(),
-                "email", cliente.getEmail(),
-                "tipo", "CLIENTE"
-            ));
+            
+            // Retornar todos os dados do cliente (exceto senha)
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("id", cliente.getId());
+            userData.put("nome", cliente.getNome());
+            userData.put("email", cliente.getEmail());
+            userData.put("cpf", cliente.getCpf());
+            userData.put("telefone", cliente.getTelefone());
+            userData.put("dataNascimento", cliente.getDataNascimento() != null ? cliente.getDataNascimento().toString() : null);
+            userData.put("cep", cliente.getCep());
+            userData.put("logradouro", cliente.getLogradouro());
+            userData.put("numero", cliente.getNumero());
+            userData.put("complemento", cliente.getComplemento());
+            userData.put("bairro", cliente.getBairro());
+            userData.put("cidade", cliente.getCidade());
+            userData.put("uf", cliente.getEstado());
+            userData.put("tipo", "CLIENTE");
+            
+            response.put("user", userData);
             
             return ResponseEntity.ok(response);
             
@@ -157,12 +183,25 @@ public class AuthController {
                 try {
                     Cliente cliente = clienteService.buscarPorId(clienteId);
                     response.put("valid", true);
-                    response.put("cliente", Map.of(
-                        "id", cliente.getId(),
-                        "nome", cliente.getNome(),
-                        "email", cliente.getEmail(),
-                        "tipo", "CLIENTE"
-                    ));
+                    
+                    // Retornar todos os dados do cliente (exceto senha)
+                    Map<String, Object> clienteData = new HashMap<>();
+                    clienteData.put("id", cliente.getId());
+                    clienteData.put("nome", cliente.getNome());
+                    clienteData.put("email", cliente.getEmail());
+                    clienteData.put("cpf", cliente.getCpf());
+                    clienteData.put("telefone", cliente.getTelefone());
+                    clienteData.put("dataNascimento", cliente.getDataNascimento() != null ? cliente.getDataNascimento().toString() : null);
+                    clienteData.put("cep", cliente.getCep());
+                    clienteData.put("logradouro", cliente.getLogradouro());
+                    clienteData.put("numero", cliente.getNumero());
+                    clienteData.put("complemento", cliente.getComplemento());
+                    clienteData.put("bairro", cliente.getBairro());
+                    clienteData.put("cidade", cliente.getCidade());
+                    clienteData.put("uf", cliente.getEstado());
+                    clienteData.put("tipo", "CLIENTE");
+                    
+                    response.put("cliente", clienteData);
                 } catch (Exception e) {
                     response.put("valid", false);
                 }

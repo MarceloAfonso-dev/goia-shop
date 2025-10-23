@@ -153,6 +153,33 @@ public class ClienteService {
         return clienteRepository.save(cliente);
     }
     
+    public Cliente atualizarClienteDados(Long id, com.goiashop.dto.ClienteAtualizacaoRequest request) {
+        Cliente cliente = buscarPorId(id);
+        
+        // Atualizar dados básicos (não permite mudar email)
+        cliente.setNome(request.getNome());
+        cliente.setTelefone(request.getTelefone());
+        
+        // Converter data de nascimento
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            cliente.setDataNascimento(LocalDate.parse(request.getDataNascimento(), formatter));
+        } catch (Exception e) {
+            throw new RuntimeException("Formato de data inválido. Use yyyy-MM-dd");
+        }
+        
+        // Atualizar endereço
+        cliente.setCep(request.getCep());
+        cliente.setLogradouro(request.getLogradouro());
+        cliente.setNumero(request.getNumero());
+        cliente.setComplemento(request.getComplemento());
+        cliente.setBairro(request.getBairro());
+        cliente.setCidade(request.getCidade());
+        cliente.setEstado(request.getUf());
+        
+        return clienteRepository.save(cliente);
+    }
+    
     /**
      * Verifica se já existe um cliente com o CPF informado
      */

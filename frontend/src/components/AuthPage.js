@@ -2,15 +2,20 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EcommerceHeader from './EcommerceHeader';
 import { useAuth } from '../hooks/useAuth';
+import { Modal, Button } from 'react-bootstrap';
+import api from '../utils/api';
 import './AuthPage.css';
 
 const AuthPage = ({ onLoginSuccess }) => {
     const navigate = useNavigate();
-    const { user, logout } = useAuth();
+    const { user, logout, updateUser } = useAuth();
     const [activeTab, setActiveTab] = useState('login'); // 'login' ou 'register'
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editData, setEditData] = useState({});
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     // Estado para Login
     const [loginData, setLoginData] = useState({
@@ -325,9 +330,32 @@ const AuthPage = ({ onLoginSuccess }) => {
         }
     };
 
-    const handleLogout = () => {
+    const handleOpenLogoutModal = () => {
+        setShowLogoutModal(true);
+    };
+
+    const handleLogout = (clearCache = false) => {
+        if (clearCache) {
+            // Limpar todo o cache do navegador relacionado ao login
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Limpar cookies se houver
+            document.cookie.split(";").forEach((c) => {
+                document.cookie = c
+                    .replace(/^ +/, "")
+                    .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+            });
+            
+            logout();
+            setSuccess('Logout realizado e cache limpo com sucesso!');
+        } else {
+            // Apenas fazer logout (mantém cache do carrinho e outras preferências)
         logout();
         setSuccess('Logout realizado com sucesso!');
+        }
+        
+        setShowLogoutModal(false);
         setTimeout(() => {
             navigate('/');
         }, 1500);
@@ -361,7 +389,156 @@ const AuthPage = ({ onLoginSuccess }) => {
         }
     };
 
-    // Se usuário já está logado, mostrar interface de logout
+    // Funções para editar perfil
+    const handleOpenEditModal = () => {
+        setEditData({
+            nome: user.nome || '',
+            email: user.email || '',
+            telefone: user.telefone || '',
+            dataNascimento: user.dataNascimento || '',
+            cep: user.cep || '',
+            logradouro: user.logradouro || '',
+            numero: user.numero || '',
+            complemento: user.complemento || '',
+            bairro: user.bairro || '',
+            cidade: user.cidade || '',
+            uf: user.uf || ''
+        });
+        setShowEditModal(true);
+        setError('');
+        setSuccess('');
+    };
+
+    const handleEditChange = (e) => {
+        const { name, value } = e.target;
+        setEditData({
+            ...editData,
+            [name]: value
+        });
+    };
+
+    const buscarCEPEdit = async (cep) => {
+        const cleanCep = cep.replace(/\D/g, '');
+        if (cleanCep.length === 8) {
+            try {
+                const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+                const data = await response.json();
+                
+                if (!data.erro) {
+                    setEditData({
+                        ...editData,
+                        cep: cleanCep.replace(/(\d{5})(\d{3})/, '$1-$2'),
+                        logradouro: data.logradouro,
+                        bairro: data.bairro,
+                        cidade: data.localidade,
+                        uf: data.uf
+                    });
+                }
+            } catch (error) {
+                console.error('Erro ao buscar CEP:', error);
+            }
+        }
+    };
+
+    const handleSaveEdit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+        setSuccess('');
+
+        try {
+            // Formatar data para yyyy-MM-dd se necessário
+            let dataFormatada = editData.dataNascimento;
+            
+            // Se já está no formato yyyy-MM-dd, manter como está
+            // Se está no formato dd/MM/yyyy, converter
+            if (dataFormatada && dataFormatada.includes('/')) {
+                const [dia, mes, ano] = dataFormatada.split('/');
+                dataFormatada = `${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+            }
+
+            const payload = {
+                nome: editData.nome,
+                email: editData.email,
+                telefone: editData.telefone.replace(/\D/g, ''),
+                dataNascimento: dataFormatada,
+                cep: editData.cep.replace(/\D/g, ''),
+                logradouro: editData.logradouro,
+                numero: editData.numero,
+                complemento: editData.complemento,
+                bairro: editData.bairro,
+                cidade: editData.cidade,
+                uf: editData.uf
+            };
+
+            const response = await api.put(`/clientes/${user.id}`, payload);
+            
+            if (response.data && response.data.data) {
+                // Atualizar dados do usuário no contexto e localStorage
+                const updatedUser = {
+                    ...user,
+                    ...response.data.data
+                };
+                
+                console.log('Dados atualizados:', updatedUser);
+                
+                // Atualizar contexto
+                updateUser(updatedUser);
+                
+                // Também atualizar diretamente no localStorage para garantir
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+                
+                setSuccess('Dados atualizados com sucesso!');
+                setShowEditModal(false);
+                
+                // Forçar atualização da página após um pequeno delay
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            }
+        } catch (err) {
+            console.error('Erro ao atualizar dados:', err);
+            setError(err.response?.data?.message || 'Erro ao atualizar dados');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Formatar CPF para exibição
+    const formatCPF = (cpf) => {
+        if (!cpf) return 'Não informado';
+        const numbers = cpf.replace(/\D/g, '');
+        return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    };
+
+    // Formatar telefone para exibição
+    const formatPhone = (phone) => {
+        if (!phone) return 'Não informado';
+        const numbers = phone.replace(/\D/g, '');
+        if (numbers.length === 11) {
+            return numbers.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+        } else if (numbers.length === 10) {
+            return numbers.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+        }
+        return phone;
+    };
+
+    // Formatar data para exibição
+    const formatDate = (date) => {
+        if (!date) return 'Não informada';
+        
+        // Se a data está no formato yyyy-MM-dd, fazer parse manual para evitar problema de fuso horário
+        if (typeof date === 'string' && date.includes('-')) {
+            const [year, month, day] = date.split('-');
+            return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+        }
+        
+        const d = new Date(date);
+        if (isNaN(d.getTime())) return 'Não informada';
+        return d.toLocaleDateString('pt-BR');
+    };
+
+    // Se usuário já está logado, mostrar interface com dados do perfil
     if (user) {
         return (
             <div className="landing-page">
@@ -373,45 +550,382 @@ const AuthPage = ({ onLoginSuccess }) => {
                     paddingTop: '40px',
                     paddingBottom: '60px'
                 }}>
-                    <div className="auth-container">
-                    <div className="auth-card logged-in-card">
+                <div className="auth-container">
+                    <div className="auth-card logged-in-card" style={{ maxWidth: '700px' }}>
                         <div className="user-info">
-                            <div className="user-avatar">
-                                <div className="avatar-circle">
+                            <div className="user-avatar" style={{ marginBottom: '20px' }}>
+                                <div style={{
+                                    width: '100px',
+                                    height: '100px',
+                                    borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, #FF4F5A, #FF8E95)',
+                                    color: 'white',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '48px',
+                                    fontWeight: 'bold',
+                                    margin: '0 auto',
+                                    boxShadow: '0 4px 15px rgba(255, 79, 90, 0.3)'
+                                }}>
                                     {user.nome?.charAt(0).toUpperCase() || 'U'}
                                 </div>
                             </div>
                             
-                            <h2>Olá, {user.nome}!</h2>
-                            <p className="user-email">{user.email}</p>
-                            <p className="user-type">
+                            <h2 style={{ marginBottom: '8px', marginTop: '0' }}>
+                                Olá, {user.nome}!
+                            </h2>
+                            <p className="user-type" style={{ marginBottom: '30px' }}>
                                 {user.tipo === 'CLIENTE' ? '👤 Cliente' :
-                                 user.tipo === 'ADMIN' ? '👑 Administrador' : 
+                                 user.grupo === 'CLIENTE' ? '👤 Cliente' :
+                                 user.tipo === 'ADMIN' || user.grupo === 'ADMIN' ? '👑 Administrador' : 
                                  '📦 Estoquista'}
                             </p>
+
+                            {/* Informações Pessoais */}
+                            <div style={{
+                                backgroundColor: '#f8f9fa',
+                                borderRadius: '12px',
+                                padding: '24px',
+                                marginBottom: '20px',
+                                textAlign: 'left'
+                            }}>
+                                <h3 style={{
+                                    fontSize: '18px',
+                                    fontWeight: '600',
+                                    color: '#1e293b',
+                                    marginBottom: '16px',
+                                    borderBottom: '2px solid #FF4F5A',
+                                    paddingBottom: '8px'
+                                }}>
+                                    📋 Informações Pessoais
+                                </h3>
+                                
+                                <div style={{ display: 'grid', gap: '12px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                                        <span style={{ color: '#64748b', fontWeight: '500' }}>Email:</span>
+                                        <span style={{ color: '#1e293b', fontWeight: '600', textAlign: 'right' }}>{user.email || 'Não informado'}</span>
+                                    </div>
+                                    
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                                        <span style={{ color: '#64748b', fontWeight: '500' }}>CPF:</span>
+                                        <span style={{ color: '#1e293b', fontWeight: '600' }}>{formatCPF(user.cpf)}</span>
+                                    </div>
+                                    
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                                        <span style={{ color: '#64748b', fontWeight: '500' }}>Telefone:</span>
+                                        <span style={{ color: '#1e293b', fontWeight: '600' }}>{formatPhone(user.telefone)}</span>
+                                    </div>
+                                    
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                                        <span style={{ color: '#64748b', fontWeight: '500' }}>Data de Nascimento:</span>
+                                        <span style={{ color: '#1e293b', fontWeight: '600' }}>{formatDate(user.dataNascimento)}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Endereço */}
+                            <div style={{
+                                backgroundColor: '#f8f9fa',
+                                borderRadius: '12px',
+                                padding: '24px',
+                                marginBottom: '20px',
+                                textAlign: 'left'
+                            }}>
+                                <h3 style={{
+                                    fontSize: '18px',
+                                    fontWeight: '600',
+                                    color: '#1e293b',
+                                    marginBottom: '16px',
+                                    borderBottom: '2px solid #FF4F5A',
+                                    paddingBottom: '8px'
+                                }}>
+                                    📍 Endereço
+                                </h3>
+                                
+                                <div style={{ display: 'grid', gap: '8px', color: '#1e293b' }}>
+                                    <p style={{ margin: 0 }}>
+                                        <strong>CEP:</strong> {user.endereco?.cep || user.cep || 'Não informado'}
+                                    </p>
+                                    <p style={{ margin: 0 }}>
+                                        <strong>Logradouro:</strong> {user.endereco?.logradouro || user.logradouro || 'Não informado'}, {user.endereco?.numero || user.numero || 'S/N'}
+                                    </p>
+                                    {(user.endereco?.complemento || user.complemento) && (
+                                        <p style={{ margin: 0 }}>
+                                            <strong>Complemento:</strong> {user.endereco?.complemento || user.complemento}
+                                        </p>
+                                    )}
+                                    <p style={{ margin: 0 }}>
+                                        <strong>Bairro:</strong> {user.endereco?.bairro || user.bairro || 'Não informado'}
+                                    </p>
+                                    <p style={{ margin: 0 }}>
+                                        <strong>Cidade/UF:</strong> {user.endereco?.cidade || user.cidade || 'Não informado'} - {user.endereco?.uf || user.uf || ''}
+                                    </p>
+                                </div>
+                            </div>
                             
                             {success && <div className="success-message">{success}</div>}
+                            {error && <div className="alert alert-error" style={{ marginTop: '20px' }}>{error}</div>}
                             
-                            <div className="logout-actions">
-                                <button 
-                                    className="btn-primary btn-large logout-btn"
-                                    onClick={handleLogout}
-                                    disabled={loading}
-                                >
-                                    {loading ? 'Saindo...' : '🚪 Sair da Conta'}
-                                </button>
-                                
+                            <div className="logout-actions" style={{ gap: '12px', marginTop: '24px', display: 'flex', justifyContent: 'center', flexWrap: 'wrap' }}>
                                 <button 
                                     className="btn-secondary btn-large"
-                                    onClick={() => navigate('/')}
+                                    onClick={handleOpenEditModal}
+                                    style={{ minWidth: '200px' }}
                                 >
-                                    🏠 Voltar ao Início
+                                    ✏️ Editar Dados
+                                </button>
+                                <button 
+                                    className="btn-primary btn-large logout-btn"
+                                    onClick={handleOpenLogoutModal}
+                                    disabled={loading}
+                                    style={{ minWidth: '200px' }}
+                                >
+                                    🚪 Sair da Conta
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
                 </div>
+
+                {/* Modal de Edição */}
+                <Modal show={showEditModal} onHide={() => setShowEditModal(false)} size="lg" centered>
+                    <Modal.Header closeButton>
+                        <Modal.Title>Editar Meus Dados</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <form onSubmit={handleSaveEdit}>
+                            {error && <div className="alert alert-error">{error}</div>}
+                            
+                            <div className="row">
+                                <div className="col-md-12 mb-3">
+                                    <label className="form-label">Nome Completo *</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        name="nome"
+                                        value={editData.nome || ''}
+                                        onChange={handleEditChange}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="row">
+                                <div className="col-md-6 mb-3">
+                                    <label className="form-label">Email *</label>
+                                    <input
+                                        type="email"
+                                        className="form-control"
+                                        name="email"
+                                        value={editData.email || ''}
+                                        onChange={handleEditChange}
+                                        required
+                                        disabled
+                                        title="O email não pode ser alterado"
+                                    />
+                                </div>
+                                <div className="col-md-6 mb-3">
+                                    <label className="form-label">Telefone *</label>
+                                    <input
+                                        type="tel"
+                                        className="form-control"
+                                        name="telefone"
+                                        value={editData.telefone || ''}
+                                        onChange={handleEditChange}
+                                        placeholder="(00) 00000-0000"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="row">
+                                <div className="col-md-12 mb-3">
+                                    <label className="form-label">Data de Nascimento *</label>
+                                    <input
+                                        type="date"
+                                        className="form-control"
+                                        name="dataNascimento"
+                                        value={editData.dataNascimento || ''}
+                                        onChange={handleEditChange}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <hr />
+                            <h5>Endereço</h5>
+
+                            <div className="row">
+                                <div className="col-md-4 mb-3">
+                                    <label className="form-label">CEP *</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        name="cep"
+                                        value={editData.cep || ''}
+                                        onChange={(e) => {
+                                            handleEditChange(e);
+                                            const cep = e.target.value.replace(/\D/g, '');
+                                            if (cep.length === 8) {
+                                                buscarCEPEdit(cep);
+                                            }
+                                        }}
+                                        placeholder="00000-000"
+                                        required
+                                    />
+                                </div>
+                                <div className="col-md-8 mb-3">
+                                    <label className="form-label">Logradouro *</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        name="logradouro"
+                                        value={editData.logradouro || ''}
+                                        onChange={handleEditChange}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="row">
+                                <div className="col-md-3 mb-3">
+                                    <label className="form-label">Número *</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        name="numero"
+                                        value={editData.numero || ''}
+                                        onChange={handleEditChange}
+                                        required
+                                    />
+                                </div>
+                                <div className="col-md-9 mb-3">
+                                    <label className="form-label">Complemento</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        name="complemento"
+                                        value={editData.complemento || ''}
+                                        onChange={handleEditChange}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="row">
+                                <div className="col-md-4 mb-3">
+                                    <label className="form-label">Bairro *</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        name="bairro"
+                                        value={editData.bairro || ''}
+                                        onChange={handleEditChange}
+                                        required
+                                    />
+                                </div>
+                                <div className="col-md-6 mb-3">
+                                    <label className="form-label">Cidade *</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        name="cidade"
+                                        value={editData.cidade || ''}
+                                        onChange={handleEditChange}
+                                        required
+                                    />
+                                </div>
+                                <div className="col-md-2 mb-3">
+                                    <label className="form-label">UF *</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        name="uf"
+                                        value={editData.uf || ''}
+                                        onChange={handleEditChange}
+                                        maxLength="2"
+                                        required
+                                    />
+                                </div>
+                            </div>
+                        </form>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+                            Cancelar
+                        </Button>
+                        <Button variant="primary" onClick={handleSaveEdit} disabled={loading}>
+                            {loading ? 'Salvando...' : 'Salvar Alterações'}
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
+
+                {/* Modal de Logout */}
+                <Modal show={showLogoutModal} onHide={() => setShowLogoutModal(false)} centered>
+                    <Modal.Header closeButton>
+                        <Modal.Title>Deseja sair da conta?</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <div style={{ padding: '10px 0' }}>
+                            <p style={{ fontSize: '16px', marginBottom: '20px', color: '#475569' }}>
+                                Escolha como deseja sair:
+                            </p>
+                            
+                            <div style={{
+                                backgroundColor: '#f8f9fa',
+                                borderRadius: '12px',
+                                padding: '20px',
+                                marginBottom: '15px',
+                                border: '2px solid #e2e8f0'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                                    <span style={{ fontSize: '24px' }}>🚪</span>
+                                    <h5 style={{ margin: 0, color: '#1e293b' }}>Sair Mantendo Cache</h5>
+                                </div>
+                                <p style={{ margin: '8px 0', fontSize: '14px', color: '#64748b' }}>
+                                    Seus dados de login ficarão salvos para facilitar o próximo acesso.
+                                    O carrinho de compras será mantido.
+                                </p>
+                                <Button 
+                                    variant="outline-primary" 
+                                    onClick={() => handleLogout(false)}
+                                    style={{ width: '100%', marginTop: '10px' }}
+                                >
+                                    Sair e Manter Dados
+                                </Button>
+                            </div>
+
+                            <div style={{
+                                backgroundColor: '#fff5f5',
+                                borderRadius: '12px',
+                                padding: '20px',
+                                border: '2px solid #fecaca'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                                    <span style={{ fontSize: '24px' }}>🗑️</span>
+                                    <h5 style={{ margin: 0, color: '#dc2626' }}>Limpar Cache e Sair</h5>
+                        </div>
+                                <p style={{ margin: '8px 0', fontSize: '14px', color: '#991b1b' }}>
+                                    Remove todos os dados salvos no navegador, incluindo carrinho,
+                                    preferências e histórico de navegação.
+                                </p>
+                                <Button 
+                                    variant="danger" 
+                                    onClick={() => handleLogout(true)}
+                                    style={{ width: '100%', marginTop: '10px' }}
+                                >
+                                    Limpar Tudo e Sair
+                                </Button>
+                    </div>
+                </div>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={() => setShowLogoutModal(false)}>
+                            Cancelar
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
             </div>
         );
     }
@@ -426,10 +940,10 @@ const AuthPage = ({ onLoginSuccess }) => {
                 paddingTop: '40px',
                 paddingBottom: '60px'
             }}>
-                <div className="auth-container">
-                    <div className="auth-card">
-                        {/* Tabs */}
-                        <div className="auth-tabs">
+            <div className="auth-container">
+                <div className="auth-card">
+                    {/* Tabs */}
+                    <div className="auth-tabs">
                         <button 
                             className={`tab-button ${activeTab === 'login' ? 'active' : ''}`}
                             onClick={() => {
@@ -779,8 +1293,8 @@ const AuthPage = ({ onLoginSuccess }) => {
                             ← Voltar à Página Inicial
                         </button>
                     </div>
+                    </div>
                 </div>
-            </div>
             </div>
         </div>
     );

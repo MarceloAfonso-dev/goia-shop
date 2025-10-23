@@ -43,6 +43,12 @@ export const useAuth = () => {
         localStorage.removeItem('userType');
     };
 
+    const updateUser = (updatedData) => {
+        console.log('useAuth - atualizando usuário:', updatedData);
+        setUser(updatedData);
+        localStorage.setItem('user', JSON.stringify(updatedData));
+    };
+
     const isAuthenticated = () => {
         const result = user !== null;
         console.log('useAuth - isAuthenticated:', result);
@@ -74,6 +80,7 @@ export const useAuth = () => {
         loading,
         login,
         logout,
+        updateUser,
         isAuthenticated,
         isAdmin,
         isEstoquista,
