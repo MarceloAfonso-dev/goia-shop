@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste API de Endereços</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px 5px;
+            cursor: pointer;
+        }
+        #result {
+            background: #f5f5f5;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste de API de Endereços</h1>
+    
+    <div>
+        <h3>1. Primeiro, faça login para obter o token:</h3>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Senha">
+        <button onclick="login()">Login</button>
+    </div>
+
+    <div>
+        <h3>2. Testar criação de endereço:</h3>
+        <button onclick="listarEnderecos()">Listar Endereços</button>
+        <button onclick="criarEndereco()">Criar Endereço de Teste</button>
+    </div>
+
+    <div id="result"></div>
+
+    <script>
+        let token = localStorage.getItem('token') || '';
+
+        function showResult(data) {
+            document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('http://localhost:8080/api/clientes/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, senha: password })
+                });
+
+                const data = await response.json();
+                showResult(data);
+
+                if (data.token) {
+                    token = data.token;
+                    localStorage.setItem('token', token);
+                    alert('Login realizado com sucesso!');
+                }
+            } catch (error) {
+                showResult({ error: error.message });
+            }
+        }
+
+        async function listarEnderecos() {
+            if (!token) {
+                alert('Faça login primeiro!');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:8080/api/cliente/enderecos', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                showResult(data);
+            } catch (error) {
+                showResult({ error: error.message });
+            }
+        }
+
+        async function criarEndereco() {
+            if (!token) {
+                alert('Faça login primeiro!');
+                return;
+            }
+
+            const endereco = {
+                cep: "12345678",
+                logradouro: "Rua Teste",
+                numero: "123",
+                complemento: "Apto 1",
+                bairro: "Centro",
+                cidade: "São Paulo",
+                estado: "SP",
+                apelido: "Casa Teste",
+                isPadrao: false
+            };
+
+            try {
+                console.log('Enviando:', endereco);
+                
+                const response = await fetch('http://localhost:8080/api/cliente/enderecos', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(endereco)
+                });
+
+                const data = await response.json();
+                showResult({ 
+                    status: response.status,
+                    data: data 
+                });
+            } catch (error) {
+                showResult({ error: error.message });
+            }
+        }
+    </script>
+</body>
+</html>

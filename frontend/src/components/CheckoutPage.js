@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import EcommerceHeader from './EcommerceHeader';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
+import api from '../utils/api';
 import './CheckoutPage.css';
 
 const CheckoutPage = () => {
@@ -13,6 +14,11 @@ const CheckoutPage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [step, setStep] = useState(1); // 1: Endereço, 2: Frete, 3: Pagamento, 4: Confirmação
+
+  // Estados para endereços salvos
+  const [enderecosSalvos, setEnderecosSalvos] = useState([]);
+  const [enderecoSelecionadoId, setEnderecoSelecionadoId] = useState(null);
+  const [usarNovoEndereco, setUsarNovoEndereco] = useState(false);
 
   // Estados do formulário
   const [enderecoData, setEnderecoData] = useState({
@@ -47,6 +53,7 @@ const CheckoutPage = () => {
     // Carregar dados do usuário se disponível (opcional)
     if (step !== 4) {
       loadUserAddress();
+      carregarEnderecosSalvos();
     }
   }, [user, cartCount, navigate, step]);
 
@@ -97,6 +104,59 @@ const CheckoutPage = () => {
     } catch (error) {
       console.error('Erro ao carregar endereço:', error);
     }
+  };
+  
+  const carregarEnderecosSalvos = async () => {
+    try {
+      const response = await api.get('/cliente/enderecos');
+      if (response.data.success && response.data.enderecos) {
+        setEnderecosSalvos(response.data.enderecos);
+        
+        // Selecionar automaticamente o endereço padrão
+        const enderecoPadrao = response.data.enderecos.find(e => e.isPadrao);
+        if (enderecoPadrao) {
+          setEnderecoSelecionadoId(enderecoPadrao.id);
+          setEnderecoData({
+            cep: enderecoPadrao.cep || '',
+            logradouro: enderecoPadrao.logradouro || '',
+            numero: enderecoPadrao.numero || '',
+            complemento: enderecoPadrao.complemento || '',
+            bairro: enderecoPadrao.bairro || '',
+            cidade: enderecoPadrao.cidade || '',
+            uf: enderecoPadrao.estado || ''
+          });
+        } else if (response.data.enderecos.length > 0) {
+          // Se não houver padrão, selecionar o primeiro
+          const primeiroEndereco = response.data.enderecos[0];
+          setEnderecoSelecionadoId(primeiroEndereco.id);
+          setEnderecoData({
+            cep: primeiroEndereco.cep || '',
+            logradouro: primeiroEndereco.logradouro || '',
+            numero: primeiroEndereco.numero || '',
+            complemento: primeiroEndereco.complemento || '',
+            bairro: primeiroEndereco.bairro || '',
+            cidade: primeiroEndereco.cidade || '',
+            uf: primeiroEndereco.estado || ''
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar endereços salvos:', error);
+    }
+  };
+  
+  const handleSelecionarEndereco = (endereco) => {
+    setEnderecoSelecionadoId(endereco.id);
+    setUsarNovoEndereco(false);
+    setEnderecoData({
+      cep: endereco.cep || '',
+      logradouro: endereco.logradouro || '',
+      numero: endereco.numero || '',
+      complemento: endereco.complemento || '',
+      bairro: endereco.bairro || '',
+      cidade: endereco.cidade || '',
+      uf: endereco.estado || ''
+    });
   };
 
   const handleEnderecoChange = (e) => {
@@ -360,6 +420,119 @@ const CheckoutPage = () => {
               <div className="auth-form">
                 <h3>Endereço de Entrega</h3>
                 
+                {/* Seleção de endereços salvos */}
+                {enderecosSalvos.length > 0 && !usarNovoEndereco && (
+                  <div style={{ marginBottom: '24px' }}>
+                    <h4 style={{ fontSize: '16px', marginBottom: '12px', color: '#1e293b' }}>
+                      Selecione um endereço salvo:
+                    </h4>
+                    <div style={{ display: 'grid', gap: '12px' }}>
+                      {enderecosSalvos.map((endereco) => (
+                        <div
+                          key={endereco.id}
+                          onClick={() => handleSelecionarEndereco(endereco)}
+                          style={{
+                            border: enderecoSelecionadoId === endereco.id ? '2px solid #FF4F5A' : '1px solid #dee2e6',
+                            borderRadius: '8px',
+                            padding: '16px',
+                            cursor: 'pointer',
+                            backgroundColor: enderecoSelecionadoId === endereco.id ? '#fff5f5' : 'white',
+                            transition: 'all 0.3s',
+                            position: 'relative'
+                          }}
+                        >
+                          {endereco.isPadrao && (
+                            <span style={{
+                              position: 'absolute',
+                              top: '8px',
+                              right: '8px',
+                              backgroundColor: '#FF4F5A',
+                              color: 'white',
+                              padding: '4px 8px',
+                              borderRadius: '8px',
+                              fontSize: '11px',
+                              fontWeight: 'bold'
+                            }}>
+                              PADRÃO
+                            </span>
+                          )}
+                          {endereco.apelido && (
+                            <h5 style={{ margin: '0 0 8px 0', color: '#FF4F5A', fontSize: '14px' }}>
+                              📌 {endereco.apelido}
+                            </h5>
+                          )}
+                          <p style={{ margin: '4px 0', fontSize: '13px' }}>
+                            <strong>CEP:</strong> {endereco.cep}
+                          </p>
+                          <p style={{ margin: '4px 0', fontSize: '13px' }}>
+                            {endereco.logradouro}, {endereco.numero}
+                            {endereco.complemento && ` - ${endereco.complemento}`}
+                          </p>
+                          <p style={{ margin: '4px 0', fontSize: '13px' }}>
+                            {endereco.bairro} - {endereco.cidade}/{endereco.estado}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUsarNovoEndereco(true);
+                        setEnderecoSelecionadoId(null);
+                        setEnderecoData({
+                          cep: '',
+                          logradouro: '',
+                          numero: '',
+                          complemento: '',
+                          bairro: '',
+                          cidade: '',
+                          uf: ''
+                        });
+                      }}
+                      style={{
+                        marginTop: '12px',
+                        padding: '8px 16px',
+                        backgroundColor: 'transparent',
+                        border: '1px solid #FF4F5A',
+                        borderRadius: '8px',
+                        color: '#FF4F5A',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500'
+                      }}
+                    >
+                      ➕ Usar novo endereço
+                    </button>
+                  </div>
+                )}
+                
+                {/* Botão para voltar aos endereços salvos */}
+                {usarNovoEndereco && enderecosSalvos.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUsarNovoEndereco(false);
+                      carregarEnderecosSalvos();
+                    }}
+                    style={{
+                      marginBottom: '16px',
+                      padding: '8px 16px',
+                      backgroundColor: 'transparent',
+                      border: '1px solid #64748b',
+                      borderRadius: '8px',
+                      color: '#64748b',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    ← Voltar para endereços salvos
+                  </button>
+                )}
+                
+                {/* Formulário de endereço (mostrar se não houver endereços salvos OU se optar por usar novo) */}
+                {(enderecosSalvos.length === 0 || usarNovoEndereco) && (
+                  <>
+                
                 <div className="form-row">
                   <div className="form-group form-group-small">
                     <label htmlFor="cep">CEP *</label>
@@ -387,7 +560,23 @@ const CheckoutPage = () => {
                     />
                   </div>
                 </div>
+                  </>
+                )}
+                
+                {/* Campos ocultos para endereços selecionados */}
+                {enderecoSelecionadoId && !usarNovoEndereco && (
+                  <div style={{ display: 'none' }}>
+                    <input type="text" name="cep" value={enderecoData.cep} readOnly />
+                    <input type="text" name="logradouro" value={enderecoData.logradouro} readOnly />
+                    <input type="text" name="numero" value={enderecoData.numero} readOnly />
+                    <input type="text" name="bairro" value={enderecoData.bairro} readOnly />
+                    <input type="text" name="cidade" value={enderecoData.cidade} readOnly />
+                    <input type="text" name="uf" value={enderecoData.uf} readOnly />
+                  </div>
+                )}
 
+                {(enderecosSalvos.length === 0 || usarNovoEndereco) && (
+                  <>
                 <div className="form-row">
                   <div className="form-group form-group-small">
                     <label htmlFor="numero">Número *</label>
@@ -413,7 +602,11 @@ const CheckoutPage = () => {
                     />
                   </div>
                 </div>
+                  </>
+                )}
 
+                {(enderecosSalvos.length === 0 || usarNovoEndereco) && (
+                  <>
                 <div className="form-row">
                   <div className="form-group">
                     <label htmlFor="bairro">Bairro *</label>
@@ -479,6 +672,8 @@ const CheckoutPage = () => {
                     </select>
                   </div>
                 </div>
+                  </>
+                )}
               </div>
 
               <div className="checkout-actions">

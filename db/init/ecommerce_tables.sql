@@ -79,6 +79,27 @@ CREATE TABLE IF NOT EXISTS pedido_itens (
     INDEX idx_pedido_item_produto (produto_id)
 );
 
+-- Tabela de endereços de entrega dos clientes
+CREATE TABLE IF NOT EXISTS enderecos_entrega (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    cliente_id BIGINT NOT NULL,
+    cep VARCHAR(8) NOT NULL,
+    logradouro VARCHAR(200) NOT NULL,
+    numero VARCHAR(10) NOT NULL,
+    complemento VARCHAR(100),
+    bairro VARCHAR(100) NOT NULL,
+    cidade VARCHAR(100) NOT NULL,
+    estado VARCHAR(2) NOT NULL,
+    is_padrao BOOLEAN NOT NULL DEFAULT FALSE,
+    apelido VARCHAR(50), -- Ex: "Casa", "Trabalho", "Casa da Mãe"
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME,
+    
+    FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE CASCADE,
+    INDEX idx_endereco_cliente (cliente_id),
+    INDEX idx_endereco_padrao (cliente_id, is_padrao)
+);
+
 -- Inserir alguns clientes de exemplo
 INSERT INTO clientes (nome, email, cpf, telefone, data_nascimento, senha_hash, cep, logradouro, numero, bairro, cidade, estado) VALUES
 ('João Silva', 'joao.silva@email.com', '12345678901', '(11) 99999-9999', '1990-01-15', '$2a$10$example_hash_here', '01310-100', 'Av. Paulista', '100', 'Bela Vista', 'São Paulo', 'SP'),
@@ -100,6 +121,13 @@ END$$
 
 CREATE TRIGGER update_pedidos_timestamp 
     BEFORE UPDATE ON pedidos 
+    FOR EACH ROW 
+BEGIN
+    SET NEW.updated_at = CURRENT_TIMESTAMP;
+END$$
+
+CREATE TRIGGER update_enderecos_entrega_timestamp 
+    BEFORE UPDATE ON enderecos_entrega 
     FOR EACH ROW 
 BEGIN
     SET NEW.updated_at = CURRENT_TIMESTAMP;

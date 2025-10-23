@@ -1,9 +1,13 @@
 package com.goiashop.controller;
 
 import com.goiashop.dto.ClienteRegistroRequest;
+import com.goiashop.dto.EnderecoEntregaRequest;
+import com.goiashop.dto.EnderecoEntregaResponse;
 import com.goiashop.model.Cliente;
+import com.goiashop.model.EnderecoEntrega;
 import com.goiashop.service.ClienteService;
 import com.goiashop.service.ClienteSessionService;
+import com.goiashop.service.EnderecoEntregaService;
 import com.goiashop.service.PedidoService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +15,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/cliente")
@@ -26,6 +32,9 @@ public class ClienteController {
     
     @Autowired
     private PedidoService pedidoService;
+    
+    @Autowired
+    private EnderecoEntregaService enderecoService;
     
     @GetMapping("/perfil")
     public ResponseEntity<Map<String, Object>> obterPerfil(@RequestHeader("Authorization") String authorization) {
@@ -127,7 +136,7 @@ public class ClienteController {
         }
         
         try {
-            String senhaAtual = request.get("senhaAtual");
+            // String senhaAtual = request.get("senhaAtual"); // TODO: implementar verificação de senha atual
             String novaSenha = request.get("novaSenha");
             
             // Buscar cliente
@@ -173,5 +182,205 @@ public class ClienteController {
         
         String token = authorization.substring(7);
         return clienteSessionService.validateSession(token);
+    }
+    
+    // ===== ENDPOINTS PARA ENDEREÇOS DE ENTREGA =====
+    
+    /**
+     * Listar todos os endereços de entrega do cliente
+     */
+    @GetMapping("/enderecos")
+    public ResponseEntity<Map<String, Object>> listarEnderecos(@RequestHeader("Authorization") String authorization) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Long clienteId = validateClienteSession(authorization);
+        if (clienteId == null) {
+            response.put("success", false);
+            response.put("message", "Sessão inválida");
+            return ResponseEntity.status(401).body(response);
+        }
+        
+        try {
+            List<EnderecoEntrega> enderecos = enderecoService.listarEnderecosPorCliente(clienteId);
+            List<EnderecoEntregaResponse> enderecosResponse = enderecos.stream()
+                .map(EnderecoEntregaResponse::new)
+                .collect(Collectors.toList());
+            
+            response.put("success", true);
+            response.put("enderecos", enderecosResponse);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    /**
+     * Buscar endereço padrão do cliente
+     */
+    @GetMapping("/enderecos/padrao")
+    public ResponseEntity<Map<String, Object>> buscarEnderecoPadrao(@RequestHeader("Authorization") String authorization) {
+        Map<String, Object> response = new HashMap<>();
+        
+        Long clienteId = validateClienteSession(authorization);
+        if (clienteId == null) {
+            response.put("success", false);
+            response.put("message", "Sessão inválida");
+            return ResponseEntity.status(401).body(response);
+        }
+        
+        try {
+            java.util.Optional<EnderecoEntrega> enderecoPadrao = enderecoService.buscarEnderecoPadrao(clienteId);
+            
+            if (enderecoPadrao.isPresent()) {
+                response.put("success", true);
+                response.put("endereco", new EnderecoEntregaResponse(enderecoPadrao.get()));
+            } else {
+                response.put("success", false);
+                response.put("message", "Nenhum endereço padrão cadastrado");
+            }
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    /**
+     * Adicionar novo endereço de entrega
+     */
+    @PostMapping("/enderecos")
+    public ResponseEntity<Map<String, Object>> adicionarEndereco(
+            @RequestHeader("Authorization") String authorization,
+            @Valid @RequestBody EnderecoEntregaRequest request) {
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        Long clienteId = validateClienteSession(authorization);
+        if (clienteId == null) {
+            response.put("success", false);
+            response.put("message", "Sessão inválida");
+            return ResponseEntity.status(401).body(response);
+        }
+        
+        try {
+            EnderecoEntrega endereco = enderecoService.adicionarEndereco(clienteId, request);
+            
+            response.put("success", true);
+            response.put("message", "Endereço adicionado com sucesso");
+            response.put("endereco", new EnderecoEntregaResponse(endereco));
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    /**
+     * Atualizar endereço de entrega existente
+     */
+    @PutMapping("/enderecos/{enderecoId}")
+    public ResponseEntity<Map<String, Object>> atualizarEndereco(
+            @RequestHeader("Authorization") String authorization,
+            @PathVariable Long enderecoId,
+            @Valid @RequestBody EnderecoEntregaRequest request) {
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        Long clienteId = validateClienteSession(authorization);
+        if (clienteId == null) {
+            response.put("success", false);
+            response.put("message", "Sessão inválida");
+            return ResponseEntity.status(401).body(response);
+        }
+        
+        try {
+            EnderecoEntrega endereco = enderecoService.atualizarEndereco(enderecoId, clienteId, request);
+            
+            response.put("success", true);
+            response.put("message", "Endereço atualizado com sucesso");
+            response.put("endereco", new EnderecoEntregaResponse(endereco));
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    /**
+     * Definir endereço como padrão
+     */
+    @PatchMapping("/enderecos/{enderecoId}/padrao")
+    public ResponseEntity<Map<String, Object>> definirEnderecoPadrao(
+            @RequestHeader("Authorization") String authorization,
+            @PathVariable Long enderecoId) {
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        Long clienteId = validateClienteSession(authorization);
+        if (clienteId == null) {
+            response.put("success", false);
+            response.put("message", "Sessão inválida");
+            return ResponseEntity.status(401).body(response);
+        }
+        
+        try {
+            EnderecoEntrega endereco = enderecoService.definirEnderecoPadrao(enderecoId, clienteId);
+            
+            response.put("success", true);
+            response.put("message", "Endereço definido como padrão");
+            response.put("endereco", new EnderecoEntregaResponse(endereco));
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    /**
+     * Remover endereço de entrega
+     */
+    @DeleteMapping("/enderecos/{enderecoId}")
+    public ResponseEntity<Map<String, Object>> removerEndereco(
+            @RequestHeader("Authorization") String authorization,
+            @PathVariable Long enderecoId) {
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        Long clienteId = validateClienteSession(authorization);
+        if (clienteId == null) {
+            response.put("success", false);
+            response.put("message", "Sessão inválida");
+            return ResponseEntity.status(401).body(response);
+        }
+        
+        try {
+            enderecoService.removerEndereco(enderecoId, clienteId);
+            
+            response.put("success", true);
+            response.put("message", "Endereço removido com sucesso");
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 }

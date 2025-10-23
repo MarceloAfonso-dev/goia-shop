@@ -16,6 +16,22 @@ const AuthPage = ({ onLoginSuccess }) => {
     const [showEditModal, setShowEditModal] = useState(false);
     const [editData, setEditData] = useState({});
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+    
+    // Estados para gerenciar endereços dentro do modal de edição
+    const [enderecosSalvos, setEnderecosSalvos] = useState([]);
+    const [showAddEnderecoModal, setShowAddEnderecoModal] = useState(false);
+    const [enderecoEditando, setEnderecoEditando] = useState(null);
+    const [enderecoForm, setEnderecoForm] = useState({
+        cep: '',
+        logradouro: '',
+        numero: '',
+        complemento: '',
+        bairro: '',
+        cidade: '',
+        estado: '',
+        apelido: '',
+        isPadrao: false
+    });
 
     // Estado para Login
     const [loginData, setLoginData] = useState({
@@ -407,6 +423,7 @@ const AuthPage = ({ onLoginSuccess }) => {
         setShowEditModal(true);
         setError('');
         setSuccess('');
+        carregarEnderecos(); // Carregar endereços ao abrir modal
     };
 
     const handleEditChange = (e) => {
@@ -536,6 +553,204 @@ const AuthPage = ({ onLoginSuccess }) => {
         const d = new Date(date);
         if (isNaN(d.getTime())) return 'Não informada';
         return d.toLocaleDateString('pt-BR');
+    };
+    
+    // ===== FUNÇÕES DE GERENCIAMENTO DE ENDEREÇOS =====
+    
+    const carregarEnderecos = async () => {
+        try {
+            const response = await api.get('/cliente/enderecos');
+            if (response.data.success) {
+                setEnderecosSalvos(response.data.enderecos || []);
+            }
+        } catch (err) {
+            console.error('Erro ao carregar endereços:', err);
+            setError('Erro ao carregar endereços');
+        }
+    };
+    
+    const handleAbrirAdicionarEndereco = () => {
+        setEnderecoForm({
+            cep: '',
+            logradouro: '',
+            numero: '',
+            complemento: '',
+            bairro: '',
+            cidade: '',
+            estado: '',
+            apelido: '',
+            isPadrao: enderecosSalvos.length === 0
+        });
+        setEnderecoEditando(null);
+        setShowAddEnderecoModal(true);
+        setError('');
+    };
+    
+    const handleEditarEndereco = (endereco) => {
+        setEnderecoForm({
+            cep: endereco.cep || '',
+            logradouro: endereco.logradouro || '',
+            numero: endereco.numero || '',
+            complemento: endereco.complemento || '',
+            bairro: endereco.bairro || '',
+            cidade: endereco.cidade || '',
+            estado: endereco.estado || '',
+            apelido: endereco.apelido || '',
+            isPadrao: endereco.isPadrao || false
+        });
+        setEnderecoEditando(endereco);
+        setShowAddEnderecoModal(true);
+        setError('');
+    };
+    
+    const handleEnderecoFormChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        let finalValue = type === 'checkbox' ? checked : value;
+        
+        if (name === 'estado') {
+            finalValue = value.toUpperCase().substring(0, 2);
+        }
+        
+        setEnderecoForm(prev => ({
+            ...prev,
+            [name]: finalValue
+        }));
+    };
+    
+    const buscarCEPEndereco = async (cep) => {
+        const cepLimpo = cep.replace(/\D/g, '');
+        if (cepLimpo.length !== 8) return;
+
+        try {
+            const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+            const data = await response.json();
+
+            if (!data.erro) {
+                setEnderecoForm(prev => ({
+                    ...prev,
+                    logradouro: data.logradouro || '',
+                    bairro: data.bairro || '',
+                    cidade: data.localidade || '',
+                    estado: data.uf || ''
+                }));
+            }
+        } catch (err) {
+            console.error('Erro ao buscar CEP:', err);
+        }
+    };
+    
+    const handleCepEnderecoChange = (e) => {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length > 8) value = value.substring(0, 8);
+        const formatted = value.replace(/(\d{5})(\d{3})/, '$1-$2');
+        
+        setEnderecoForm(prev => ({ ...prev, cep: formatted }));
+
+        if (value.length === 8) {
+            buscarCEPEndereco(value);
+        }
+    };
+    
+    const handleSalvarEndereco = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+
+        // Validações
+        if (!enderecoForm.cep || enderecoForm.cep.replace(/\D/g, '').length !== 8) {
+            setError('CEP inválido. Deve conter 8 dígitos.');
+            setLoading(false);
+            return;
+        }
+
+        if (!enderecoForm.estado || enderecoForm.estado.length !== 2) {
+            setError('Estado (UF) é obrigatório e deve ter 2 caracteres.');
+            setLoading(false);
+            return;
+        }
+
+        if (!enderecoForm.logradouro || !enderecoForm.numero || !enderecoForm.bairro || !enderecoForm.cidade) {
+            setError('Por favor, preencha todos os campos obrigatórios.');
+            setLoading(false);
+            return;
+        }
+
+        try {
+            const payload = {
+                cep: enderecoForm.cep.replace(/\D/g, ''),
+                logradouro: enderecoForm.logradouro.trim(),
+                numero: enderecoForm.numero.trim(),
+                complemento: enderecoForm.complemento?.trim() || '',
+                bairro: enderecoForm.bairro.trim(),
+                cidade: enderecoForm.cidade.trim(),
+                estado: enderecoForm.estado.toUpperCase().trim(),
+                apelido: enderecoForm.apelido?.trim() || '',
+                isPadrao: enderecoForm.isPadrao || false
+            };
+
+            console.log('Payload enviado:', payload);
+
+            let response;
+            if (enderecoEditando) {
+                console.log('Editando endereço ID:', enderecoEditando.id);
+                response = await api.put(`/cliente/enderecos/${enderecoEditando.id}`, payload);
+            } else {
+                console.log('Criando novo endereço');
+                response = await api.post('/cliente/enderecos', payload);
+            }
+
+            console.log('Resposta do servidor:', response.data);
+
+            if (response.data.success) {
+                setSuccess(response.data.message);
+                await carregarEnderecos();
+                setShowAddEnderecoModal(false);
+            }
+        } catch (err) {
+            console.error('Erro ao salvar endereço:', err);
+            console.error('Erro detalhado:', err.response?.data);
+            setError(err.response?.data?.message || 'Erro ao salvar endereço');
+        } finally {
+            setLoading(false);
+        }
+    };
+    
+    const handleDefinirPadrao = async (enderecoId) => {
+        try {
+            setLoading(true);
+            const response = await api.patch(`/cliente/enderecos/${enderecoId}/padrao`);
+            
+            if (response.data.success) {
+                setSuccess('Endereço definido como padrão');
+                await carregarEnderecos();
+            }
+        } catch (err) {
+            console.error('Erro ao definir endereço padrão:', err);
+            setError(err.response?.data?.message || 'Erro ao definir endereço padrão');
+        } finally {
+            setLoading(false);
+        }
+    };
+    
+    const handleRemoverEndereco = async (enderecoId) => {
+        if (!window.confirm('Tem certeza que deseja remover este endereço?')) {
+            return;
+        }
+        
+        try {
+            setLoading(true);
+            const response = await api.delete(`/cliente/enderecos/${enderecoId}`);
+            
+            if (response.data.success) {
+                setSuccess('Endereço removido com sucesso');
+                await carregarEnderecos();
+            }
+        } catch (err) {
+            console.error('Erro ao remover endereço:', err);
+            setError(err.response?.data?.message || 'Erro ao remover endereço');
+        } finally {
+            setLoading(false);
+        }
     };
 
     // Se usuário já está logado, mostrar interface com dados do perfil
@@ -849,6 +1064,87 @@ const AuthPage = ({ onLoginSuccess }) => {
                                     />
                                 </div>
                             </div>
+
+                            <hr />
+                            <h5>Endereços de Entrega</h5>
+                            
+                            <div className="mb-3">
+                                <Button 
+                                    variant="success" 
+                                    size="sm"
+                                    onClick={handleAbrirAdicionarEndereco}
+                                >
+                                    <i className="bi bi-plus-circle me-2"></i>
+                                    Adicionar Novo Endereço
+                                </Button>
+                            </div>
+
+                            {enderecosSalvos.length === 0 ? (
+                                <div className="alert alert-info">
+                                    Nenhum endereço de entrega cadastrado.
+                                </div>
+                            ) : (
+                                <div className="row">
+                                    {enderecosSalvos.map((endereco) => (
+                                        <div key={endereco.id} className="col-md-6 mb-3">
+                                            <div className={`card ${endereco.isPadrao ? 'border-primary' : ''}`}>
+                                                <div className="card-body">
+                                                    {endereco.isPadrao && (
+                                                        <span className="badge bg-primary mb-2">Padrão</span>
+                                                    )}
+                                                    {endereco.apelido && (
+                                                        <h6 className="card-title">{endereco.apelido}</h6>
+                                                    )}
+                                                    <p className="card-text mb-1">
+                                                        <small>
+                                                            {endereco.logradouro}, {endereco.numero}
+                                                            {endereco.complemento && ` - ${endereco.complemento}`}
+                                                        </small>
+                                                    </p>
+                                                    <p className="card-text mb-1">
+                                                        <small>{endereco.bairro}</small>
+                                                    </p>
+                                                    <p className="card-text mb-2">
+                                                        <small>{endereco.cidade} - {endereco.estado}</small>
+                                                    </p>
+                                                    <p className="card-text mb-2">
+                                                        <small>CEP: {endereco.cep}</small>
+                                                    </p>
+                                                    
+                                                    <div className="btn-group btn-group-sm" role="group">
+                                                        {!endereco.isPadrao && (
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-outline-primary"
+                                                                onClick={() => handleDefinirPadrao(endereco.id)}
+                                                                title="Definir como padrão"
+                                                            >
+                                                                <i className="bi bi-star"></i>
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-outline-secondary"
+                                                            onClick={() => handleEditarEndereco(endereco)}
+                                                            title="Editar"
+                                                        >
+                                                            <i className="bi bi-pencil"></i>
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-outline-danger"
+                                                            onClick={() => handleRemoverEndereco(endereco.id)}
+                                                            title="Remover"
+                                                        >
+                                                            <i className="bi bi-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </form>
                     </Modal.Body>
                     <Modal.Footer>
@@ -857,6 +1153,148 @@ const AuthPage = ({ onLoginSuccess }) => {
                         </Button>
                         <Button variant="primary" onClick={handleSaveEdit} disabled={loading}>
                             {loading ? 'Salvando...' : 'Salvar Alterações'}
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
+
+                {/* Modal de Adicionar/Editar Endereço */}
+                <Modal 
+                    show={showAddEnderecoModal} 
+                    onHide={() => setShowAddEnderecoModal(false)}
+                    centered
+                >
+                    <Modal.Header closeButton>
+                        <Modal.Title>
+                            {enderecoEditando ? 'Editar Endereço' : 'Adicionar Endereço'}
+                        </Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        {error && <div className="alert alert-danger">{error}</div>}
+                        {success && <div className="alert alert-success">{success}</div>}
+                        
+                        <form onSubmit={handleSalvarEndereco}>
+                            <div className="mb-3">
+                                <label className="form-label">Apelido (ex: Casa, Trabalho)</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    name="apelido"
+                                    value={enderecoForm.apelido}
+                                    onChange={handleEnderecoFormChange}
+                                    placeholder="Casa, Trabalho, etc."
+                                />
+                            </div>
+
+                            <div className="row">
+                                <div className="col-md-6 mb-3">
+                                    <label className="form-label">CEP *</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        name="cep"
+                                        value={enderecoForm.cep}
+                                        onChange={handleCepEnderecoChange}
+                                        placeholder="00000-000"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="mb-3">
+                                <label className="form-label">Logradouro *</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    name="logradouro"
+                                    value={enderecoForm.logradouro}
+                                    onChange={handleEnderecoFormChange}
+                                    required
+                                />
+                            </div>
+
+                            <div className="row">
+                                <div className="col-md-4 mb-3">
+                                    <label className="form-label">Número *</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        name="numero"
+                                        value={enderecoForm.numero}
+                                        onChange={handleEnderecoFormChange}
+                                        required
+                                    />
+                                </div>
+                                <div className="col-md-8 mb-3">
+                                    <label className="form-label">Complemento</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        name="complemento"
+                                        value={enderecoForm.complemento}
+                                        onChange={handleEnderecoFormChange}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="row">
+                                <div className="col-md-6 mb-3">
+                                    <label className="form-label">Bairro *</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        name="bairro"
+                                        value={enderecoForm.bairro}
+                                        onChange={handleEnderecoFormChange}
+                                        required
+                                    />
+                                </div>
+                                <div className="col-md-4 mb-3">
+                                    <label className="form-label">Cidade *</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        name="cidade"
+                                        value={enderecoForm.cidade}
+                                        onChange={handleEnderecoFormChange}
+                                        required
+                                    />
+                                </div>
+                                <div className="col-md-2 mb-3">
+                                    <label className="form-label">UF *</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        name="estado"
+                                        value={enderecoForm.estado}
+                                        onChange={handleEnderecoFormChange}
+                                        maxLength="2"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="form-check mb-3">
+                                <input
+                                    type="checkbox"
+                                    className="form-check-input"
+                                    id="isPadraoCheck"
+                                    name="isPadrao"
+                                    checked={enderecoForm.isPadrao}
+                                    onChange={handleEnderecoFormChange}
+                                    disabled={enderecosSalvos.length === 0}
+                                />
+                                <label className="form-check-label" htmlFor="isPadraoCheck">
+                                    Definir como endereço padrão
+                                </label>
+                            </div>
+                        </form>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={() => setShowAddEnderecoModal(false)}>
+                            Cancelar
+                        </Button>
+                        <Button variant="primary" onClick={handleSalvarEndereco} disabled={loading}>
+                            {loading ? 'Salvando...' : 'Salvar Endereço'}
                         </Button>
                     </Modal.Footer>
                 </Modal>
