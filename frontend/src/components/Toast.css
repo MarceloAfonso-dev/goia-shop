@@ -1,0 +1,122 @@
+/* Toast.css */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+
+.goia-toast {
+  position: fixed;
+  top: 100px;
+  right: 30px;
+  min-width: 320px;
+  max-width: 450px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  z-index: 10000;
+  animation: goiaSlideInRight 0.3s ease-out;
+  font-family: 'Outfit', sans-serif;
+}
+
+@keyframes goiaSlideInRight {
+  from {
+    transform: translateX(450px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.goia-toast-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.goia-toast-success .goia-toast-icon {
+  background: linear-gradient(135deg, #10b981, #34d399);
+  color: white;
+}
+
+.goia-toast-error .goia-toast-icon {
+  background: linear-gradient(135deg, #ef4444, #f87171);
+  color: white;
+}
+
+.goia-toast-warning .goia-toast-icon {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  color: white;
+}
+
+.goia-toast-info .goia-toast-icon {
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+  color: white;
+}
+
+.goia-toast-message {
+  flex: 1;
+  color: #1e293b;
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.goia-toast-close {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.goia-toast-close:hover {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+/* Border left colorido */
+.goia-toast-success {
+  border-left: 4px solid #10b981;
+}
+
+.goia-toast-error {
+  border-left: 4px solid #ef4444;
+}
+
+.goia-toast-warning {
+  border-left: 4px solid #f59e0b;
+}
+
+.goia-toast-info {
+  border-left: 4px solid #3b82f6;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .goia-toast {
+    right: 20px;
+    left: 20px;
+    min-width: auto;
+    max-width: none;
+  }
+}
+

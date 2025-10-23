@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { useCart } from '../hooks/useCart';
+import EcommerceHeader from './EcommerceHeader';
 import './PublicProductGrid.css';
 
 // Componentes de ícones PNG - Usando os ícones fornecidos
@@ -290,11 +291,11 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
     return urlArquivo.replace('http://localhost:8080', '');
   };
 
-  // Função personalizada para adicionar ao carrinho e redirecionar
+  // Função personalizada para adicionar ao carrinho (sem redirecionar)
   const handleAddToCart = (product) => {
-    addToCart(product, 1); // Sempre adicionar 1 unidade
-    // Redirecionar para o carrinho
-    window.location.href = '/carrinho';
+    // Simplesmente adiciona ao carrinho
+    // O toast será exibido automaticamente pelo useCart
+    addToCart(product, 1);
   };
 
   // Função para navegar para a home
@@ -346,18 +347,8 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#F1F2F4' }}>
-        <header className="goi-header">
-          <div className="goi-logo">
-            <h1>GOIA Shop - Marketplace</h1>
-          </div>
-          <button 
-            className="btn btn-secondary" 
-            onClick={handleGoToHome}
-          >
-            ← Voltar
-          </button>
-        </header>
+      <div className="landing-page" style={{ minHeight: '100vh', backgroundColor: '#F1F2F4' }}>
+        <EcommerceHeader />
         <div className="container" style={{ paddingTop: '40px', textAlign: 'center' }}>
           <div style={{ padding: '60px 20px' }}>
             <div style={{ fontSize: '48px', marginBottom: '20px' }}>🛍️</div>
@@ -371,18 +362,8 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
 
   if (error) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#F1F2F4' }}>
-        <header className="goi-header">
-          <div className="goi-logo">
-            <h1>GOIA Shop - Marketplace</h1>
-          </div>
-          <button 
-            className="btn btn-secondary" 
-            onClick={handleGoToHome}
-          >
-            ← Voltar
-          </button>
-        </header>
+      <div className="landing-page" style={{ minHeight: '100vh', backgroundColor: '#F1F2F4' }}>
+        <EcommerceHeader />
         <div className="container" style={{ paddingTop: '40px' }}>
           <div className="product-card" style={{ textAlign: 'center', marginTop: '40px' }}>
             <div style={{ fontSize: '48px', marginBottom: '20px' }}>⚠️</div>
@@ -401,49 +382,9 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#F1F2F4' }}>
-      {/* GOI Header */}
-      <header className="goi-header">
-        <div className="goi-logo" onClick={handleGoToHome} style={{ cursor: 'pointer' }}>
-          <img src="/assets/img/goia-icon-header.png" alt="GOIA" style={{ width: '52px', height: '52px' }} />
-          <h1>GOIA Shop</h1>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {/* Carrinho */}
-          <div 
-            style={{ position: 'relative', cursor: 'pointer', padding: '8px' }}
-            onClick={() => window.location.href = '/carrinho'}
-            title="Ver carrinho"
-          >
-            <div style={{ 
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <CartIcon size={28} color="#FF4F5A" />
-              {cartCount > 0 && (
-                <span style={{
-                  backgroundColor: '#FF4F5A',
-                  color: 'white',
-                  borderRadius: '50%',
-                  width: '20px',
-                  height: '20px',
-                  fontSize: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 'bold',
-                  position: 'absolute',
-                  top: '0px',
-                  right: '0px'
-                }}>
-                  {cartCount}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="landing-page" style={{ minHeight: '100vh', backgroundColor: '#F1F2F4' }}>
+      {/* Header Padronizado */}
+      <EcommerceHeader />
 
       <div className="container" style={{ paddingTop: '40px', paddingBottom: '40px' }}>
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>

@@ -1,4 +1,5 @@
-import { useState, useEffect, useContext, createContext } from 'react';
+import { useState, useEffect, useContext, createContext, useRef } from 'react';
+import Toast from '../components/Toast';
 
 const CartContext = createContext();
 
@@ -10,6 +11,8 @@ export const CartProvider = ({ children }) => {
   });
 
   const [cartCount, setCartCount] = useState(0);
+  const [toast, setToast] = useState(null);
+  const processingRef = useRef(false);
 
   // Atualizar localStorage sempre que o carrinho mudar
   useEffect(() => {
@@ -20,25 +23,87 @@ export const CartProvider = ({ children }) => {
     setCartCount(totalItems);
   }, [cart]);
 
+  // Função auxiliar para mostrar toast
+  const showToast = (message, type = 'info') => {
+    console.log('🔔 showToast chamado:', { message, type });
+    setToast({ message, type });
+  };
+
   // Adicionar produto ao carrinho
   const addToCart = (produto, quantidade = 1) => {
+    // Prevenir chamadas duplicadas usando useRef (mais confiável que useState)
+    if (processingRef.current) {
+      console.log('⏸️ Bloqueado: addToCart já está processando');
+      return;
+    }
+    
+    console.log('✅ Processando addToCart para:', produto.nome, 'quantidade:', quantidade);
+    processingRef.current = true;
+    
+    // Verificar se há estoque disponível
+    const estoqueDisponivel = produto.quantidade || 0;
+    
+    // Usar a abordagem de callback para garantir que usamos o estado mais recente
     setCart(prevCart => {
-      // Verificar se o produto já está no carrinho
-      const existingItemIndex = prevCart.findIndex(item => item.id === produto.id);
+      console.log('🛒 Estado atual do carrinho:', prevCart.map(i => `${i.nome}: ${i.quantidade}`));
       
-      if (existingItemIndex >= 0) {
-        // Se já existe, atualizar quantidade
-        const newCart = [...prevCart];
-        newCart[existingItemIndex].quantidade += quantidade;
-        return newCart;
+      // Verificar se o produto já está no carrinho
+      const existingItem = prevCart.find(item => item.id === produto.id);
+      
+      if (existingItem) {
+        // Se já existe, verificar se pode adicionar mais
+        const quantidadeAtual = existingItem.quantidade;
+        const novaQuantidade = quantidadeAtual + quantidade;
+        
+        console.log(`📦 Produto existe. Atual: ${quantidadeAtual}, Nova: ${novaQuantidade}, Estoque: ${estoqueDisponivel}`);
+        
+        // Validar estoque
+        if (novaQuantidade > estoqueDisponivel) {
+          showToast(
+            `Estoque insuficiente! Disponível: ${estoqueDisponivel} ${estoqueDisponivel === 1 ? 'unidade' : 'unidades'}. Você já tem ${quantidadeAtual} no carrinho.`,
+            'warning'
+          );
+          setTimeout(() => { processingRef.current = false; }, 500);
+          return prevCart; // Não modifica o carrinho
+        }
+        
+        // Atualizar quantidade
+        showToast(`${produto.nome} - Quantidade atualizada no carrinho! (${novaQuantidade})`, 'success');
+        setTimeout(() => { processingRef.current = false; }, 500);
+        
+        return prevCart.map(item => 
+          item.id === produto.id 
+            ? { 
+                ...item, 
+                quantidade: novaQuantidade,
+                produtoCompleto: produto 
+              }
+            : item
+        );
       } else {
-        // Se não existe, adicionar novo item
+        // Se não existe, verificar estoque antes de adicionar
+        console.log(`🆕 Produto novo. Quantidade: ${quantidade}, Estoque: ${estoqueDisponivel}`);
+        
+        if (quantidade > estoqueDisponivel) {
+          showToast(
+            `Estoque insuficiente! Disponível: ${estoqueDisponivel} ${estoqueDisponivel === 1 ? 'unidade' : 'unidades'}.`,
+            'error'
+          );
+          setTimeout(() => { processingRef.current = false; }, 500);
+          return prevCart; // Não adiciona ao carrinho
+        }
+        
+        // Adicionar novo item
+        showToast(`${produto.nome} adicionado ao carrinho!`, 'success');
+        setTimeout(() => { processingRef.current = false; }, 500);
+        
         return [...prevCart, {
           id: produto.id,
           nome: produto.nome,
           preco: produto.preco,
           imagem: produto.imagens?.[0]?.caminho || null,
           quantidade: quantidade,
+          estoqueDisponivel: estoqueDisponivel,
           produtoCompleto: produto
         }];
       }
@@ -57,13 +122,28 @@ export const CartProvider = ({ children }) => {
       return;
     }
 
-    setCart(prevCart => 
-      prevCart.map(item => 
+    setCart(prevCart => {
+      const item = prevCart.find(item => item.id === produtoId);
+      if (!item) return prevCart;
+      
+      // Verificar estoque disponível
+      const estoqueDisponivel = item.produtoCompleto?.quantidade || item.estoqueDisponivel || 0;
+      
+      if (novaQuantidade > estoqueDisponivel) {
+        showToast(
+          `Estoque insuficiente! Disponível: ${estoqueDisponivel} ${estoqueDisponivel === 1 ? 'unidade' : 'unidades'}.`,
+          'warning'
+        );
+        return prevCart; // Não modifica
+      }
+      
+      showToast(`Quantidade atualizada!`, 'info');
+      return prevCart.map(item => 
         item.id === produtoId 
           ? { ...item, quantidade: novaQuantidade }
           : item
-      )
-    );
+      );
+    });
   };
 
   // Limpar carrinho
@@ -102,6 +182,13 @@ export const CartProvider = ({ children }) => {
   return (
     <CartContext.Provider value={value}>
       {children}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </CartContext.Provider>
   );
 };

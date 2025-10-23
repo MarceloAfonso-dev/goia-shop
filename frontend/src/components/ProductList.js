@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Card, Badge, Spinner, Alert, Row, Col, Button, Form, InputGroup, Pagination } from 'react-bootstrap';
+import { Table, Card, Badge, Spinner, Alert, Row, Col, Button, Form, InputGroup, Pagination, Modal } from 'react-bootstrap';
 import api from '../utils/api';
 import ProductCadastroModal from './ProductCadastroModal';
 import ProductEditModal from './ProductEditCompleteModal';
@@ -16,9 +16,10 @@ const ProductList = () => {
     const [error, setError] = useState('');
     const [showCadastroModal, setShowCadastroModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
-    // Preview removido - agora usa página dedicada
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [showQuantidadeModal, setShowQuantidadeModal] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
     
     // Estados de filtro e paginação
     const [filtroNome, setFiltroNome] = useState('');
@@ -147,6 +148,32 @@ const ProductList = () => {
     const handleEditProduct = (product) => {
         setSelectedProduct(product);
         setShowEditModal(true);
+    };
+
+    const handleViewDetails = (product) => {
+        setSelectedProduct(product);
+        setCurrentImageIndex(0); // Resetar para primeira imagem
+        setShowDetailsModal(true);
+    };
+
+    const handleNextImage = () => {
+        if (selectedProduct && selectedProduct.imagens) {
+            setCurrentImageIndex((prev) => 
+                (prev + 1) % selectedProduct.imagens.length
+            );
+        }
+    };
+
+    const handlePrevImage = () => {
+        if (selectedProduct && selectedProduct.imagens) {
+            setCurrentImageIndex((prev) => 
+                prev === 0 ? selectedProduct.imagens.length - 1 : prev - 1
+            );
+        }
+    };
+
+    const goToImage = (index) => {
+        setCurrentImageIndex(index);
     };
 
     // Funções de filtro
@@ -401,7 +428,7 @@ const ProductList = () => {
                                                             <Button 
                                                                 variant="info" 
                                                                 size="sm" 
-                                                                onClick={() => window.open(`/produto/${product.id}`, '_blank')}
+                                                                onClick={() => handleViewDetails(product)}
                                                                 title="Ver detalhes do produto"
                                                             >
                                                                 👁️
@@ -535,7 +562,215 @@ const ProductList = () => {
                 />
             )}
 
-            {/* Product Preview - Removido, agora usa página dedicada */}
+            {/* Modal de Detalhes do Produto - Para Administradores */}
+            {isAdmin() && (
+                <Modal 
+                    show={showDetailsModal} 
+                    onHide={() => setShowDetailsModal(false)}
+                    size="lg"
+                    centered
+                >
+                    <Modal.Header closeButton>
+                        <Modal.Title>Detalhes do Produto</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        {selectedProduct && (
+                            <div>
+                                <Row className="mb-3">
+                                    <Col md={6}>
+                                        {/* Carrossel de Imagens */}
+                                        {selectedProduct.imagens && selectedProduct.imagens.length > 0 ? (
+                                            <div>
+                                                {/* Imagem Principal com Navegação */}
+                                                <div style={{ position: 'relative', marginBottom: '16px' }}>
+                                                    <img 
+                                                        src={selectedProduct.imagens[currentImageIndex]?.urlArquivo || '/placeholder.png'} 
+                                                        alt={selectedProduct.nome}
+                                                        style={{ 
+                                                            width: '100%', 
+                                                            maxHeight: '400px', 
+                                                            objectFit: 'contain', 
+                                                            borderRadius: '8px',
+                                                            backgroundColor: '#f8f9fa'
+                                                        }}
+                                                    />
+                                                    
+                                                    {/* Botões de Navegação - apenas se houver mais de uma imagem */}
+                                                    {selectedProduct.imagens.length > 1 && (
+                                                        <>
+                                                            <Button
+                                                                variant="dark"
+                                                                size="sm"
+                                                                onClick={handlePrevImage}
+                                                                style={{
+                                                                    position: 'absolute',
+                                                                    left: '10px',
+                                                                    top: '50%',
+                                                                    transform: 'translateY(-50%)',
+                                                                    opacity: 0.7,
+                                                                    borderRadius: '50%',
+                                                                    width: '40px',
+                                                                    height: '40px',
+                                                                    padding: 0
+                                                                }}
+                                                            >
+                                                                ‹
+                                                            </Button>
+                                                            <Button
+                                                                variant="dark"
+                                                                size="sm"
+                                                                onClick={handleNextImage}
+                                                                style={{
+                                                                    position: 'absolute',
+                                                                    right: '10px',
+                                                                    top: '50%',
+                                                                    transform: 'translateY(-50%)',
+                                                                    opacity: 0.7,
+                                                                    borderRadius: '50%',
+                                                                    width: '40px',
+                                                                    height: '40px',
+                                                                    padding: 0
+                                                                }}
+                                                            >
+                                                                ›
+                                                            </Button>
+                                                            
+                                                            {/* Contador de Imagens */}
+                                                            <Badge 
+                                                                bg="dark" 
+                                                                style={{
+                                                                    position: 'absolute',
+                                                                    bottom: '10px',
+                                                                    right: '10px',
+                                                                    opacity: 0.8
+                                                                }}
+                                                            >
+                                                                {currentImageIndex + 1} / {selectedProduct.imagens.length}
+                                                            </Badge>
+                                                        </>
+                                                    )}
+                                                    
+                                                    {/* Badge de Imagem Principal */}
+                                                    {selectedProduct.imagens[currentImageIndex]?.isPrincipal && (
+                                                        <Badge 
+                                                            bg="primary" 
+                                                            style={{
+                                                                position: 'absolute',
+                                                                top: '10px',
+                                                                left: '10px'
+                                                            }}
+                                                        >
+                                                            ★ Principal
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                                
+                                                {/* Miniaturas */}
+                                                {selectedProduct.imagens.length > 1 && (
+                                                    <div style={{ 
+                                                        display: 'flex', 
+                                                        gap: '8px', 
+                                                        flexWrap: 'wrap',
+                                                        justifyContent: 'center'
+                                                    }}>
+                                                        {selectedProduct.imagens.map((img, index) => (
+                                                            <div
+                                                                key={index}
+                                                                onClick={() => goToImage(index)}
+                                                                style={{
+                                                                    width: '70px',
+                                                                    height: '70px',
+                                                                    cursor: 'pointer',
+                                                                    border: currentImageIndex === index 
+                                                                        ? '3px solid #0d6efd' 
+                                                                        : img.isPrincipal 
+                                                                            ? '2px solid #ffc107'
+                                                                            : '1px solid #dee2e6',
+                                                                    borderRadius: '4px',
+                                                                    overflow: 'hidden',
+                                                                    opacity: currentImageIndex === index ? 1 : 0.6,
+                                                                    transition: 'all 0.2s',
+                                                                    position: 'relative'
+                                                                }}
+                                                                onMouseEnter={(e) => {
+                                                                    if (currentImageIndex !== index) {
+                                                                        e.currentTarget.style.opacity = '0.8';
+                                                                    }
+                                                                }}
+                                                                onMouseLeave={(e) => {
+                                                                    if (currentImageIndex !== index) {
+                                                                        e.currentTarget.style.opacity = '0.6';
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <img 
+                                                                    src={img.urlArquivo} 
+                                                                    alt={`${selectedProduct.nome} - ${index + 1}`}
+                                                                    style={{ 
+                                                                        width: '100%', 
+                                                                        height: '100%', 
+                                                                        objectFit: 'cover'
+                                                                    }}
+                                                                />
+                                                                {img.isPrincipal && (
+                                                                    <span style={{
+                                                                        position: 'absolute',
+                                                                        top: '2px',
+                                                                        right: '2px',
+                                                                        fontSize: '12px'
+                                                                    }}>
+                                                                        ★
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div style={{ 
+                                                width: '100%', 
+                                                height: '300px', 
+                                                backgroundColor: '#f0f0f0', 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                justifyContent: 'center',
+                                                borderRadius: '8px'
+                                            }}>
+                                                <span style={{ fontSize: '48px' }}>📦</span>
+                                            </div>
+                                        )}
+                                    </Col>
+                                    <Col md={6}>
+                                        <h4>{selectedProduct.nome}</h4>
+                                        <p className="text-muted">Código: {selectedProduct.codigo}</p>
+                                        <hr />
+                                        <p><strong>Preço:</strong> <span className="text-success fs-5">{formatPrice(selectedProduct.preco)}</span></p>
+                                        <p><strong>Quantidade em Estoque:</strong> <Badge bg={selectedProduct.quantidade > 0 ? 'success' : 'danger'}>{selectedProduct.quantidade}</Badge></p>
+                                        <p><strong>Status:</strong> {getStatusBadge(selectedProduct.status)}</p>
+                                        <hr />
+                                        <h5>Descrição</h5>
+                                        <p style={{ maxHeight: '150px', overflowY: 'auto' }}>
+                                            {selectedProduct.descricao || 'Sem descrição'}
+                                        </p>
+                                    </Col>
+                                </Row>
+                            </div>
+                        )}
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={() => setShowDetailsModal(false)}>
+                            Fechar
+                        </Button>
+                        <Button variant="warning" onClick={() => {
+                            setShowDetailsModal(false);
+                            handleEditProduct(selectedProduct);
+                        }}>
+                            Editar Produto
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
+            )}
             
             {/* Modal de Edição de Quantidade */}
             <ProductQuantidadeModal

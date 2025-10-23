@@ -82,6 +82,17 @@ const CartPage = () => {
                 <div className="item-details">
                   <h3 className="item-name">{item.nome}</h3>
                   <p className="item-price">{formatPrice(item.preco)}</p>
+                  {/* Mostrar estoque disponível */}
+                  {item.produtoCompleto && (
+                    <p style={{ 
+                      fontSize: '0.85rem', 
+                      color: item.produtoCompleto.quantidade <= 5 ? '#d90000' : '#64748b',
+                      margin: '4px 0 0 0'
+                    }}>
+                      {item.produtoCompleto.quantidade <= 5 ? '⚠️ ' : ''}
+                      Estoque: {item.produtoCompleto.quantidade} unidade(s)
+                    </p>
+                  )}
                 </div>
 
                 <div className="item-quantity">
@@ -95,6 +106,12 @@ const CartPage = () => {
                   <button 
                     className="qty-btn" 
                     onClick={() => updateQuantity(item.id, item.quantidade + 1)}
+                    disabled={item.produtoCompleto && item.quantidade >= item.produtoCompleto.quantidade}
+                    style={{
+                      opacity: item.produtoCompleto && item.quantidade >= item.produtoCompleto.quantidade ? 0.5 : 1,
+                      cursor: item.produtoCompleto && item.quantidade >= item.produtoCompleto.quantidade ? 'not-allowed' : 'pointer'
+                    }}
+                    title={item.produtoCompleto && item.quantidade >= item.produtoCompleto.quantidade ? 'Estoque máximo atingido' : 'Aumentar quantidade'}
                   >
                     +
                   </button>

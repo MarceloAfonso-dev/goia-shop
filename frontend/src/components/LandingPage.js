@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
+import { useAuth } from '../hooks/useAuth';
 import './LandingPage.css';
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [showPopup, setShowPopup] = useState(false);
   const [popupData, setPopupData] = useState({ title: '', description: '' });
   const [openFaq, setOpenFaq] = useState(null);
@@ -169,15 +171,57 @@ const LandingPage = () => {
           <a href="#faq">Ajuda</a>
         </nav>
         <div className="header-right">
-          <button className="btn-login" onClick={() => navigate('/login')}>
-            Login
+          {/* Login/Account Link */}
+          {user ? (
+            <button 
+              className="btn-login"
+              onClick={() => {
+                if (user.grupo === 'ADMIN' || user.grupo === 'ESTOQUISTA') {
+                  navigate('/dashboard');
+                } else {
+                  navigate('/minha-conta');
+                }
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              <div style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                backgroundColor: '#FF4F5A',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '14px',
+                fontWeight: 'bold'
+              }}>
+                {user.nome?.charAt(0).toUpperCase()}
+              </div>
+              <span>Olá, {user.nome?.split(' ')[0]}</span>
+            </button>
+          ) : (
+            <button className="btn-login" onClick={() => navigate('/login')}>
+              Login
+            </button>
+          )}
+          
+          <button className="btn-cta" onClick={() => navigate('/cadastro')}>
+            Abrir conta
           </button>
-          <button className="btn-cta">Abrir conta</button>
-          <small style={{marginLeft: '10px'}}>
-            <a href="/admin" style={{color: '#666', fontSize: '12px', textDecoration: 'none'}}>
-              Admin
-            </a>
-          </small>
+          
+          {/* Link Admin - Apenas se não for cliente */}
+          {!user || (user && user.grupo !== 'CLIENTE' && user.tipo !== 'CLIENTE') ? (
+            <small style={{marginLeft: '10px'}}>
+              <a href="/admin" style={{color: '#666', fontSize: '12px', textDecoration: 'none'}}>
+                Admin
+              </a>
+            </small>
+          ) : null}
         </div>
       </header>
 

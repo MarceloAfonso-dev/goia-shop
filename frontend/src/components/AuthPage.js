@@ -364,10 +364,16 @@ const AuthPage = ({ onLoginSuccess }) => {
     // Se usuário já está logado, mostrar interface de logout
     if (user) {
         return (
-            <div className="ecommerce-page">
+            <div className="landing-page">
                 <EcommerceHeader />
                 
-                <div className="auth-container">
+                <div style={{ 
+                    minHeight: '100vh', 
+                    backgroundColor: '#F1F2F4',
+                    paddingTop: '40px',
+                    paddingBottom: '60px'
+                }}>
+                    <div className="auth-container">
                     <div className="auth-card logged-in-card">
                         <div className="user-info">
                             <div className="user-avatar">
@@ -405,18 +411,25 @@ const AuthPage = ({ onLoginSuccess }) => {
                         </div>
                     </div>
                 </div>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="ecommerce-page">
+        <div className="landing-page">
             <EcommerceHeader />
             
-            <div className="auth-container">
-                <div className="auth-card">
-                    {/* Tabs */}
-                    <div className="auth-tabs">
+            <div style={{ 
+                minHeight: '100vh', 
+                backgroundColor: '#F1F2F4',
+                paddingTop: '40px',
+                paddingBottom: '60px'
+            }}>
+                <div className="auth-container">
+                    <div className="auth-card">
+                        {/* Tabs */}
+                        <div className="auth-tabs">
                         <button 
                             className={`tab-button ${activeTab === 'login' ? 'active' : ''}`}
                             onClick={() => {
@@ -767,6 +780,7 @@ const AuthPage = ({ onLoginSuccess }) => {
                         </button>
                     </div>
                 </div>
+            </div>
             </div>
         </div>
     );
