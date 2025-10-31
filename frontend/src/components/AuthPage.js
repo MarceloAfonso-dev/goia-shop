@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import EcommerceHeader from './EcommerceHeader';
 import { useAuth } from '../hooks/useAuth';
+import { useCart } from '../hooks/useCart';
 import { Modal, Button } from 'react-bootstrap';
 import api from '../utils/api';
 import './AuthPage.css';
 
 const AuthPage = ({ onLoginSuccess }) => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { user, logout, updateUser } = useAuth();
+    const { restorePreservedCart, clearCartOnLogout, switchToUserCart, preserveCartWithToken } = useCart();
     const [activeTab, setActiveTab] = useState('login'); // 'login' ou 'register'
+    
+    // Capturar parâmetros da URL
+    const cartToken = searchParams.get('cart_token');
+    const redirectTo = searchParams.get('redirect');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -131,6 +138,9 @@ const AuthPage = ({ onLoginSuccess }) => {
         setLoading(true);
         setError('');
 
+        // Preservar carrinho atual antes do login
+        preserveCartWithToken();
+
         try {
             // Verificar se há usuário do backoffice logado
             const existingUser = localStorage.getItem('user');
@@ -157,8 +167,22 @@ const AuthPage = ({ onLoginSuccess }) => {
             const result = await response.json();
 
             if (response.ok && result.success) {
-                // Limpar qualquer sessão anterior
-                localStorage.clear();
+                // Preservar carrinho e cart_token antes de limpar
+                const preservedCart = localStorage.getItem('goia-shop-cart-preserved');
+                const cartToken = localStorage.getItem('goia-shop-cart-token');
+                
+                // Limpar apenas sessões de usuário, não carrinho
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                localStorage.removeItem('userType');
+                
+                // Restaurar dados preservados
+                if (preservedCart) {
+                    localStorage.setItem('goia-shop-cart-preserved', preservedCart);
+                }
+                if (cartToken) {
+                    localStorage.setItem('goia-shop-cart-token', cartToken);
+                }
                 
                 // Salvar token e dados do cliente
                 localStorage.setItem('token', result.token);
@@ -168,8 +192,18 @@ const AuthPage = ({ onLoginSuccess }) => {
                 // Notificar sobre o login
                 onLoginSuccess(result.user);
                 
-                // Para clientes, navegar para a página inicial ou conta
-                if (result.user.tipo === 'CLIENTE') {
+                // Trocar para o carrinho do usuário
+                switchToUserCart();
+                
+                // Restaurar carrinho se houver cart_token
+                const cartRestored = restorePreservedCart();
+                
+                // Redirecionar para onde estava antes ou página padrão
+                if (redirectTo === 'checkout' && cartRestored) {
+                    navigate('/checkout');
+                } else if (redirectTo === 'checkout') {
+                    navigate('/carrinho'); // Se não restaurou carrinho, volta para carrinho
+                } else if (result.user.tipo === 'CLIENTE') {
                     navigate('/');
                 } else {
                     navigate('/minha-conta');
@@ -321,6 +355,13 @@ const AuthPage = ({ onLoginSuccess }) => {
             if (response.ok && result.success) {
                 setSuccess('Conta criada com sucesso! Você já pode fazer login.');
                 setActiveTab('login');
+                // Pre-preencher email no login se veio do carrinho
+                if (cartToken && redirectTo) {
+                    setLoginData(prev => ({
+                        ...prev,
+                        email: registerData.email
+                    }));
+                }
                 // Limpar formulário
                 setRegisterData({
                     nome: '',
@@ -377,9 +418,10 @@ const AuthPage = ({ onLoginSuccess }) => {
             logout();
             setSuccess('Logout realizado e cache limpo com sucesso!');
         } else {
-            // Apenas fazer logout (mantém cache do carrinho e outras preferências)
-        logout();
-        setSuccess('Logout realizado com sucesso!');
+            // Limpar apenas o carrinho do usuário específico antes do logout
+            clearCartOnLogout();
+            logout();
+            setSuccess('Logout realizado com sucesso!');
         }
         
         setShowLogoutModal(false);

@@ -161,7 +161,7 @@ const LandingPage = () => {
             </button>
           )}
           
-          <button className="btn-cta" onClick={() => navigate('/cadastro')}>
+          <button className="btn-cta" onClick={() => window.open('https://goia.click/cadastro', '_blank')}>
             Abrir conta
           </button>
           

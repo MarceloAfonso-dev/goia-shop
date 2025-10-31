@@ -2,18 +2,22 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EcommerceHeader from './EcommerceHeader';
 import { useCart } from '../hooks/useCart';
+import { useAuth } from '../hooks/useAuth';
 import api from '../utils/api';
 import './CartPage.css';
 
 const CartPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { 
     cart, 
     cartCount, 
+    cartToken,
     removeFromCart, 
     updateQuantity, 
     clearCart, 
-    getCartTotal 
+    getCartTotal,
+    preserveCartWithToken
   } = useCart();
 
   // Estados para simulação de frete
@@ -90,6 +94,18 @@ const CartPage = () => {
     const subtotal = getCartTotal();
     const valorFrete = freteSelecionado ? freteSelecionado.preco : 0;
     return subtotal + valorFrete;
+  };
+
+  // Função para iniciar checkout
+  const handleCheckout = () => {
+    if (!user) {
+      // Se não estiver logado, preservar carrinho e ir para login
+      preserveCartWithToken();
+      navigate(`/login?cart_token=${cartToken}&redirect=checkout`);
+    } else {
+      // Se já estiver logado, ir direto para checkout
+      navigate('/checkout');
+    }
   };
 
   if (cartCount === 0) {
@@ -291,8 +307,8 @@ const CartPage = () => {
                 <span>{formatPrice(getTotalComFrete())}</span>
               </div>
 
-              <button className="btn-checkout" onClick={() => navigate('/checkout')}>
-                Finalizar Compra
+              <button className="btn-checkout" onClick={handleCheckout}>
+                {user ? 'Finalizar Compra' : 'Login e Finalizar'}
               </button>
               
               <button className="btn-continue" onClick={() => navigate('/produtos')}>
