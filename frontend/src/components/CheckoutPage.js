@@ -19,6 +19,7 @@ const CheckoutPage = () => {
   const [enderecosSalvos, setEnderecosSalvos] = useState([]);
   const [enderecoSelecionadoId, setEnderecoSelecionadoId] = useState(null);
   const [usarNovoEndereco, setUsarNovoEndereco] = useState(false);
+  const [salvarNovoEndereco, setSalvarNovoEndereco] = useState(true);
 
   // Estados do formulário
   const [enderecoData, setEnderecoData] = useState({
@@ -205,6 +206,33 @@ const CheckoutPage = () => {
     }
   };
 
+  const salvarEnderecoNaConta = async () => {
+    if (!user || !salvarNovoEndereco) return;
+    
+    try {
+      const novoEndereco = {
+        cep: enderecoData.cep,
+        logradouro: enderecoData.logradouro,
+        numero: enderecoData.numero,
+        complemento: enderecoData.complemento,
+        bairro: enderecoData.bairro,
+        cidade: enderecoData.cidade,
+        estado: enderecoData.uf,
+        apelido: `Endereço ${enderecosSalvos.length + 1}`,
+        isPadrao: enderecosSalvos.length === 0 // Primeiro endereço vira padrão
+      };
+
+      await api.post('/cliente/enderecos', novoEndereco);
+      
+      // Recarregar endereços salvos
+      await carregarEnderecosSalvos();
+      
+      console.log('✅ Endereço salvo na conta com sucesso!');
+    } catch (error) {
+      console.error('Erro ao salvar endereço:', error);
+    }
+  };
+
   const calcularFrete = async () => {
     if (!enderecoData.cep) {
       setError('CEP é obrigatório para calcular o frete');
@@ -215,6 +243,10 @@ const CheckoutPage = () => {
     setError('');
 
     try {
+      // Salvar endereço na conta se o usuário optou por isso
+      if (usarNovoEndereco && salvarNovoEndereco) {
+        await salvarEnderecoNaConta();
+      }
       const response = await fetch('http://localhost:8080/api/frete/calcular', {
         method: 'POST',
         headers: {
@@ -509,8 +541,22 @@ const CheckoutPage = () => {
                 {/* Seleção de endereços salvos */}
                 {enderecosSalvos.length > 0 && !usarNovoEndereco && (
                   <div style={{ marginBottom: '24px' }}>
+                    <div style={{ 
+                      backgroundColor: '#f0f9ff', 
+                      border: '1px solid #0ea5e9', 
+                      borderRadius: '8px', 
+                      padding: '16px', 
+                      marginBottom: '16px' 
+                    }}>
+                      <h4 style={{ fontSize: '16px', marginBottom: '8px', color: '#0c4a6e' }}>
+                        📍 Seus Endereços Salvos
+                      </h4>
+                      <p style={{ fontSize: '14px', color: '#075985', margin: '0' }}>
+                        Selecione um endereço ou cadastre um novo
+                      </p>
+                    </div>
                     <h4 style={{ fontSize: '16px', marginBottom: '12px', color: '#1e293b' }}>
-                      Selecione um endereço salvo:
+                      Selecione um endereço:
                     </h4>
                     <div style={{ display: 'grid', gap: '12px' }}>
                       {enderecosSalvos.map((endereco) => (
@@ -576,43 +622,74 @@ const CheckoutPage = () => {
                         });
                       }}
                       style={{
-                        marginTop: '12px',
-                        padding: '8px 16px',
-                        backgroundColor: 'transparent',
+                        marginTop: '16px',
+                        padding: '12px 20px',
+                        backgroundColor: '#FF4F5A',
                         border: '1px solid #FF4F5A',
                         borderRadius: '8px',
-                        color: '#FF4F5A',
+                        color: 'white',
                         cursor: 'pointer',
                         fontSize: '14px',
-                        fontWeight: '500'
+                        fontWeight: '600',
+                        width: '100%',
+                        boxShadow: '0 2px 4px rgba(255, 79, 90, 0.2)'
                       }}
                     >
-                      ➕ Usar novo endereço
+                      ➕ Cadastrar Novo Endereço
                     </button>
                   </div>
                 )}
                 
                 {/* Botão para voltar aos endereços salvos */}
                 {usarNovoEndereco && enderecosSalvos.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUsarNovoEndereco(false);
-                      carregarEnderecosSalvos();
-                    }}
-                    style={{
-                      marginBottom: '16px',
-                      padding: '8px 16px',
-                      backgroundColor: 'transparent',
-                      border: '1px solid #64748b',
-                      borderRadius: '8px',
-                      color: '#64748b',
-                      cursor: 'pointer',
-                      fontSize: '14px'
-                    }}
-                  >
-                    ← Voltar para endereços salvos
-                  </button>
+                  <div style={{ 
+                    backgroundColor: '#e0f2fe', 
+                    border: '1px solid #0284c7', 
+                    borderRadius: '8px', 
+                    padding: '12px', 
+                    marginBottom: '16px' 
+                  }}>
+                    <p style={{ fontSize: '14px', color: '#0369a1', margin: '0 0 8px 0' }}>
+                      💡 Você tem {enderecosSalvos.length} endereço(s) salvo(s) na sua conta
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUsarNovoEndereco(false);
+                        carregarEnderecosSalvos();
+                      }}
+                      style={{
+                        padding: '8px 16px',
+                        backgroundColor: '#0284c7',
+                        border: 'none',
+                        borderRadius: '6px',
+                        color: 'white',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500'
+                      }}
+                    >
+                      ← Voltar para Endereços Salvos
+                    </button>
+                  </div>
+                )}
+                
+                {/* Mensagem quando não há endereços salvos */}
+                {enderecosSalvos.length === 0 && !usarNovoEndereco && (
+                  <div style={{ 
+                    backgroundColor: '#fef3c7', 
+                    border: '1px solid #f59e0b', 
+                    borderRadius: '8px', 
+                    padding: '16px', 
+                    marginBottom: '16px' 
+                  }}>
+                    <h4 style={{ fontSize: '16px', marginBottom: '8px', color: '#92400e' }}>
+                      🏠 Primeiro Endereço de Entrega
+                    </h4>
+                    <p style={{ fontSize: '14px', color: '#451a03', margin: '0' }}>
+                      Cadastre seu primeiro endereço de entrega. Ele será salvo para futuras compras.
+                    </p>
+                  </div>
                 )}
                 
                 {/* Formulário de endereço (mostrar se não houver endereços salvos OU se optar por usar novo) */}
@@ -758,6 +835,33 @@ const CheckoutPage = () => {
                     </select>
                   </div>
                 </div>
+                
+                {/* Opção para salvar endereço na conta */}
+                {usarNovoEndereco && user && (
+                  <div style={{ 
+                    marginTop: '16px',
+                    padding: '12px', 
+                    backgroundColor: '#f8fafc', 
+                    border: '1px solid #e2e8f0', 
+                    borderRadius: '8px' 
+                  }}>
+                    <label style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      color: '#374151'
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={salvarNovoEndereco}
+                        onChange={(e) => setSalvarNovoEndereco(e.target.checked)}
+                        style={{ marginRight: '8px' }}
+                      />
+                      💾 Salvar este endereço na minha conta para futuras compras
+                    </label>
+                  </div>
+                )}
                   </>
                 )}
               </div>
