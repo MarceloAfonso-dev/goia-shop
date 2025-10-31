@@ -37,7 +37,13 @@ const CheckoutPage = () => {
 
   const [pagamentoData, setPagamentoData] = useState({
     formaPagamento: 'PIX',
-    observacoes: ''
+    observacoes: '',
+    // Dados do cartão
+    numeroCartao: '',
+    nomeCartao: '',
+    validadeCartao: '',
+    cvvCartao: '',
+    parcelasCartao: 1
   });
 
   // Estado para countdown do redirecionamento
@@ -248,39 +254,72 @@ const CheckoutPage = () => {
       return;
     }
 
+    // Validar dados do cartão se necessário
+    if (!validarCartao()) {
+      setError('Preencha todos os dados do cartão corretamente');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
-      // Simular processamento de pagamento (2 segundos)
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Gerar número do pedido simulado
-      const numeroPedido = 'GOIA' + Date.now().toString().slice(-6);
-      const valorTotal = getTotalComFrete();
-      const formaPagamento = pagamentoData.formaPagamento === 'PIX' ? 'PIX' : 'Saldo GOIA Bank';
-      
-      // Simular sucesso do pagamento
-      const compraData = {
-        numeroPedido,
-        valorTotal,
-        formaPagamento,
-        frete: freteSelecionado,
-        itens: cart.length,
-        enderecoEntrega: `${enderecoData.logradouro}, ${enderecoData.numero} - ${enderecoData.cidade}/${enderecoData.uf}`
+      // Preparar dados do pedido
+      const dadosPedido = {
+        itens: cart.map(item => ({
+          produtoId: item.id,
+          quantidade: item.quantity,
+          preco: item.price
+        })),
+        dadosPedido: {
+          observacoes: pagamentoData.observacoes,
+          formaPagamento: pagamentoData.formaPagamento,
+          // Dados do cartão se for cartão de crédito
+          ...(pagamentoData.formaPagamento === 'CARTAO' && {
+            numeroCartao: pagamentoData.numeroCartao,
+            nomeCartao: pagamentoData.nomeCartao,
+            validadeCartao: pagamentoData.validadeCartao,
+            cvvCartao: pagamentoData.cvvCartao,
+            parcelasCartao: parseInt(pagamentoData.parcelasCartao)
+          })
+        }
       };
-      
-      setSuccess('Compra realizada com sucesso!');
-      setStep(4);
-      
-      // Salvar dados da compra para mostrar no popup
-      localStorage.setItem('ultimaCompra', JSON.stringify(compraData));
-      
-      // Limpar carrinho
-      clearCart();
+
+      // Enviar pedido para o backend
+      const response = await api.post('/pedidos', dadosPedido);
+
+      if (response.data.success) {
+        const pedidoData = response.data.pedido;
+        
+        // Dados para mostrar no sucesso
+        const compraData = {
+          numeroPedido: `GOIA${pedidoData.id}`,
+          valorTotal: getTotalComFrete(),
+          formaPagamento: pagamentoData.formaPagamento,
+          frete: freteSelecionado,
+          itens: cart.length,
+          enderecoEntrega: `${enderecoData.logradouro}, ${enderecoData.numero} - ${enderecoData.cidade}/${enderecoData.uf}`,
+          pedidoId: pedidoData.id
+        };
+        
+        setSuccess('Pedido realizado com sucesso!');
+        setStep(4);
+        
+        // Salvar dados da compra para mostrar no popup
+        localStorage.setItem('ultimaCompra', JSON.stringify(compraData));
+        
+        // Limpar carrinho
+        clearCart();
+      } else {
+        setError(response.data.message || 'Erro ao processar pedido');
+      }
     } catch (error) {
       console.error('Erro ao finalizar pedido:', error);
-      setError('Erro ao conectar com o servidor');
+      if (error.response && error.response.data) {
+        setError(error.response.data.message || 'Erro ao processar pagamento');
+      } else {
+        setError('Erro ao conectar com o servidor');
+      }
     } finally {
       setLoading(false);
     }
@@ -291,6 +330,53 @@ const CheckoutPage = () => {
       style: 'currency',
       currency: 'BRL'
     }).format(price || 0);
+  };
+
+  // Funções para formatação de cartão
+  const formatCardNumber = (value) => {
+    const numbers = value.replace(/\D/g, '');
+    return numbers.replace(/(\d{4})(?=\d)/g, '$1 ').substring(0, 19);
+  };
+
+  const formatCardExpiry = (value) => {
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length <= 2) return numbers;
+    return numbers.substring(0, 2) + '/' + numbers.substring(2, 4);
+  };
+
+  const formatCVV = (value) => {
+    return value.replace(/\D/g, '').substring(0, 4);
+  };
+
+  const handlePagamentoChange = (e) => {
+    const { name, value } = e.target;
+    let formattedValue = value;
+
+    if (name === 'numeroCartao') {
+      formattedValue = formatCardNumber(value);
+    } else if (name === 'validadeCartao') {
+      formattedValue = formatCardExpiry(value);
+    } else if (name === 'cvvCartao') {
+      formattedValue = formatCVV(value);
+    } else if (name === 'nomeCartao') {
+      formattedValue = value.toUpperCase();
+    }
+
+    setPagamentoData({
+      ...pagamentoData,
+      [name]: formattedValue
+    });
+  };
+
+  // Validação simples dos dados do cartão
+  const validarCartao = () => {
+    if (pagamentoData.formaPagamento !== 'CARTAO') return true;
+    
+    const numeroLimpo = pagamentoData.numeroCartao.replace(/\s/g, '');
+    return numeroLimpo.length >= 13 && 
+           pagamentoData.nomeCartao.length >= 2 && 
+           pagamentoData.validadeCartao.length === 5 && 
+           pagamentoData.cvvCartao.length >= 3;
   };
 
   const getTotalComFrete = () => {
@@ -761,13 +847,111 @@ const CheckoutPage = () => {
                   id="formaPagamento"
                   name="formaPagamento"
                   value={pagamentoData.formaPagamento}
-                  onChange={(e) => setPagamentoData({...pagamentoData, formaPagamento: e.target.value})}
+                  onChange={handlePagamentoChange}
                   required
                 >
                   <option value="PIX">💳 PIX - Instantâneo</option>
+                  <option value="BOLETO">🧾 Boleto Bancário - Vencimento em 3 dias</option>
+                  <option value="CARTAO">💳 Cartão de Crédito</option>
                   <option value="SALDO_GOIA">🏦 Saldo em Conta GOIA Bank</option>
                 </select>
               </div>
+
+              {/* Campos do Cartão */}
+              {pagamentoData.formaPagamento === 'CARTAO' && (
+                <div style={{ border: '1px solid #e1e5e9', borderRadius: '8px', padding: '16px', marginBottom: '16px', backgroundColor: '#f8f9fa' }}>
+                  <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', color: '#1e293b' }}>Dados do Cartão</h4>
+                  
+                  <div className="form-group">
+                    <label htmlFor="numeroCartao">Número do Cartão *</label>
+                    <input
+                      type="text"
+                      id="numeroCartao"
+                      name="numeroCartao"
+                      value={pagamentoData.numeroCartao}
+                      onChange={handlePagamentoChange}
+                      placeholder="0000 0000 0000 0000"
+                      required
+                      maxLength="19"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="nomeCartao">Nome no Cartão *</label>
+                    <input
+                      type="text"
+                      id="nomeCartao"
+                      name="nomeCartao"
+                      value={pagamentoData.nomeCartao}
+                      onChange={handlePagamentoChange}
+                      placeholder="NOME COMO IMPRESSO NO CARTÃO"
+                      required
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                    <div className="form-group">
+                      <label htmlFor="validadeCartao">Validade *</label>
+                      <input
+                        type="text"
+                        id="validadeCartao"
+                        name="validadeCartao"
+                        value={pagamentoData.validadeCartao}
+                        onChange={handlePagamentoChange}
+                        placeholder="MM/AA"
+                        required
+                        maxLength="5"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="cvvCartao">CVV *</label>
+                      <input
+                        type="text"
+                        id="cvvCartao"
+                        name="cvvCartao"
+                        value={pagamentoData.cvvCartao}
+                        onChange={handlePagamentoChange}
+                        placeholder="000"
+                        required
+                        maxLength="4"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="parcelasCartao">Parcelas</label>
+                      <select
+                        id="parcelasCartao"
+                        name="parcelasCartao"
+                        value={pagamentoData.parcelasCartao}
+                        onChange={handlePagamentoChange}
+                      >
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(parcela => {
+                          const valorParcela = getTotalComFrete() / parcela;
+                          return (
+                            <option key={parcela} value={parcela}>
+                              {parcela}x {formatPrice(valorParcela)}
+                              {parcela === 1 ? ' (à vista)' : ''}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Informações do Boleto */}
+              {pagamentoData.formaPagamento === 'BOLETO' && (
+                <div style={{ border: '1px solid #fbbf24', borderRadius: '8px', padding: '16px', marginBottom: '16px', backgroundColor: '#fefce8' }}>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '16px', color: '#92400e' }}>ℹ️ Informações do Boleto</h4>
+                  <p style={{ margin: '0', fontSize: '14px', color: '#451a03' }}>
+                    • O boleto será gerado após a confirmação do pedido<br/>
+                    • Vencimento em 3 dias úteis<br/>
+                    • Após o pagamento, o pedido será processado em até 2 dias úteis
+                  </p>
+                </div>
+              )}
 
               <div className="form-group">
                 <label htmlFor="observacoes">Observações</label>
@@ -775,7 +959,7 @@ const CheckoutPage = () => {
                   id="observacoes"
                   name="observacoes"
                   value={pagamentoData.observacoes}
-                  onChange={(e) => setPagamentoData({...pagamentoData, observacoes: e.target.value})}
+                  onChange={handlePagamentoChange}
                   placeholder="Observações para o pedido (opcional)"
                   rows={3}
                 />
@@ -794,6 +978,11 @@ const CheckoutPage = () => {
                   <span>Total:</span>
                   <span>{formatPrice(getTotalComFrete())}</span>
                 </div>
+                {pagamentoData.formaPagamento === 'CARTAO' && pagamentoData.parcelasCartao > 1 && (
+                  <div style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
+                    💳 {pagamentoData.parcelasCartao}x de {formatPrice(getTotalComFrete() / pagamentoData.parcelasCartao)} 
+                  </div>
+                )}
               </div>
 
               <div className="checkout-actions">
@@ -803,7 +992,7 @@ const CheckoutPage = () => {
                 <button 
                   type="button" 
                   onClick={finalizarPedido} 
-                  disabled={loading}
+                  disabled={loading || (pagamentoData.formaPagamento === 'CARTAO' && !validarCartao())}
                   className="btn-primary"
                 >
                   {loading ? '⏳ Finalizando...' : (user ? '✨ Finalizar Pedido' : '🔐 Login e Finalizar')}

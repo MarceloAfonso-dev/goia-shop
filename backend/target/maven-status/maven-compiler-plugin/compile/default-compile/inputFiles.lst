@@ -5,6 +5,7 @@
 /app/src/main/java/com/goiashop/controller/UsuarioController.java
 /app/src/main/java/com/goiashop/controller/AuditLogController.java
 /app/src/main/java/com/goiashop/repository/ProdutoRepository.java
+/app/src/main/java/com/goiashop/service/PagamentoService.java
 /app/src/main/java/com/goiashop/repository/AuditLogRepository.java
 /app/src/main/java/com/goiashop/util/CPFValidator.java
 /app/src/main/java/com/goiashop/controller/AuthController.java

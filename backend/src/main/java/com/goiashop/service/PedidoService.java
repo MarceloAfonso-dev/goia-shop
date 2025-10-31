@@ -1,15 +1,22 @@
 package com.goiashop.service;
 
-import com.goiashop.dto.CartItemRequest;
-import com.goiashop.dto.PedidoRequest;
-import com.goiashop.model.*;
-import com.goiashop.repository.*;
+import java.math.BigDecimal;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.util.List;
+import com.goiashop.dto.CartItemRequest;
+import com.goiashop.dto.PedidoRequest;
+import com.goiashop.model.Cliente;
+import com.goiashop.model.Pedido;
+import com.goiashop.model.PedidoItem;
+import com.goiashop.model.Produto;
+import com.goiashop.repository.ClienteRepository;
+import com.goiashop.repository.PedidoItemRepository;
+import com.goiashop.repository.PedidoRepository;
+import com.goiashop.repository.ProdutoRepository;
 
 @Service
 public class PedidoService {
@@ -26,8 +33,17 @@ public class PedidoService {
     @Autowired
     private ProdutoRepository produtoRepository;
     
+    @Autowired
+    private PagamentoService pagamentoService;
+    
     @Transactional
     public Pedido criarPedido(Long clienteId, List<CartItemRequest> itensCarrinho, PedidoRequest dadosPedido) {
+        // Validar dados de pagamento primeiro
+        var resultadoPagamento = pagamentoService.validarPagamento(dadosPedido);
+        if (!(Boolean) resultadoPagamento.get("sucesso")) {
+            throw new RuntimeException("Erro no pagamento: " + resultadoPagamento.get("mensagem"));
+        }
+        
         // Buscar cliente
         Cliente cliente = clienteRepository.findById(clienteId)
             .orElseThrow(() -> new RuntimeException("Cliente não encontrado"));
