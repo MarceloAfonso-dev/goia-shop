@@ -61,4 +61,18 @@ public class FreteOption {
     public void setDescricao(String descricao) {
         this.descricao = descricao;
     }
+    
+    // Alias para compatibilidade com frontend
+    public BigDecimal getPreco() {
+        return valor;
+    }
+    
+    public void setPreco(BigDecimal preco) {
+        this.valor = preco;
+    }
+    
+    public String getPrazo() {
+        if (prazoEntrega == null) return "Não informado";
+        return prazoEntrega + (prazoEntrega == 1 ? " dia útil" : " dias úteis");
+    }
 }
