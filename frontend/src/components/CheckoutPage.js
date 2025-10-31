@@ -87,10 +87,12 @@ const CheckoutPage = () => {
   // useEffect para restaurar estado quando voltar da página de resumo
   useEffect(() => {
     const locationState = location.state;
-    if (locationState) {
+    
+    if (locationState) {      
       if (locationState.endereco) {
         setEnderecoData(locationState.endereco);
       }
+      
       if (locationState.pagamento) {
         setPagamentoData(prev => ({
           ...prev,
@@ -105,30 +107,36 @@ const CheckoutPage = () => {
           })
         }));
       }
+      
       if (locationState.frete) {
         setFreteSelecionado(locationState.frete);
-        // Se tem frete mas não tem opções, adicionar às opções disponíveis
-        setFreteOptions(prev => {
-          const exists = prev.find(opt => opt.tipo === locationState.frete.tipo);
-          if (!exists) {
-            return [...prev, locationState.frete];
-          }
-          return prev;
-        });
       }
+      
       if (locationState.step) {
         setStep(locationState.step);
       }
+      
+      // Se veio para editar frete (step 2), calcular imediatamente
+      if (locationState.step === 2 && locationState.endereco) {
+        // Pequeno delay para garantir que o enderecoData foi definido
+        setTimeout(() => {
+          calcularFreteComRestauracao(locationState.frete);
+        }, 100);
+      }
     }
-  }, [location.state]);
+    
+    // Carregar endereços salvos se não veio da revisão
+    if (user && !locationState) {
+      carregarEnderecosSalvos();
+    }
+  }, [location.state, user]);
 
-  // useEffect para calcular frete automaticamente quando estiver no step 2 e tiver endereço
+  // useEffect para calcular frete automaticamente quando necessário
   useEffect(() => {
     if (step === 2 && enderecoData.cep && enderecoData.logradouro && freteOptions.length === 0) {
-      console.log('🚚 CHECKOUT - Calculando frete automaticamente para step 2');
       calcularFrete();
     }
-  }, [step, enderecoData.cep, enderecoData.logradouro, freteOptions.length]);
+  }, [step, enderecoData.cep, enderecoData.logradouro]);
 
   const loadUserAddress = async () => {
     try {
@@ -167,8 +175,11 @@ const CheckoutPage = () => {
         console.log('📍 CHECKOUT - Endereços carregados:', response.data.enderecos);
         setEnderecosSalvos(response.data.enderecos);
         
-        // Só selecionar automaticamente se não há nenhum endereço já selecionado
-        if (!enderecoSelecionadoId) {
+        // Só selecionar automaticamente se não há endereço definido E não veio da revisão
+        const veioDaRevisao = location.state && location.state.endereco;
+        const temEnderecoDefinido = enderecoSelecionadoId || (enderecoData.cep && enderecoData.logradouro);
+        
+        if (!temEnderecoDefinido && !veioDaRevisao) {
           const enderecoPadrao = response.data.enderecos.find(e => e.isPadrao);
           if (enderecoPadrao) {
             console.log('📍 CHECKOUT - Selecionando endereço padrão:', enderecoPadrao);
@@ -196,6 +207,16 @@ const CheckoutPage = () => {
               cidade: primeiroEndereco.cidade || '',
               uf: primeiroEndereco.estado || ''
             });
+          }
+        } else {
+          console.log('📍 CHECKOUT - Mantendo endereço atual da revisão:', enderecoData);
+          // Se já tem endereço definido, encontrar o ID correspondente
+          const enderecoCorrespondente = response.data.enderecos.find(e => 
+            e.cep === enderecoData.cep && e.logradouro === enderecoData.logradouro && e.numero === enderecoData.numero
+          );
+          if (enderecoCorrespondente) {
+            console.log('📍 CHECKOUT - Encontrou endereço correspondente:', enderecoCorrespondente);
+            setEnderecoSelecionadoId(enderecoCorrespondente.id);
           }
         }
       }
@@ -317,7 +338,64 @@ const CheckoutPage = () => {
 
       if (response.ok && result.success) {
         setFreteOptions(result.opcoes);
+        
+        // Se já tinha um frete selecionado, verificar se ele ainda existe nas novas opções
+        if (freteSelecionado) {
+          const freteEncontrado = result.opcoes.find(opt => opt.tipo === freteSelecionado.tipo);
+          if (freteEncontrado) {
+            setFreteSelecionado(freteEncontrado); // Atualizar com dados mais recentes
+          } else {
+            setFreteSelecionado(null);
+          }
+        }
+        
         setStep(2);
+      } else {
+        setError(result.message || 'Erro ao calcular frete');
+      }
+    } catch (error) {
+      console.error('Erro ao calcular frete:', error);
+      setError('Erro ao conectar com o servidor');
+    } finally {
+      setLoadingFrete(false);
+    }
+  };
+
+  const calcularFreteComRestauracao = async (freteOriginal) => {
+    if (!enderecoData.cep) {
+      setError('CEP é obrigatório para calcular o frete');
+      return;
+    }
+
+    setLoadingFrete(true);
+    setError('');
+
+    try {
+      const response = await fetch('http://localhost:8080/api/frete/calcular', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cep: enderecoData.cep,
+          valorTotal: getCartTotal()
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setFreteOptions(result.opcoes);
+        
+        // GARANTIR que o frete original esteja selecionado se existir
+        const freteEncontrado = result.opcoes.find(opt => opt.tipo === freteOriginal?.tipo);
+        if (freteEncontrado) {
+          setFreteSelecionado(freteEncontrado);
+        } else if (freteOriginal) {
+          // Se não encontrou nas opções, adicionar o original
+          setFreteOptions(prev => [...prev, freteOriginal]);
+          setFreteSelecionado(freteOriginal);
+        }
       } else {
         setError(result.message || 'Erro ao calcular frete');
       }
