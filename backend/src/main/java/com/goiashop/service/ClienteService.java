@@ -1,15 +1,16 @@
 package com.goiashop.service;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.goiashop.dto.ClienteRegistroRequest;
 import com.goiashop.model.Cliente;
 import com.goiashop.repository.ClienteRepository;
 import com.goiashop.util.CPFValidator;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.Optional;
 
 @Service
 public class ClienteService {
@@ -21,6 +22,9 @@ public class ClienteService {
     private PasswordService passwordService;
     
     public Cliente registrarCliente(ClienteRegistroRequest request) {
+        // Validar nome - deve ter no mínimo duas palavras com pelo menos 3 letras cada
+        validarNome(request.getNome());
+        
         // Verificar se email já existe
         if (clienteRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email já está em uso");
@@ -113,6 +117,9 @@ public class ClienteService {
     public Cliente atualizarCliente(Long id, ClienteRegistroRequest request) {
         Cliente cliente = buscarPorId(id);
         
+        // Validar nome - deve ter no mínimo duas palavras com pelo menos 3 letras cada
+        validarNome(request.getNome());
+        
         // Verificar se email mudou e se já existe
         if (!cliente.getEmail().equals(request.getEmail()) && 
             clienteRepository.existsByEmail(request.getEmail())) {
@@ -187,6 +194,9 @@ public class ClienteService {
     public Cliente atualizarClienteDados(Long id, com.goiashop.dto.ClienteAtualizacaoRequest request) {
         Cliente cliente = buscarPorId(id);
         
+        // Validar nome - deve ter no mínimo duas palavras com pelo menos 3 letras cada
+        validarNome(request.getNome());
+        
         // Atualizar dados básicos (não permite mudar email)
         cliente.setNome(request.getNome());
         cliente.setTelefone(request.getTelefone());
@@ -223,5 +233,29 @@ public class ClienteService {
      */
     public boolean existsByEmail(String email) {
         return clienteRepository.existsByEmail(email);
+    }
+    
+    /**
+     * Valida se o nome tem pelo menos duas palavras com mínimo 3 letras cada
+     */
+    private void validarNome(String nome) {
+        if (nome == null || nome.trim().isEmpty()) {
+            throw new RuntimeException("Nome é obrigatório");
+        }
+        
+        // Dividir o nome em palavras (separadas por espaços)
+        String[] palavras = nome.trim().split("\\s+");
+        
+        // Deve ter pelo menos 2 palavras
+        if (palavras.length < 2) {
+            throw new RuntimeException("Nome deve ter pelo menos duas palavras");
+        }
+        
+        // Cada palavra deve ter pelo menos 3 letras
+        for (String palavra : palavras) {
+            if (palavra.length() < 3) {
+                throw new RuntimeException("Cada palavra do nome deve ter pelo menos 3 letras");
+            }
+        }
     }
 }
