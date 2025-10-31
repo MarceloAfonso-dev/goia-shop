@@ -45,6 +45,7 @@
 /app/src/main/java/com/goiashop/service/UserService.java
 /app/src/main/java/com/goiashop/service/FileUploadService.java
 /app/src/main/java/com/goiashop/dto/ProdutoImagemRequest.java
+/app/src/main/java/com/goiashop/controller/CheckoutController.java
 /app/src/main/java/com/goiashop/service/ClienteService.java
 /app/src/main/java/com/goiashop/dto/ProdutoCompletoRequest.java
 /app/src/main/java/com/goiashop/dto/ProdutoAlteracaoQuantidadeRequest.java

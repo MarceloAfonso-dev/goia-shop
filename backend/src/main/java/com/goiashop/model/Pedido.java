@@ -4,6 +4,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -29,6 +32,7 @@ public class Pedido {
     
     @ManyToOne
     @JoinColumn(name = "cliente_id", nullable = false)
+    @JsonIgnoreProperties({"pedidos", "senha", "createdAt", "updatedAt"})
     private Cliente cliente;
     
     @Column(name = "numero_pedido", nullable = false, unique = true, length = 20)
@@ -70,6 +74,7 @@ public class Pedido {
     private String entregaEstado;
     
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     private List<PedidoItem> itens;
     
     @Column(name = "created_at", nullable = false)

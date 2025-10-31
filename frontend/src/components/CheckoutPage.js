@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import EcommerceHeader from './EcommerceHeader';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
@@ -8,6 +8,7 @@ import './CheckoutPage.css';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { cart, cartCount, getCartTotal, clearCart } = useCart();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -83,6 +84,52 @@ const CheckoutPage = () => {
     }
   }, [step, navigate]);
 
+  // useEffect para restaurar estado quando voltar da página de resumo
+  useEffect(() => {
+    const locationState = location.state;
+    if (locationState) {
+      if (locationState.endereco) {
+        setEnderecoData(locationState.endereco);
+      }
+      if (locationState.pagamento) {
+        setPagamentoData(prev => ({
+          ...prev,
+          formaPagamento: locationState.pagamento.metodo?.toUpperCase() || 'PIX',
+          observacoes: locationState.pagamento.observacoes || '',
+          ...(locationState.pagamento.metodo === 'cartao' && {
+            numeroCartao: locationState.pagamento.numeroCartao || '',
+            nomeCartao: locationState.pagamento.nomeCartao || '',
+            validadeCartao: locationState.pagamento.validadeCartao || '',
+            cvvCartao: locationState.pagamento.cvvCartao || '',
+            parcelasCartao: locationState.pagamento.parcelas || 1
+          })
+        }));
+      }
+      if (locationState.frete) {
+        setFreteSelecionado(locationState.frete);
+        // Se tem frete mas não tem opções, adicionar às opções disponíveis
+        setFreteOptions(prev => {
+          const exists = prev.find(opt => opt.tipo === locationState.frete.tipo);
+          if (!exists) {
+            return [...prev, locationState.frete];
+          }
+          return prev;
+        });
+      }
+      if (locationState.step) {
+        setStep(locationState.step);
+      }
+    }
+  }, [location.state]);
+
+  // useEffect para calcular frete automaticamente quando estiver no step 2 e tiver endereço
+  useEffect(() => {
+    if (step === 2 && enderecoData.cep && enderecoData.logradouro && freteOptions.length === 0) {
+      console.log('🚚 CHECKOUT - Calculando frete automaticamente para step 2');
+      calcularFrete();
+    }
+  }, [step, enderecoData.cep, enderecoData.logradouro, freteOptions.length]);
+
   const loadUserAddress = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -117,34 +164,39 @@ const CheckoutPage = () => {
     try {
       const response = await api.get('/cliente/enderecos');
       if (response.data.success && response.data.enderecos) {
+        console.log('📍 CHECKOUT - Endereços carregados:', response.data.enderecos);
         setEnderecosSalvos(response.data.enderecos);
         
-        // Selecionar automaticamente o endereço padrão
-        const enderecoPadrao = response.data.enderecos.find(e => e.isPadrao);
-        if (enderecoPadrao) {
-          setEnderecoSelecionadoId(enderecoPadrao.id);
-          setEnderecoData({
-            cep: enderecoPadrao.cep || '',
-            logradouro: enderecoPadrao.logradouro || '',
-            numero: enderecoPadrao.numero || '',
-            complemento: enderecoPadrao.complemento || '',
-            bairro: enderecoPadrao.bairro || '',
-            cidade: enderecoPadrao.cidade || '',
-            uf: enderecoPadrao.estado || ''
-          });
-        } else if (response.data.enderecos.length > 0) {
-          // Se não houver padrão, selecionar o primeiro
-          const primeiroEndereco = response.data.enderecos[0];
-          setEnderecoSelecionadoId(primeiroEndereco.id);
-          setEnderecoData({
-            cep: primeiroEndereco.cep || '',
-            logradouro: primeiroEndereco.logradouro || '',
-            numero: primeiroEndereco.numero || '',
-            complemento: primeiroEndereco.complemento || '',
-            bairro: primeiroEndereco.bairro || '',
-            cidade: primeiroEndereco.cidade || '',
-            uf: primeiroEndereco.estado || ''
-          });
+        // Só selecionar automaticamente se não há nenhum endereço já selecionado
+        if (!enderecoSelecionadoId) {
+          const enderecoPadrao = response.data.enderecos.find(e => e.isPadrao);
+          if (enderecoPadrao) {
+            console.log('📍 CHECKOUT - Selecionando endereço padrão:', enderecoPadrao);
+            setEnderecoSelecionadoId(enderecoPadrao.id);
+            setEnderecoData({
+              cep: enderecoPadrao.cep || '',
+              logradouro: enderecoPadrao.logradouro || '',
+              numero: enderecoPadrao.numero || '',
+              complemento: enderecoPadrao.complemento || '',
+              bairro: enderecoPadrao.bairro || '',
+              cidade: enderecoPadrao.cidade || '',
+              uf: enderecoPadrao.estado || ''
+            });
+          } else if (response.data.enderecos.length > 0) {
+            // Se não houver padrão, selecionar o primeiro
+            const primeiroEndereco = response.data.enderecos[0];
+            console.log('📍 CHECKOUT - Selecionando primeiro endereço:', primeiroEndereco);
+            setEnderecoSelecionadoId(primeiroEndereco.id);
+            setEnderecoData({
+              cep: primeiroEndereco.cep || '',
+              logradouro: primeiroEndereco.logradouro || '',
+              numero: primeiroEndereco.numero || '',
+              complemento: primeiroEndereco.complemento || '',
+              bairro: primeiroEndereco.bairro || '',
+              cidade: primeiroEndereco.cidade || '',
+              uf: primeiroEndereco.estado || ''
+            });
+          }
         }
       }
     } catch (error) {
@@ -153,9 +205,10 @@ const CheckoutPage = () => {
   };
   
   const handleSelecionarEndereco = (endereco) => {
+    console.log('📍 CHECKOUT - Selecionando endereço:', endereco);
     setEnderecoSelecionadoId(endereco.id);
     setUsarNovoEndereco(false);
-    setEnderecoData({
+    const novoEnderecoData = {
       cep: endereco.cep || '',
       logradouro: endereco.logradouro || '',
       numero: endereco.numero || '',
@@ -163,7 +216,9 @@ const CheckoutPage = () => {
       bairro: endereco.bairro || '',
       cidade: endereco.cidade || '',
       uf: endereco.estado || ''
-    });
+    };
+    console.log('📋 CHECKOUT - EnderecoData atualizado para:', novoEnderecoData);
+    setEnderecoData(novoEnderecoData);
   };
 
   const handleEnderecoChange = (e) => {
@@ -394,10 +449,14 @@ const CheckoutPage = () => {
       formattedValue = value.toUpperCase();
     }
 
-    setPagamentoData({
+    const novoPagamentoData = {
       ...pagamentoData,
       [name]: formattedValue
-    });
+    };
+
+    console.log('💳 CHECKOUT - Pagamento alterado:', { name, value: formattedValue, novoPagamentoData });
+    
+    setPagamentoData(novoPagamentoData);
   };
 
   // Validação simples dos dados do cartão
@@ -887,14 +946,20 @@ const CheckoutPage = () => {
                   <div 
                     key={index} 
                     className={`frete-option ${freteSelecionado?.tipo === opcao.tipo ? 'selected' : ''}`}
-                    onClick={() => setFreteSelecionado(opcao)}
+                    onClick={() => {
+                      console.log('🚚 CHECKOUT - Frete selecionado:', opcao);
+                      setFreteSelecionado(opcao);
+                    }}
                   >
                     <div className="frete-radio">
                       <input
                         type="radio"
                         name="frete"
                         checked={freteSelecionado?.tipo === opcao.tipo}
-                        onChange={() => setFreteSelecionado(opcao)}
+                        onChange={() => {
+                          console.log('🚚 CHECKOUT - Frete selecionado via radio:', opcao);
+                          setFreteSelecionado(opcao);
+                        }}
                       />
                     </div>
                     <div className="frete-info">
@@ -1095,11 +1160,54 @@ const CheckoutPage = () => {
                 </button>
                 <button 
                   type="button" 
-                  onClick={finalizarPedido} 
+                  onClick={() => {
+                    // Verificar se frete foi selecionado
+                    if (!freteSelecionado) {
+                      setError('Selecione uma opção de frete antes de continuar');
+                      setStep(2);
+                      return;
+                    }
+
+                    // Debug dos dados antes de navegar
+                    console.log('🚀 CHECKOUT - Navegando para revisar pedido:');
+                    console.log('📍 Endereço sendo enviado:', enderecoData);
+                    console.log('💳 Pagamento sendo enviado:', {
+                      metodo: pagamentoData.formaPagamento.toLowerCase(),
+                      observacoes: pagamentoData.observacoes || '',
+                      ...(pagamentoData.formaPagamento === 'CARTAO' && {
+                        numeroCartao: pagamentoData.numeroCartao,
+                        nomeCartao: pagamentoData.nomeCartao,
+                        validadeCartao: pagamentoData.validadeCartao,
+                        cvvCartao: pagamentoData.cvvCartao,
+                        parcelas: parseInt(pagamentoData.parcelasCartao) || 1
+                      })
+                    });
+                    console.log('🚚 Frete sendo enviado:', freteSelecionado);
+                    console.log('🔢 Endereço selecionado ID:', enderecoSelecionadoId);
+
+                    // Navegar para página de resumo com todos os dados
+                    navigate('/revisar-pedido', {
+                      state: {
+                        endereco: enderecoData,
+                        pagamento: {
+                          metodo: pagamentoData.formaPagamento.toLowerCase(),
+                          observacoes: pagamentoData.observacoes || '',
+                          ...(pagamentoData.formaPagamento === 'CARTAO' && {
+                            numeroCartao: pagamentoData.numeroCartao,
+                            nomeCartao: pagamentoData.nomeCartao,
+                            validadeCartao: pagamentoData.validadeCartao,
+                            cvvCartao: pagamentoData.cvvCartao,
+                            parcelas: parseInt(pagamentoData.parcelasCartao) || 1
+                          })
+                        },
+                        frete: freteSelecionado
+                      }
+                    });
+                  }} 
                   disabled={loading || (pagamentoData.formaPagamento === 'CARTAO' && !validarCartao())}
                   className="btn-primary"
                 >
-                  {loading ? '⏳ Finalizando...' : (user ? '✨ Finalizar Pedido' : '🔐 Login e Finalizar')}
+                  {user ? '📋 Revisar Pedido' : '🔐 Login e Continuar'}
                 </button>
               </div>
             </div>

@@ -10,6 +10,8 @@ import PublicProductGrid from './components/PublicProductGrid';
 import ProductDetailPage from './components/ProductDetailPage';
 import CartPage from './components/CartPage';
 import CheckoutPage from './components/CheckoutPage';
+import OrderSummaryPage from './components/OrderSummaryPage';
+import OrderConfirmationPage from './components/OrderConfirmationPage';
 import { useAuth } from './hooks/useAuth';
 import { CartProvider } from './hooks/useCart';
 
@@ -80,6 +82,24 @@ function App() {
               <Navigate to="/dashboard" replace />
             ) : (
               <CheckoutPage />
+            )
+          } />
+          <Route path="/revisar-pedido" element={
+            isBackofficeUser() ? (
+              <Navigate to="/dashboard" replace />
+            ) : user && isClienteUser() ? (
+              <OrderSummaryPage />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          } />
+          <Route path="/pedido-confirmado" element={
+            isBackofficeUser() ? (
+              <Navigate to="/dashboard" replace />
+            ) : user && isClienteUser() ? (
+              <OrderConfirmationPage />
+            ) : (
+              <Navigate to="/login" replace />
             )
           } />
           
