@@ -209,6 +209,15 @@ public class ClienteService {
             throw new RuntimeException("Formato de data inválido. Use yyyy-MM-dd");
         }
         
+        // Atualizar gênero se fornecido
+        if (request.getGenero() != null && !request.getGenero().isEmpty()) {
+            try {
+                cliente.setGenero(Cliente.Genero.valueOf(request.getGenero()));
+            } catch (IllegalArgumentException e) {
+                // Ignora se o valor não for válido
+            }
+        }
+        
         // Atualizar endereço
         cliente.setCep(request.getCep());
         cliente.setLogradouro(request.getLogradouro());
@@ -217,6 +226,36 @@ public class ClienteService {
         cliente.setBairro(request.getBairro());
         cliente.setCidade(request.getCidade());
         cliente.setEstado(request.getUf());
+        
+        return clienteRepository.save(cliente);
+    }
+    
+    public Cliente atualizarPerfil(Long id, com.goiashop.dto.ClientePerfilRequest request) {
+        Cliente cliente = buscarPorId(id);
+        
+        // Validar nome - deve ter no mínimo duas palavras com pelo menos 3 letras cada
+        validarNome(request.getNome());
+        
+        // Atualizar dados básicos do perfil
+        cliente.setNome(request.getNome());
+        cliente.setTelefone(request.getTelefone());
+        
+        // Converter data de nascimento
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            cliente.setDataNascimento(LocalDate.parse(request.getDataNascimento(), formatter));
+        } catch (Exception e) {
+            throw new RuntimeException("Formato de data inválido. Use yyyy-MM-dd");
+        }
+        
+        // Atualizar gênero se fornecido
+        if (request.getGenero() != null && !request.getGenero().isEmpty()) {
+            try {
+                cliente.setGenero(Cliente.Genero.valueOf(request.getGenero()));
+            } catch (IllegalArgumentException e) {
+                // Ignora se o valor não for válido
+            }
+        }
         
         return clienteRepository.save(cliente);
     }

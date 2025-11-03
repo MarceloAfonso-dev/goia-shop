@@ -68,7 +68,8 @@ export const useAuth = () => {
     };
 
     const isClienteUser = () => {
-        return user?.grupo === 'CLIENTE' || (!user?.grupo && user);
+        const userType = localStorage.getItem('userType');
+        return userType === 'cliente' || user?.tipo === 'CLIENTE' || (!user?.grupo && user);
     };
 
     const getUserType = () => {

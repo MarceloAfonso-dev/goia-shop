@@ -6,6 +6,7 @@ import AuthPage from './components/AuthPage';
 import AdminLogin from './components/AdminLogin';
 import Dashboard from './components/Dashboard';
 import MyAccountPage from './components/MyAccountPage';
+import OrderDetailsPage from './components/OrderDetailsPage';
 import PublicProductGrid from './components/PublicProductGrid';
 import ProductDetailPage from './components/ProductDetailPage';
 import CartPage from './components/CartPage';
@@ -17,6 +18,8 @@ import { CartProvider } from './hooks/useCart';
 
 function App() {
   const { user, loading, login, logout, isBackofficeUser, isClienteUser, getUserType } = useAuth();
+  
+  // Debug removido
 
   if (loading) {
     return (
@@ -106,15 +109,13 @@ function App() {
           {/* Rota da área do usuário - apenas para clientes */}
           <Route 
             path="/minha-conta" 
-            element={
-              isBackofficeUser() ? (
-                <Navigate to="/dashboard" replace />
-              ) : user && isClienteUser() ? (
-                <MyAccountPage />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            } 
+            element={<MyAccountPage />} 
+          />
+          
+          {/* Rota de detalhes do pedido - apenas para clientes */}
+          <Route 
+            path="/pedido/:id" 
+            element={<OrderDetailsPage />} 
           />
           
           {/* Rota do dashboard (protegida - apenas backoffice) */}

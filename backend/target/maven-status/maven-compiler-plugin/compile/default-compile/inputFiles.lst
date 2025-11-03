@@ -63,11 +63,13 @@
 /app/src/main/java/com/goiashop/controller/FreteController.java
 /app/src/main/java/com/goiashop/config/DataInitializer.java
 /app/src/main/java/com/goiashop/dto/ClienteAtualizacaoRequest.java
+/app/src/main/java/com/goiashop/service/ViaCepService.java
 /app/src/main/java/com/goiashop/service/AuthService.java
 /app/src/main/java/com/goiashop/dto/EnderecoEntregaDTO.java
 /app/src/main/java/com/goiashop/model/PaymentMethod.java
 /app/src/main/java/com/goiashop/repository/PedidoRepository.java
 /app/src/main/java/com/goiashop/dto/EnderecoEntregaRequest.java
+/app/src/main/java/com/goiashop/dto/ClientePerfilRequest.java
 /app/src/main/java/com/goiashop/repository/UserRepository.java
 /app/src/main/java/com/goiashop/dto/PaginatedResponse.java
 /app/src/main/java/com/goiashop/repository/PedidoItemRepository.java

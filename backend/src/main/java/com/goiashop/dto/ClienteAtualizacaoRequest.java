@@ -1,6 +1,8 @@
 package com.goiashop.dto;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 public class ClienteAtualizacaoRequest {
     
@@ -17,6 +19,8 @@ public class ClienteAtualizacaoRequest {
     
     @NotBlank(message = "Data de nascimento é obrigatória")
     private String dataNascimento;
+    
+    private String genero;
     
     // Endereço
     @NotBlank(message = "CEP é obrigatório")
@@ -74,6 +78,14 @@ public class ClienteAtualizacaoRequest {
     
     public void setDataNascimento(String dataNascimento) {
         this.dataNascimento = dataNascimento;
+    }
+    
+    public String getGenero() {
+        return genero;
+    }
+    
+    public void setGenero(String genero) {
+        this.genero = genero;
     }
     
     public String getCep() {

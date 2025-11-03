@@ -189,6 +189,11 @@ const AuthPage = ({ onLoginSuccess }) => {
                 localStorage.setItem('user', JSON.stringify(result.user));
                 localStorage.setItem('userType', 'cliente');
                 
+                console.log('Login realizado com sucesso:');
+                console.log('- Token:', result.token);
+                console.log('- User:', result.user);
+                console.log('- UserType:', 'cliente');
+                
                 // Notificar sobre o login
                 onLoginSuccess(result.user);
                 
@@ -203,10 +208,8 @@ const AuthPage = ({ onLoginSuccess }) => {
                     navigate('/checkout');
                 } else if (redirectTo === 'checkout') {
                     navigate('/carrinho'); // Se não restaurou carrinho, volta para carrinho
-                } else if (result.user.tipo === 'CLIENTE') {
-                    navigate('/');
                 } else {
-                    navigate('/minha-conta');
+                    navigate('/'); // Sempre vai para home após login
                 }
             } else {
                 const errorMsg = typeof result.message === 'string' ? result.message : 'Email ou senha incorretos';
