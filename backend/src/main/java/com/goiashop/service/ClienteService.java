@@ -21,6 +21,9 @@ public class ClienteService {
     @Autowired
     private PasswordService passwordService;
     
+    @Autowired
+    private SecurityLogService securityLogService;
+    
     public Cliente registrarCliente(ClienteRegistroRequest request) {
         // Validar nome - deve ter no mínimo duas palavras com pelo menos 3 letras cada
         validarNome(request.getNome());
@@ -85,20 +88,45 @@ public class ClienteService {
     }
     
     public Cliente autenticarCliente(String email, String senha) {
+        return autenticarCliente(email, senha, null);
+    }
+    
+    public Cliente autenticarCliente(String email, String senha, jakarta.servlet.http.HttpServletRequest request) {
         Optional<Cliente> clienteOpt = clienteRepository.findByEmail(email);
         
         if (clienteOpt.isEmpty()) {
+            // Log de tentativa de login com email não encontrado
+            if (request != null) {
+                securityLogService.registrarLog(null, "LOGIN_FAILED", 
+                    "Tentativa de login com email não encontrado: " + email, "FAILED", request);
+            }
             throw new RuntimeException("Cliente não encontrado");
         }
         
         Cliente cliente = clienteOpt.get();
         
         if (cliente.getStatus() != Cliente.ClienteStatus.ATIVO) {
+            // Log de tentativa de login com conta inativa
+            if (request != null) {
+                securityLogService.registrarLog(cliente, "LOGIN_FAILED", 
+                    "Tentativa de login com conta inativa", "FAILED", request);
+            }
             throw new RuntimeException("Conta inativa");
         }
         
         if (!passwordService.checkPassword(senha, cliente.getSenhaHash())) {
+            // Log de tentativa de login com senha incorreta
+            if (request != null) {
+                securityLogService.registrarLog(cliente, "LOGIN_FAILED", 
+                    "Tentativa de login com senha incorreta", "FAILED", request);
+            }
             throw new RuntimeException("Senha incorreta");
+        }
+        
+        // Log de login bem-sucedido
+        if (request != null) {
+            securityLogService.registrarLog(cliente, "LOGIN", 
+                "Login realizado com sucesso", "SUCCESS", request);
         }
         
         return cliente;
