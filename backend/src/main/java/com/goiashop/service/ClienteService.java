@@ -297,4 +297,33 @@ public class ClienteService {
             }
         }
     }
+    
+    /**
+     * Verificar se a senha fornecida confere com a senha do cliente
+     */
+    public boolean verificarSenha(Cliente cliente, String senhaFornecida) {
+        if (senhaFornecida == null || senhaFornecida.isEmpty()) {
+            return false;
+        }
+        return passwordService.verifyPassword(senhaFornecida, cliente.getSenhaHash());
+    }
+    
+    /**
+     * Alterar senha do cliente
+     */
+    public void alterarSenha(Long clienteId, String novaSenha) {
+        Cliente cliente = buscarPorId(clienteId);
+        
+        // Validar nova senha
+        if (novaSenha == null || novaSenha.length() < 6) {
+            throw new RuntimeException("Nova senha deve ter pelo menos 6 caracteres");
+        }
+        
+        // Hash da nova senha
+        String novaSenhaHash = passwordService.hashPassword(novaSenha);
+        
+        // Atualizar
+        cliente.setSenhaHash(novaSenhaHash);
+        clienteRepository.save(cliente);
+    }
 }

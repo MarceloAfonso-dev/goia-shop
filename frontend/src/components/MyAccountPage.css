@@ -887,3 +887,227 @@
   border-color: #1d4ed8;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
+
+/* Estilos específicos para segurança */
+.security-card {
+  background: white;
+  border-radius: 15px;
+  padding: 25px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+.security-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.security-item:last-child {
+  border-bottom: none;
+}
+
+.security-info h4 {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 5px 0;
+  font-size: 1.1rem;
+}
+
+.security-info p {
+  font-family: 'Outfit', sans-serif;
+  color: #64748b;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.btn-change-password,
+.btn-view-history {
+  background: linear-gradient(135deg, #FF4F5A, #FF8E95);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.btn-change-password:hover,
+.btn-view-history:hover {
+  background: linear-gradient(135deg, #e63946, #FF4F5A);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 79, 90, 0.3);
+}
+
+/* Modal grande para histórico */
+.modal-large {
+  max-width: 800px;
+  width: 90%;
+}
+
+.modal-large .modal-body {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+/* Dicas de senha */
+.password-tips {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 15px;
+  margin-top: 20px;
+}
+
+.password-tips p {
+  margin: 0 0 10px 0;
+  font-family: 'Outfit', sans-serif;
+  color: #334155;
+  font-weight: 500;
+}
+
+.password-tips ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.password-tips li {
+  font-family: 'Outfit', sans-serif;
+  color: #64748b;
+  margin-bottom: 5px;
+  font-size: 0.9rem;
+}
+
+/* Logs de segurança */
+.security-logs {
+  min-height: 400px;
+}
+
+.empty-logs {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.empty-logs .empty-icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+}
+
+.empty-logs h4 {
+  font-family: 'Outfit', sans-serif;
+  color: #334155;
+  margin-bottom: 10px;
+}
+
+.empty-logs p {
+  font-family: 'Outfit', sans-serif;
+  color: #64748b;
+}
+
+.logs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.log-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  padding: 15px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.log-icon {
+  font-size: 1.5rem;
+  min-width: 40px;
+  text-align: center;
+}
+
+.log-details {
+  flex: 1;
+}
+
+.log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.log-action {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.95rem;
+}
+
+.log-status {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.log-status.success {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.log-status.failed {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.log-description {
+  font-family: 'Outfit', sans-serif;
+  color: #64748b;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.log-meta {
+  display: flex;
+  gap: 15px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.loading-container {
+  text-align: center;
+  padding: 40px;
+}
+
+.loading-container p {
+  font-family: 'Outfit', sans-serif;
+  color: #64748b;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .security-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .log-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  
+  .log-meta {
+    flex-direction: column;
+    gap: 5px;
+  }
+}

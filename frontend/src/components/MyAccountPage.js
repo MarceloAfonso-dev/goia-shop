@@ -29,6 +29,14 @@ const MyAccountPage = () => {
         isPadrao: false
     });
     const [cepLoading, setCepLoading] = useState(false);
+    const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+    const [showSecurityHistoryModal, setShowSecurityHistoryModal] = useState(false);
+    const [passwordForm, setPasswordForm] = useState({
+        senhaAtual: '',
+        novaSenha: '',
+        confirmarSenha: ''
+    });
+    const [securityLogs, setSecurityLogs] = useState([]);
 
     useEffect(() => {
         // Verificar se há token
@@ -274,6 +282,78 @@ const MyAccountPage = () => {
             isPadrao: address.isPadrao || false
         });
         setShowEditAddressModal(true);
+    };
+
+    const handlePasswordChange = (e) => {
+        const { name, value } = e.target;
+        setPasswordForm(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleChangePassword = async () => {
+        try {
+            setLoading(true);
+
+            // Validações básicas
+            if (!passwordForm.senhaAtual || !passwordForm.novaSenha || !passwordForm.confirmarSenha) {
+                alert('Por favor, preencha todos os campos.');
+                return;
+            }
+
+            if (passwordForm.novaSenha !== passwordForm.confirmarSenha) {
+                alert('Nova senha e confirmação não coincidem.');
+                return;
+            }
+
+            if (!/^\d{6}$/.test(passwordForm.novaSenha)) {
+                alert('Nova senha deve conter exatamente 6 dígitos numéricos.');
+                return;
+            }
+
+            // Fazer a requisição
+            const response = await api.post('/cliente/alterar-senha', passwordForm);
+
+            if (response.data.success) {
+                alert('Senha alterada com sucesso!');
+                setShowChangePasswordModal(false);
+                setPasswordForm({
+                    senhaAtual: '',
+                    novaSenha: '',
+                    confirmarSenha: ''
+                });
+            } else {
+                alert('Erro: ' + (response.data.message || 'Falha ao alterar senha'));
+            }
+
+        } catch (error) {
+            console.error('Erro ao alterar senha:', error);
+            const errorMsg = error.response?.data?.message || 'Erro ao alterar senha. Tente novamente.';
+            alert(errorMsg);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadSecurityHistory = async () => {
+        try {
+            setLoading(true);
+            const response = await api.get('/cliente/historico-seguranca');
+            
+            if (response.data.success) {
+                setSecurityLogs(response.data.logs || []);
+            }
+        } catch (error) {
+            console.error('Erro ao carregar histórico de segurança:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleShowSecurityHistory = () => {
+        setShowSecurityHistoryModal(true);
+        loadSecurityHistory();
     };
 
     const formatDate = (dateString) => {
@@ -628,17 +708,23 @@ const MyAccountPage = () => {
                                             <h4>Alterar Senha</h4>
                                             <p>Recomendamos alterar sua senha periodicamente</p>
                                         </div>
-                                        <button className="btn-change-password">
+                                        <button 
+                                            className="btn-change-password"
+                                            onClick={() => setShowChangePasswordModal(true)}
+                                        >
                                             🔑 Alterar Senha
                                         </button>
                                     </div>
 
                                     <div className="security-item">
                                         <div className="security-info">
-                                            <h4>Histórico de Login</h4>
-                                            <p>Último acesso: Hoje</p>
+                                            <h4>Histórico de Segurança</h4>
+                                            <p>Visualize seu histórico de atividades</p>
                                         </div>
-                                        <button className="btn-view-history">
+                                        <button 
+                                            className="btn-view-history"
+                                            onClick={handleShowSecurityHistory}
+                                        >
                                             📋 Ver Histórico
                                         </button>
                                     </div>
@@ -978,6 +1064,174 @@ const MyAccountPage = () => {
                                 disabled={loading}
                             >
                                 {loading ? 'Salvando...' : 'Atualizar Endereço'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Alterar Senha */}
+            {showChangePasswordModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h3>Alterar Senha</h3>
+                            <button 
+                                className="btn-close"
+                                onClick={() => {
+                                    setShowChangePasswordModal(false);
+                                    setPasswordForm({
+                                        senhaAtual: '',
+                                        novaSenha: '',
+                                        confirmarSenha: ''
+                                    });
+                                }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="form-grid">
+                                <div className="form-group">
+                                    <label>Senha Atual *</label>
+                                    <input 
+                                        type="password" 
+                                        name="senhaAtual"
+                                        value={passwordForm.senhaAtual}
+                                        onChange={handlePasswordChange}
+                                        placeholder="Digite sua senha atual"
+                                        maxLength="6"
+                                        pattern="\d{6}"
+                                        title="Deve conter exatamente 6 dígitos numéricos"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Nova Senha * (exatamente 6 dígitos)</label>
+                                    <input 
+                                        type="password" 
+                                        name="novaSenha"
+                                        value={passwordForm.novaSenha}
+                                        onChange={handlePasswordChange}
+                                        placeholder="Digite a nova senha"
+                                        maxLength="6"
+                                        pattern="\d{6}"
+                                        title="Deve conter exatamente 6 dígitos numéricos"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Confirmar Nova Senha *</label>
+                                    <input 
+                                        type="password" 
+                                        name="confirmarSenha"
+                                        value={passwordForm.confirmarSenha}
+                                        onChange={handlePasswordChange}
+                                        placeholder="Confirme a nova senha"
+                                        maxLength="6"
+                                        pattern="\d{6}"
+                                        title="Deve conter exatamente 6 dígitos numéricos"
+                                    />
+                                </div>
+                            </div>
+                            <div className="password-tips">
+                                <p><strong>Dicas para uma senha segura:</strong></p>
+                                <ul>
+                                    <li>Use pelo menos 6 caracteres</li>
+                                    <li>Combine letras, números e símbolos</li>
+                                    <li>Evite informações pessoais</li>
+                                    <li>Use uma senha única para esta conta</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button 
+                                className="btn-cancel"
+                                onClick={() => {
+                                    setShowChangePasswordModal(false);
+                                    setPasswordForm({
+                                        senhaAtual: '',
+                                        novaSenha: '',
+                                        confirmarSenha: ''
+                                    });
+                                }}
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                className="btn-save"
+                                onClick={handleChangePassword}
+                                disabled={loading}
+                            >
+                                {loading ? 'Alterando...' : 'Alterar Senha'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Histórico de Segurança */}
+            {showSecurityHistoryModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content modal-large">
+                        <div className="modal-header">
+                            <h3>Histórico de Segurança</h3>
+                            <button 
+                                className="btn-close"
+                                onClick={() => setShowSecurityHistoryModal(false)}
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            {loading ? (
+                                <div className="loading-container">
+                                    <p>Carregando histórico...</p>
+                                </div>
+                            ) : (
+                                <div className="security-logs">
+                                    {securityLogs.length === 0 ? (
+                                        <div className="empty-logs">
+                                            <div className="empty-icon">🔐</div>
+                                            <h4>Nenhum registro encontrado</h4>
+                                            <p>Seu histórico de segurança aparecerá aqui</p>
+                                        </div>
+                                    ) : (
+                                        <div className="logs-list">
+                                            {securityLogs.map(log => (
+                                                <div key={log.id} className="log-item">
+                                                    <div className="log-icon">
+                                                        {log.action === 'LOGIN' && '🔑'}
+                                                        {log.action === 'LOGOUT' && '🚪'}
+                                                        {log.action === 'PASSWORD_CHANGE' && '🔒'}
+                                                        {log.action === 'PROFILE_UPDATE' && '👤'}
+                                                    </div>
+                                                    <div className="log-details">
+                                                        <div className="log-header">
+                                                            <span className="log-action">{log.actionDisplay}</span>
+                                                            <span className={`log-status ${log.status.toLowerCase()}`}>
+                                                                {log.statusDisplay}
+                                                            </span>
+                                                        </div>
+                                                        <div className="log-description">{log.description}</div>
+                                                        <div className="log-meta">
+                                                            <span className="log-date">{log.createdAt}</span>
+                                                            {log.ipAddress && (
+                                                                <span className="log-ip">IP: {log.ipAddress}</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                        <div className="modal-footer">
+                            <button 
+                                className="btn-cancel"
+                                onClick={() => setShowSecurityHistoryModal(false)}
+                            >
+                                Fechar
                             </button>
                         </div>
                     </div>

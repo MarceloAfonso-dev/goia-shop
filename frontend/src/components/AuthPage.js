@@ -261,8 +261,9 @@ const AuthPage = ({ onLoginSuccess }) => {
             return;
         }
 
-        if (registerData.senha.length < 6) {
-            setError('A senha deve ter pelo menos 6 caracteres');
+        // Validar senha - exatamente 6 dígitos numéricos
+        if (!/^\d{6}$/.test(registerData.senha)) {
+            setError('A senha deve conter exatamente 6 dígitos numéricos');
             setLoading(false);
             return;
         }
@@ -550,8 +551,8 @@ const AuthPage = ({ onLoginSuccess }) => {
                 setLoading(false);
                 return;
             }
-            if (editData.novaSenha.length < 6) {
-                setError('A nova senha deve ter pelo menos 6 caracteres');
+            if (!/^\d{6}$/.test(editData.novaSenha)) {
+                setError('A nova senha deve conter exatamente 6 dígitos numéricos');
                 setLoading(false);
                 return;
             }
@@ -1193,6 +1194,9 @@ const AuthPage = ({ onLoginSuccess }) => {
                                         value={editData.senhaAtual || ''}
                                         onChange={handleEditChange}
                                         placeholder="Digite sua senha atual"
+                                        maxLength="6"
+                                        pattern="\d{6}"
+                                        title="Deve conter exatamente 6 dígitos numéricos"
                                     />
                                 </div>
                             </div>
@@ -1206,7 +1210,10 @@ const AuthPage = ({ onLoginSuccess }) => {
                                         name="novaSenha"
                                         value={editData.novaSenha || ''}
                                         onChange={handleEditChange}
-                                        placeholder="Mínimo 6 caracteres"
+                                        placeholder="Exatamente 6 dígitos"
+                                        maxLength="6"
+                                        pattern="\d{6}"
+                                        title="Deve conter exatamente 6 dígitos numéricos"
                                     />
                                 </div>
                                 <div className="col-md-6 mb-3">
@@ -1218,6 +1225,9 @@ const AuthPage = ({ onLoginSuccess }) => {
                                         value={editData.confirmarNovaSenha || ''}
                                         onChange={handleEditChange}
                                         placeholder="Confirme a nova senha"
+                                        maxLength="6"
+                                        pattern="\d{6}"
+                                        title="Deve conter exatamente 6 dígitos numéricos"
                                     />
                                 </div>
                             </div>
@@ -1677,6 +1687,9 @@ const AuthPage = ({ onLoginSuccess }) => {
                                     onChange={handleLoginChange}
                                     required
                                     placeholder="Sua senha"
+                                    maxLength="6"
+                                    pattern="\d{6}"
+                                    title="Deve conter exatamente 6 dígitos numéricos"
                                 />
                             </div>
 
@@ -1807,8 +1820,10 @@ const AuthPage = ({ onLoginSuccess }) => {
                                         value={registerData.senha}
                                         onChange={handleRegisterChange}
                                         required
-                                        placeholder="Mínimo 6 caracteres"
-                                        minLength={6}
+                                        placeholder="Exatamente 6 dígitos"
+                                        maxLength="6"
+                                        pattern="\d{6}"
+                                        title="Deve conter exatamente 6 dígitos numéricos"
                                     />
                                 </div>
 
@@ -1822,6 +1837,9 @@ const AuthPage = ({ onLoginSuccess }) => {
                                         onChange={handleRegisterChange}
                                         required
                                         placeholder="Confirme sua senha"
+                                        maxLength="6"
+                                        pattern="\d{6}"
+                                        title="Deve conter exatamente 6 dígitos numéricos"
                                     />
                                 </div>
                             </div>

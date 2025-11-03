@@ -1,6 +1,7 @@
 /app/src/main/java/com/goiashop/service/EnderecoEntregaService.java
 /app/src/main/java/com/goiashop/controller/EnderecoController.java
 /app/src/main/java/com/goiashop/repository/EnderecoEntregaRepository.java
+/app/src/main/java/com/goiashop/service/SecurityLogService.java
 /app/src/main/java/com/goiashop/service/PasswordService.java
 /app/src/main/java/com/goiashop/repository/OrderRepository.java
 /app/src/main/java/com/goiashop/controller/ClientesController.java
@@ -18,6 +19,7 @@
 /app/src/main/java/com/goiashop/service/AuditLogService.java
 /app/src/main/java/com/goiashop/controller/ClienteController.java
 /app/src/main/java/com/goiashop/service/ClienteSessionService.java
+/app/src/main/java/com/goiashop/dto/AlterarSenhaRequest.java
 /app/src/main/java/com/goiashop/dto/FreteOption.java
 /app/src/main/java/com/goiashop/config/CorsConfig.java
 /app/src/main/java/com/goiashop/dto/PedidoRequest.java
@@ -29,6 +31,7 @@
 /app/src/main/java/com/goiashop/controller/AdminProdutoController.java
 /app/src/main/java/com/goiashop/model/Order.java
 /app/src/main/java/com/goiashop/model/Produto.java
+/app/src/main/java/com/goiashop/model/SecurityLog.java
 /app/src/main/java/com/goiashop/dto/ProdutoCadastroRequest.java
 /app/src/main/java/com/goiashop/dto/UsuarioCadastroRequest.java
 /app/src/main/java/com/goiashop/controller/UtilController.java
@@ -53,6 +56,7 @@
 /app/src/main/java/com/goiashop/service/UserService.java
 /app/src/main/java/com/goiashop/service/FileUploadService.java
 /app/src/main/java/com/goiashop/dto/ProdutoImagemRequest.java
+/app/src/main/java/com/goiashop/dto/SecurityLogResponse.java
 /app/src/main/java/com/goiashop/controller/CheckoutController.java
 /app/src/main/java/com/goiashop/repository/OrderItemRepository.java
 /app/src/main/java/com/goiashop/service/ClienteService.java
@@ -64,6 +68,7 @@
 /app/src/main/java/com/goiashop/config/DataInitializer.java
 /app/src/main/java/com/goiashop/dto/ClienteAtualizacaoRequest.java
 /app/src/main/java/com/goiashop/service/ViaCepService.java
+/app/src/main/java/com/goiashop/repository/SecurityLogRepository.java
 /app/src/main/java/com/goiashop/service/AuthService.java
 /app/src/main/java/com/goiashop/dto/EnderecoEntregaDTO.java
 /app/src/main/java/com/goiashop/model/PaymentMethod.java
