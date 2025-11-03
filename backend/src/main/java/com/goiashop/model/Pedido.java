@@ -38,12 +38,37 @@ public class Pedido {
     @Column(name = "numero_pedido", nullable = false, unique = true, length = 20)
     private String numeroPedido;
     
+    @Column(name = "order_sequence", nullable = false, unique = true)
+    private Long orderSequence;
+    
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private PedidoStatus status = PedidoStatus.PENDENTE;
     
     @Column(name = "valor_total", nullable = false, precision = 10, scale = 2)
     private BigDecimal valorTotal;
+    
+    @Column(name = "items_total", nullable = false, precision = 10, scale = 2)
+    private BigDecimal itemsTotal;
+    
+    @Column(name = "shipping_price", precision = 10, scale = 2)
+    private BigDecimal shippingPrice = BigDecimal.ZERO;
+    
+    @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
+    private BigDecimal totalAmount;
+    
+    @Column(name = "payment_info", columnDefinition = "JSON")
+    private String paymentInfo;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", nullable = false)
+    private PaymentMethod paymentMethod;
+    
+    @Column(name = "shipping_service", length = 100)
+    private String shippingService;
+    
+    @Column(name = "shipping_deadline")
+    private Integer shippingDeadline;
     
     @Column(name = "observacoes", columnDefinition = "TEXT")
     private String observacoes;
@@ -87,7 +112,11 @@ public class Pedido {
     public Pedido() {
         this.createdAt = LocalDateTime.now();
         this.numeroPedido = generateNumeroPedido();
+        this.orderSequence = System.currentTimeMillis();
         this.valorTotal = BigDecimal.ZERO;
+        this.itemsTotal = BigDecimal.ZERO;
+        this.totalAmount = BigDecimal.ZERO;
+        this.shippingPrice = BigDecimal.ZERO;
     }
     
     public Pedido(Cliente cliente) {
@@ -234,6 +263,70 @@ public class Pedido {
     
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+    
+    public Long getOrderSequence() {
+        return orderSequence;
+    }
+    
+    public void setOrderSequence(Long orderSequence) {
+        this.orderSequence = orderSequence;
+    }
+    
+    public BigDecimal getItemsTotal() {
+        return itemsTotal;
+    }
+    
+    public void setItemsTotal(BigDecimal itemsTotal) {
+        this.itemsTotal = itemsTotal;
+    }
+    
+    public BigDecimal getShippingPrice() {
+        return shippingPrice;
+    }
+    
+    public void setShippingPrice(BigDecimal shippingPrice) {
+        this.shippingPrice = shippingPrice;
+    }
+    
+    public BigDecimal getTotalAmount() {
+        return totalAmount;
+    }
+    
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
+    }
+    
+    public String getPaymentInfo() {
+        return paymentInfo;
+    }
+    
+    public void setPaymentInfo(String paymentInfo) {
+        this.paymentInfo = paymentInfo;
+    }
+    
+    public PaymentMethod getPaymentMethod() {
+        return paymentMethod;
+    }
+    
+    public void setPaymentMethod(PaymentMethod paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+    
+    public String getShippingService() {
+        return shippingService;
+    }
+    
+    public void setShippingService(String shippingService) {
+        this.shippingService = shippingService;
+    }
+    
+    public Integer getShippingDeadline() {
+        return shippingDeadline;
+    }
+    
+    public void setShippingDeadline(Integer shippingDeadline) {
+        this.shippingDeadline = shippingDeadline;
     }
     
     @PreUpdate

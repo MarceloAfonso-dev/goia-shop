@@ -90,6 +90,14 @@ const OrderSummaryPage = () => {
                 dadosPedido: {
                     observacoes: pagamento.observacoes || '',
                     formaPagamento: pagamento.metodo.toUpperCase(),
+                    // Dados de endereço de entrega
+                    cep: endereco.cep,
+                    logradouro: endereco.logradouro,
+                    numero: endereco.numero,
+                    complemento: endereco.complemento || '',
+                    bairro: endereco.bairro,
+                    cidade: endereco.cidade,
+                    estado: endereco.uf,
                     ...(pagamento.metodo === 'cartao' && {
                         numeroCartao: pagamento.numeroCartao,
                         nomeCartao: pagamento.nomeCartao,

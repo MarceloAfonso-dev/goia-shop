@@ -142,6 +142,83 @@ public class CheckoutController {
         }
     }
     
+    /**
+     * Finalizar compra - criar pedido
+     * S5-US06: Finalizar compra (criar pedido)
+     */
+    @PostMapping("/finalize")
+    public ResponseEntity<Map<String, Object>> finalizarCompra(
+            @RequestHeader("Authorization") String authorization,
+            @RequestBody Map<String, Object> requestBody) {
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            // Validar sessão do cliente
+            Long clienteId = validateClienteSession(authorization);
+            if (clienteId == null) {
+                response.put("success", false);
+                response.put("message", "Sessão inválida");
+                return ResponseEntity.status(401).body(response);
+            }
+            
+            // Simular processamento por enquanto
+            // TODO: Integrar com OrderService quando estiver pronto
+            
+            // Extrair dados do request
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> itens = (List<Map<String, Object>>) requestBody.get("itens");
+            String metodoPagamento = (String) requestBody.get("metodoPagamento");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> enderecoEntrega = (Map<String, Object>) requestBody.get("enderecoEntrega");
+            
+            // Validações básicas
+            if (itens == null || itens.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Carrinho vazio");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            if (metodoPagamento == null || metodoPagamento.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "Método de pagamento obrigatório");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            if (enderecoEntrega == null) {
+                response.put("success", false);
+                response.put("message", "Endereço de entrega obrigatório");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // Por enquanto, vamos simular sucesso
+            // Gerar número do pedido fictício
+            String numeroPedido = "GS" + String.format("%08d", System.currentTimeMillis() % 100000000);
+            
+            response.put("success", true);
+            response.put("message", "Pedido criado com sucesso!");
+            response.put("numeroPedido", numeroPedido);
+            response.put("redirectTo", "/pedido-confirmado");
+            
+            // Log para debug
+            System.out.println("🛒 Pedido simulado criado:");
+            System.out.println("   📝 Número: " + numeroPedido);
+            System.out.println("   👤 Cliente ID: " + clienteId);
+            System.out.println("   💳 Pagamento: " + metodoPagamento);
+            System.out.println("   📦 Itens: " + itens.size());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            System.err.println("❌ Erro ao finalizar compra: " + e.getMessage());
+            e.printStackTrace();
+            
+            response.put("success", false);
+            response.put("message", "Erro interno do servidor. Tente novamente.");
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+    
     private Long validateClienteSession(String authorization) {
         if (authorization == null || !authorization.startsWith("Bearer ")) {
             return null;

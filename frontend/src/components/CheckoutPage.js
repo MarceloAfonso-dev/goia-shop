@@ -439,6 +439,14 @@ const CheckoutPage = () => {
         dadosPedido: {
           observacoes: pagamentoData.observacoes,
           formaPagamento: pagamentoData.formaPagamento,
+          // Dados de endereço de entrega
+          cep: enderecoData.cep,
+          logradouro: enderecoData.logradouro,
+          numero: enderecoData.numero,
+          complemento: enderecoData.complemento || '',
+          bairro: enderecoData.bairro,
+          cidade: enderecoData.cidade,
+          estado: enderecoData.uf,
           // Dados do cartão se for cartão de crédito
           ...(pagamentoData.formaPagamento === 'CARTAO' && {
             numeroCartao: pagamentoData.numeroCartao,

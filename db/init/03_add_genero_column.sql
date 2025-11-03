@@ -1,5 +1,5 @@
 -- Script para adicionar coluna de gênero na tabela clientes
-USE goia_shop;
+USE BancoGOIA;
 
 -- Adicionar coluna genero na tabela clientes
 ALTER TABLE clientes 

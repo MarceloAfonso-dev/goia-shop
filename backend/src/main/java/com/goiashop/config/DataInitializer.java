@@ -7,10 +7,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
-import com.goiashop.model.User;
 import com.goiashop.model.Produto;
-import com.goiashop.repository.UserRepository;
+import com.goiashop.model.User;
 import com.goiashop.repository.ProdutoRepository;
+import com.goiashop.repository.UserRepository;
 import com.goiashop.service.PasswordService;
 
 @Component
@@ -129,6 +129,10 @@ public class DataInitializer implements CommandLineRunner {
     }
     
     private void createProdutoIfNotExists(String nome, String descricao, BigDecimal preco, Integer estoque) {
+        // Obter usuário admin para definir como criador
+        User adminUser = userRepository.findByEmail("admin@goiashop.com")
+            .orElseThrow(() -> new RuntimeException("Usuário admin não encontrado"));
+        
         Produto produto = new Produto();
         produto.setNome(nome);
         produto.setDescricao(descricao);
@@ -136,6 +140,8 @@ public class DataInitializer implements CommandLineRunner {
         produto.setQuantidadeEstoque(estoque);
         produto.setStatus(Produto.ProdutoStatus.ATIVO);
         produto.setAvaliacao(4.0 + (Math.random() * 1.0)); // Avaliação entre 4.0 e 5.0
+        produto.setCreatedBy(adminUser.getId());
+        produto.setUpdatedBy(adminUser.getId());
         
         produtoRepository.save(produto);
         System.out.println("📦 Produto criado: " + nome + " - R$ " + preco);
