@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import EcommerceHeader from './EcommerceHeader';
 import api from '../utils/api';
@@ -7,6 +7,7 @@ import './MyAccountPage.css';
 
 const MyAccountPage = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { user, logout } = useAuth();
     const [activeSection, setActiveSection] = useState('profile');
     const [loading, setLoading] = useState(false);
@@ -39,11 +40,30 @@ const MyAccountPage = () => {
     const [securityLogs, setSecurityLogs] = useState([]);
 
     useEffect(() => {
-        // Verificar se há token
+        // Debug: verificar tokens
         const token = localStorage.getItem('token');
         const userType = localStorage.getItem('userType');
+        const ultimaCompra = localStorage.getItem('ultimaCompra');
+        
+        console.log('🔐 MyAccount - Token:', token ? 'Existe' : 'Não existe');
+        console.log('👤 MyAccount - UserType:', userType);
+        console.log('🛒 MyAccount - Última compra:', ultimaCompra ? 'Existe' : 'Não existe');
+        
+        // Se acabou de fazer uma compra (tem ultimaCompra), dar um tempo para o token ser restaurado
+        if (ultimaCompra && (!token || !userType)) {
+            console.log('⏳ MyAccount - Aguardando token após compra...');
+            setTimeout(() => {
+                const tokenAtualizado = localStorage.getItem('token');
+                const userTypeAtualizado = localStorage.getItem('userType');
+                if (!tokenAtualizado || !userTypeAtualizado || userTypeAtualizado !== 'cliente') {
+                    navigate('/login');
+                }
+            }, 1000);
+            return;
+        }
         
         if (!token || !userType || userType !== 'cliente') {
+            console.log('❌ MyAccount - Redirecionando para login');
             navigate('/login');
             return;
         }
@@ -69,6 +89,26 @@ const MyAccountPage = () => {
             });
         }
     }, [user, navigate]);
+
+    // Verificar parâmetro tab na URL para definir seção ativa
+    useEffect(() => {
+        const searchParams = new URLSearchParams(location.search);
+        const tabParam = searchParams.get('tab');
+        
+        if (tabParam) {
+            // Mapear os parâmetros para as seções internas
+            const tabMapping = {
+                'orders': 'orders',
+                'addresses': 'addresses', 
+                'security': 'security',
+                'profile': 'profile'
+            };
+            
+            if (tabMapping[tabParam]) {
+                setActiveSection(tabMapping[tabParam]);
+            }
+        }
+    }, [location.search]);
 
     const loadUserProfile = async () => {
         try {

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Container, Row, Col, Card, Button, Alert } from 'react-bootstrap';
 import { useAuth } from '../hooks/useAuth';
@@ -8,6 +8,7 @@ const OrderConfirmationPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { isClienteUser } = useAuth();
+    const [countdown, setCountdown] = useState(5);
     
     const { pedido, endereco, pagamento } = location.state || {};
 
@@ -16,7 +17,21 @@ const OrderConfirmationPage = () => {
             navigate('/');
             return;
         }
-    }, []);
+
+        // Redirecionamento automático para Minha Conta - Meus Pedidos após 5 segundos
+        const timer = setInterval(() => {
+            setCountdown(prev => {
+                if (prev <= 1) {
+                    console.log('🎯 CONFIRMAÇÃO - Redirecionamento automático para /minha-conta?tab=orders');
+                    navigate('/minha-conta?tab=orders');
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [isClienteUser, pedido, navigate]);
 
     const formatarPreco = (preco) => {
         return new Intl.NumberFormat('pt-BR', {
@@ -77,9 +92,12 @@ const OrderConfirmationPage = () => {
                                 <i className="bi bi-check-circle-fill text-success" style={{ fontSize: '4rem' }}></i>
                             </div>
                             <h2 className="text-success mb-3">Pedido Realizado com Sucesso!</h2>
-                            <p className="text-muted mb-0">
+                            <p className="text-muted mb-3">
                                 Seu pedido foi processado e você receberá atualizações por email.
                             </p>
+                            <div className="alert alert-info">
+                                <i className="bi bi-clock"></i> Redirecionando automaticamente para <strong>Meus Pedidos</strong> em <strong>{countdown}</strong> segundos...
+                            </div>
                         </Card.Body>
                     </Card>
 
@@ -209,7 +227,10 @@ const OrderConfirmationPage = () => {
                         <Button 
                             variant="primary" 
                             size="lg"
-                            onClick={() => navigate('/meus-pedidos')}
+                            onClick={() => {
+                                console.log('🔍 CONFIRMAÇÃO - Botão Acompanhar Pedidos clicado');
+                                navigate('/minha-conta?tab=orders');
+                            }}
                         >
                             <i className="bi bi-list-ul"></i> Acompanhar Pedidos
                         </Button>

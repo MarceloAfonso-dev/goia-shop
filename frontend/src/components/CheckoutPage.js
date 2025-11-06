@@ -65,24 +65,24 @@ const CheckoutPage = () => {
     }
   }, [user, cartCount, navigate, step]);
 
-  // useEffect para countdown e redirecionamento automático
-  useEffect(() => {
-    if (step === 4) {
-      setCountdown(8); // Reset countdown quando chegar no step 4
+  // useEffect para countdown e redirecionamento automático (desabilitado - agora redireciona para meus pedidos)
+  // useEffect(() => {
+  //   if (step === 4) {
+  //     setCountdown(8); // Reset countdown quando chegar no step 4
       
-      const countdownTimer = setInterval(() => {
-        setCountdown(prev => {
-          if (prev <= 1) {
-            navigate('/produtos');
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+  //     const countdownTimer = setInterval(() => {
+  //       setCountdown(prev => {
+  //         if (prev <= 1) {
+  //           navigate('/produtos');
+  //           return 0;
+  //         }
+  //         return prev - 1;
+  //       });
+  //     }, 1000);
       
-      return () => clearInterval(countdownTimer);
-    }
-  }, [step, navigate]);
+  //     return () => clearInterval(countdownTimer);
+  //   }
+  // }, [step, navigate]);
 
   // useEffect para restaurar estado quando voltar da página de resumo
   useEffect(() => {
@@ -483,6 +483,8 @@ const CheckoutPage = () => {
         
         // Limpar carrinho
         clearCart();
+        
+        // O redirecionamento automático agora acontece na OrderConfirmationPage
       } else {
         setError(response.data.message || 'Erro ao processar pedido');
       }
@@ -612,10 +614,13 @@ const CheckoutPage = () => {
               
               <div className="success-actions">
                 <button 
-                  onClick={() => navigate('/')} 
+                  onClick={() => {
+                    console.log('🔍 CHECKOUT - Botão Acompanhar Pedido clicado');
+                    navigate('/minha-conta?tab=orders');
+                  }} 
                   className="btn-primary btn-large"
                 >
-                  🏠 Voltar ao Início
+                  📦 Acompanhar Pedido
                 </button>
                 <button 
                   onClick={() => navigate('/produtos')} 
@@ -632,7 +637,7 @@ const CheckoutPage = () => {
               
               <div className="auto-redirect-info">
                 <p>
-                  🕒 Redirecionando automaticamente para a loja em <strong>{countdown}</strong> segundo{countdown !== 1 ? 's' : ''}...
+                  ℹ️ Clique em <strong>"Acompanhar Pedido"</strong> para ver seus pedidos ou continue comprando.
                 </p>
               </div>
             </div>

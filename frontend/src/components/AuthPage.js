@@ -208,6 +208,14 @@ const AuthPage = ({ onLoginSuccess }) => {
                     navigate('/checkout');
                 } else if (redirectTo === 'checkout') {
                     navigate('/carrinho'); // Se não restaurou carrinho, volta para carrinho
+                } else if (redirectTo === '/minha-conta') {
+                    // Verificar se há parâmetro tab e redirecionar
+                    const tabParam = searchParams.get('tab');
+                    if (tabParam) {
+                        navigate(`/minha-conta?tab=${tabParam}`);
+                    } else {
+                        navigate('/minha-conta');
+                    }
                 } else {
                     navigate('/'); // Sempre vai para home após login
                 }
