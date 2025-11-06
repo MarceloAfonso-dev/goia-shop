@@ -91,12 +91,9 @@ public class PedidoService {
         pedido.setEntregaCidade(dadosPedido.getCidade());
         pedido.setEntregaEstado(dadosPedido.getEstado());
         
-        // Salvar pedido primeiro para obter ID
-        pedido = pedidoRepository.save(pedido);
-        
         BigDecimal valorTotal = BigDecimal.ZERO;
         
-        // Adicionar itens
+        // Calcular valores dos itens primeiro
         for (CartItemRequest item : itensCarrinho) {
             Produto produto = produtoRepository.findById(item.getProdutoId())
                 .orElseThrow(() -> new RuntimeException("Produto não encontrado: " + item.getProdutoId()));
@@ -106,6 +103,24 @@ public class PedidoService {
                 throw new RuntimeException("Estoque insuficiente para o produto: " + produto.getNome());
             }
             
+            // Calcular valor do item (sem salvar ainda)
+            BigDecimal precoItem = produto.getPreco().multiply(BigDecimal.valueOf(item.getQuantidade()));
+            valorTotal = valorTotal.add(precoItem);
+        }
+        
+        // Atualizar valores do pedido ANTES de salvar
+        pedido.setValorTotal(valorTotal);
+        pedido.setItemsTotal(valorTotal);
+        pedido.setTotalAmount(valorTotal.add(pedido.getShippingPrice()));
+        
+        // Agora salvar o pedido com todos os valores corretos
+        pedido = pedidoRepository.save(pedido);
+        
+        // Agora criar e salvar os itens do pedido
+        for (CartItemRequest item : itensCarrinho) {
+            Produto produto = produtoRepository.findById(item.getProdutoId())
+                .orElseThrow(() -> new RuntimeException("Produto não encontrado: " + item.getProdutoId()));
+            
             // Criar item do pedido
             PedidoItem pedidoItem = new PedidoItem(pedido, produto, item.getQuantidade());
             pedidoItemRepository.save(pedidoItem);
@@ -113,16 +128,7 @@ public class PedidoService {
             // Atualizar estoque do produto
             produto.setQuantidade(produto.getQuantidade() - item.getQuantidade());
             produtoRepository.save(produto);
-            
-            valorTotal = valorTotal.add(pedidoItem.getPrecoTotal());
         }
-        
-        // Atualizar valores do pedido
-        pedido.setValorTotal(valorTotal);
-        pedido.setItemsTotal(valorTotal);
-        pedido.setTotalAmount(valorTotal.add(pedido.getShippingPrice()));
-        
-        pedido = pedidoRepository.save(pedido);
         
         // Salvar endereço na conta do cliente para reutilização futura
         salvarEnderecoNaContaDoCliente(clienteId, dadosPedido);
