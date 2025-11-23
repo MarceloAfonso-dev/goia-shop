@@ -3,6 +3,7 @@ package com.goiashop.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.CascadeType;
@@ -14,6 +15,8 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
@@ -65,7 +68,13 @@ public class Produto {
     
     @Column(name = "updated_by")
     private Long updatedBy;
-    
+
+    // Relacionamento com categoria
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "categoria_id")
+    @JsonIgnoreProperties({"produtos", "hibernateLazyInitializer", "handler"})
+    private Categoria categoria;
+
     // Relacionamento com imagens do produto
     @OneToMany(mappedBy = "produto", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @OrderBy("ordem ASC, id ASC")
@@ -184,6 +193,14 @@ public class Produto {
     public void addImagem(ProdutoImagem imagem) {
         imagem.setProduto(this);
         this.imagens.add(imagem);
+    }
+
+    public Categoria getCategoria() {
+        return categoria;
+    }
+
+    public void setCategoria(Categoria categoria) {
+        this.categoria = categoria;
     }
     
     // Método utilitário para obter imagem principal

@@ -23,6 +23,7 @@ public class ProdutoCompletoRequest {
     
     private String status;
     private Double avaliacao;
+    private Long categoriaId;
     
     private List<ProdutoImagemRequest> imagens;
     
@@ -84,5 +85,13 @@ public class ProdutoCompletoRequest {
     
     public void setImagens(List<ProdutoImagemRequest> imagens) {
         this.imagens = imagens;
+    }
+    
+    public Long getCategoriaId() {
+        return categoriaId;
+    }
+    
+    public void setCategoriaId(Long categoriaId) {
+        this.categoriaId = categoriaId;
     }
 }

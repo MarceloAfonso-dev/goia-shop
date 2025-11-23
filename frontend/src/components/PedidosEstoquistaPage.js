@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import './PedidosEstoquistaPage.css';
 
@@ -14,11 +14,7 @@ const PedidosEstoquistaPage = () => {
     
     const pageSize = 10;
 
-    useEffect(() => {
-        carregarPedidos();
-    }, [currentPage, token]);
-
-    const carregarPedidos = async () => {
+    const carregarPedidos = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
@@ -49,7 +45,11 @@ const PedidosEstoquistaPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentPage, pageSize, token]);
+
+    useEffect(() => {
+        carregarPedidos();
+    }, [carregarPedidos]);
 
     const atualizarStatusPedido = async (pedidoId, novoStatus) => {
         try {

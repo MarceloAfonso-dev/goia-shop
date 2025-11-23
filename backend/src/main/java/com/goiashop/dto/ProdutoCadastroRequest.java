@@ -27,6 +27,9 @@ public class ProdutoCadastroRequest {
     // Para avaliação (1-5 estrelas com 0.5 de incremento)
     private Double avaliacao;
     
+    // ID da categoria
+    private Long categoriaId;
+    
     // Constructors
     public ProdutoCadastroRequest() {}
     
@@ -86,6 +89,14 @@ public class ProdutoCadastroRequest {
         this.avaliacao = avaliacao;
     }
     
+    public Long getCategoriaId() {
+        return categoriaId;
+    }
+    
+    public void setCategoriaId(Long categoriaId) {
+        this.categoriaId = categoriaId;
+    }
+    
     @Override
     public String toString() {
         return "ProdutoCadastroRequest{" +
@@ -95,6 +106,7 @@ public class ProdutoCadastroRequest {
                 ", quantidadeEstoque=" + quantidadeEstoque +
                 ", status='" + status + '\'' +
                 ", avaliacao=" + avaliacao +
+                ", categoriaId=" + categoriaId +
                 '}';
     }
 }
