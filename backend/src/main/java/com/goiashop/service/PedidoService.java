@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -139,6 +141,19 @@ public class PedidoService {
     public List<Pedido> listarPedidosCliente(Long clienteId) {
         return pedidoRepository.findByClienteIdOrderByCreatedAtDesc(clienteId);
     }
+
+    /**
+     * Lista todos os pedidos com paginação (para estoquistas)
+     */
+    /**
+     * Lista todos os pedidos com paginação (para estoquistas)
+     */
+    public Page<Pedido> listarTodosPedidosComPaginacao(Pageable pageable) {
+        if (pageable == null) {
+            throw new IllegalArgumentException("Pageable não pode ser null");
+        }
+        return pedidoRepository.findAll(pageable);
+    }
     
     public Pedido buscarPedido(Long pedidoId, Long clienteId) {
         Pedido pedido = pedidoRepository.findById(pedidoId)
@@ -160,8 +175,17 @@ public class PedidoService {
         Pedido pedido = pedidoRepository.findById(pedidoId)
             .orElseThrow(() -> new RuntimeException("Pedido não encontrado"));
         
+        Pedido.PedidoStatus statusAnterior = pedido.getStatus();
         pedido.setStatus(novoStatus);
-        return pedidoRepository.save(pedido);
+        pedido.setUpdatedAt(java.time.LocalDateTime.now());
+        
+        Pedido pedidoSalvo = pedidoRepository.save(pedido);
+        
+        // Log da alteração
+        System.out.println(String.format("Status do pedido %d alterado de %s para %s em %s", 
+            pedidoId, statusAnterior, novoStatus, java.time.LocalDateTime.now()));
+        
+        return pedidoSalvo;
     }
     
     @Transactional

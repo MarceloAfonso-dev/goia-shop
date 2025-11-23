@@ -12,8 +12,10 @@ const ProductCadastroModal = ({ show, onHide, onSuccess }) => {
         preco: '',
         quantidadeEstoque: '',
         avaliacao: '',
-        status: 'ATIVO' // Admin sempre cadastra como ativo
+        status: 'ATIVO', // Admin sempre cadastra como ativo
+        categoriaId: ''
     });
+    const [categorias, setCategorias] = useState([]);
     const [files, setFiles] = useState([]);
     const [principalImageIndex, setPrincipalImageIndex] = useState(0);
     const [loading, setLoading] = useState(false);
@@ -25,8 +27,20 @@ const ProductCadastroModal = ({ show, onHide, onSuccess }) => {
     useEffect(() => {
         if (!show) {
             console.log('🔍 Modal foi fechado - files serão resetados');
+        } else {
+            // Carregar categorias quando o modal abrir
+            fetchCategorias();
         }
     }, [show]);
+
+    const fetchCategorias = async () => {
+        try {
+            const response = await api.get('/categorias');
+            setCategorias(response.data || []);
+        } catch (err) {
+            console.error('Erro ao carregar categorias:', err);
+        }
+    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -120,7 +134,8 @@ const ProductCadastroModal = ({ show, onHide, onSuccess }) => {
                 preco: parseFloat(formData.preco),
                 quantidadeEstoque: isAdmin() ? 0 : parseInt(formData.quantidadeEstoque),
                 avaliacao: formData.avaliacao ? parseFloat(formData.avaliacao) : null,
-                status: 'ATIVO' // Admin sempre cadastra produto ativo
+                status: 'ATIVO', // Admin sempre cadastra produto ativo
+                categoriaId: formData.categoriaId ? parseInt(formData.categoriaId) : null
             };
 
             const produtoResponse = await api.post('/produtos', produtoData);
@@ -316,6 +331,22 @@ const ProductCadastroModal = ({ show, onHide, onSuccess }) => {
                                     value={formData.descricao}
                                     onChange={handleInputChange}
                                 />
+                            </Form.Group>
+
+                            <Form.Group className="mb-3">
+                                <Form.Label>Categoria</Form.Label>
+                                <Form.Select
+                                    name="categoriaId"
+                                    value={formData.categoriaId}
+                                    onChange={handleInputChange}
+                                >
+                                    <option value="">Selecione uma categoria</option>
+                                    {categorias.map((categoria) => (
+                                        <option key={categoria.id} value={categoria.id}>
+                                            {categoria.nome}
+                                        </option>
+                                    ))}
+                                </Form.Select>
                             </Form.Group>
 
                             <Row>

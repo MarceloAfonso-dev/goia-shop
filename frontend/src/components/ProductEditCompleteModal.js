@@ -12,8 +12,10 @@ const ProductEditModal = ({ show, onHide, product, onProductUpdated }) => {
         preco: '',
         quantidadeEstoque: '',
         avaliacao: '',
-        status: ''
+        status: '',
+        categoriaId: ''
     });
+    const [categorias, setCategorias] = useState([]);
     const [imagens, setImagens] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -29,7 +31,8 @@ const ProductEditModal = ({ show, onHide, product, onProductUpdated }) => {
                 preco: product.preco || '',
                 quantidadeEstoque: product.quantidadeEstoque || '',
                 avaliacao: product.avaliacao || '',
-                status: product.status || 'ATIVO'
+                status: product.status || 'ATIVO',
+                categoriaId: product.categoria?.id || ''
             });
             
             // Carregar imagens do produto
@@ -38,8 +41,20 @@ const ProductEditModal = ({ show, onHide, product, onProductUpdated }) => {
             } else {
                 setImagens([]);
             }
+            
+            // Carregar categorias
+            fetchCategorias();
         }
     }, [product]);
+
+    const fetchCategorias = async () => {
+        try {
+            const response = await api.get('/categorias');
+            setCategorias(response.data || []);
+        } catch (err) {
+            console.error('Erro ao carregar categorias:', err);
+        }
+    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -247,6 +262,7 @@ const ProductEditModal = ({ show, onHide, product, onProductUpdated }) => {
                 quantidadeEstoque: isAdmin() ? 0 : parseInt(formData.quantidadeEstoque),
                 // Admin mantém status atual, estoquista pode alterar
                 status: isAdmin() ? product.status : formData.status,
+                categoriaId: formData.categoriaId ? parseInt(formData.categoriaId) : null,
                 imagens: existingImages.map((img, index) => ({
                     imagemId: img.id,
                     ordem: img.ordem,
@@ -393,6 +409,22 @@ const ProductEditModal = ({ show, onHide, product, onProductUpdated }) => {
                             onChange={handleInputChange}
                             placeholder="Descrição do produto"
                         />
+                    </Form.Group>
+
+                    <Form.Group className="mb-3">
+                        <Form.Label>Categoria</Form.Label>
+                        <Form.Select
+                            name="categoriaId"
+                            value={formData.categoriaId}
+                            onChange={handleInputChange}
+                        >
+                            <option value="">Selecione uma categoria</option>
+                            {categorias.map((categoria) => (
+                                <option key={categoria.id} value={categoria.id}>
+                                    {categoria.nome}
+                                </option>
+                            ))}
+                        </Form.Select>
                     </Form.Group>
 
                     <Row>

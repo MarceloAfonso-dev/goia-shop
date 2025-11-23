@@ -21,8 +21,10 @@ import com.goiashop.dto.ProdutoAlteracaoQuantidadeRequest;
 import com.goiashop.dto.ProdutoCadastroRequest;
 import com.goiashop.dto.ProdutoCompletoRequest;
 import com.goiashop.dto.ProdutoImagemRequest;
+import com.goiashop.model.Categoria;
 import com.goiashop.model.Produto;
 import com.goiashop.model.ProdutoImagem;
+import com.goiashop.repository.CategoriaRepository;
 import com.goiashop.repository.ProdutoImagemRepository;
 import com.goiashop.repository.ProdutoRepository;
 
@@ -40,6 +42,9 @@ public class ProdutoService {
     
     @Autowired
     private AuditLogService auditLogService;
+    
+    @Autowired
+    private CategoriaRepository categoriaRepository;
 
     public List<Produto> listarTodos() {
         return produtoRepository.findAll();
@@ -57,7 +62,7 @@ public class ProdutoService {
     /**
      * Lista produtos com paginação e filtros
      */
-    public PaginatedResponse<Produto> listarComPaginacao(String nome, Long codigo, String status, int page, int size) {
+    public PaginatedResponse<Produto> listarComPaginacao(String nome, Long codigo, String status, Long categoriaId, int page, int size) {
         // Configurar ordenação por data de criação (decrescente)
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         
@@ -70,7 +75,7 @@ public class ProdutoService {
             }
         }
         
-        Page<Produto> produtoPage = produtoRepository.findByFilters(nome, codigo, statusEnum, pageable);
+        Page<Produto> produtoPage = produtoRepository.findByFilters(nome, codigo, statusEnum, categoriaId, pageable);
         
         return new PaginatedResponse<>(
             produtoPage.getContent(),
@@ -97,6 +102,13 @@ public class ProdutoService {
         // Definir status
         if (request.getStatus() != null) {
             produto.setStatus(Produto.ProdutoStatus.valueOf(request.getStatus().toUpperCase()));
+        }
+        
+        // Definir categoria se fornecida
+        if (request.getCategoriaId() != null) {
+            Categoria categoria = categoriaRepository.findById(request.getCategoriaId())
+                .orElseThrow(() -> new IllegalArgumentException("Categoria não encontrada"));
+            produto.setCategoria(categoria);
         }
         
         // Salvar produto
@@ -127,6 +139,7 @@ public class ProdutoService {
         oldValues.put("quantidadeEstoque", produto.getQuantidadeEstoque());
         oldValues.put("avaliacao", produto.getAvaliacao());
         oldValues.put("status", produto.getStatus());
+        oldValues.put("categoria_id", produto.getCategoria() != null ? produto.getCategoria().getId() : null);
         
         // Atualizar campos
         produto.setNome(request.getNome());
@@ -142,6 +155,15 @@ public class ProdutoService {
             produto.setStatus(Produto.ProdutoStatus.valueOf(request.getStatus().toUpperCase()));
         }
         
+        // Definir categoria se fornecida
+        if (request.getCategoriaId() != null) {
+            Categoria categoria = categoriaRepository.findById(request.getCategoriaId())
+                .orElseThrow(() -> new IllegalArgumentException("Categoria não encontrada"));
+            produto.setCategoria(categoria);
+        } else {
+            produto.setCategoria(null);
+        }
+        
         // Salvar produto
         Produto produtoAtualizado = produtoRepository.save(produto);
         
@@ -153,6 +175,7 @@ public class ProdutoService {
         newValues.put("quantidadeEstoque", produtoAtualizado.getQuantidadeEstoque());
         newValues.put("avaliacao", produtoAtualizado.getAvaliacao());
         newValues.put("status", produtoAtualizado.getStatus());
+        newValues.put("categoria_id", produtoAtualizado.getCategoria() != null ? produtoAtualizado.getCategoria().getId() : null);
         
         auditLogService.logUpdate(userId, "produtos_ecommerce", produtoAtualizado.getId(), oldValues, newValues);
         
@@ -346,6 +369,7 @@ public class ProdutoService {
         oldData.put("quantidade_estoque", produto.getQuantidadeEstoque());
         oldData.put("status", produto.getStatus());
         oldData.put("avaliacao", produto.getAvaliacao());
+        oldData.put("categoria_id", produto.getCategoria() != null ? produto.getCategoria().getId() : null);
 
         // Atualizar campos do produto
         produto.setNome(request.getNome());
@@ -359,6 +383,15 @@ public class ProdutoService {
         produto.setAvaliacao(request.getAvaliacao());
         produto.setUpdatedAt(LocalDateTime.now());
         produto.setUpdatedBy(userId);
+        
+        // Definir categoria se fornecida
+        if (request.getCategoriaId() != null) {
+            Categoria categoria = categoriaRepository.findById(request.getCategoriaId())
+                .orElseThrow(() -> new IllegalArgumentException("Categoria não encontrada"));
+            produto.setCategoria(categoria);
+        } else {
+            produto.setCategoria(null);
+        }
 
         // Gerenciar imagens se fornecidas
         if (request.getImagens() != null && !request.getImagens().isEmpty()) {
@@ -630,6 +663,22 @@ public class ProdutoService {
     public List<Produto> buscarPorNome(String termo) {
         return produtoRepository.findByStatusAndNomeContainingIgnoreCaseOrderByIdDesc(
             Produto.ProdutoStatus.ATIVO, termo);
+    }
+    
+    /**
+     * Busca produtos por categoria
+     */
+    public List<Produto> listarPorCategoria(Long categoriaId) {
+        return produtoRepository.findByStatusAndCategoriaIdOrderByIdDesc(
+            Produto.ProdutoStatus.ATIVO, categoriaId);
+    }
+    
+    /**
+     * Busca produtos por categoria e nome
+     */
+    public List<Produto> buscarPorCategoriaENome(Long categoriaId, String termo) {
+        return produtoRepository.findByStatusAndCategoriaIdAndNomeContainingIgnoreCaseOrderByIdDesc(
+            Produto.ProdutoStatus.ATIVO, categoriaId, termo);
     }
 
 }

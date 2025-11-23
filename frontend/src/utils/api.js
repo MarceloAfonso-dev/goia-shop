@@ -3,7 +3,11 @@ import axios from 'axios';
 // Configuração base da API
 const api = axios.create({
     baseURL: 'http://localhost:8080/api',
-    timeout: 10000
+    timeout: 10000,
+    headers: {
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Accept': 'application/json; charset=UTF-8'
+    }
 });
 
 // Interceptor para adicionar token em todas as requisições

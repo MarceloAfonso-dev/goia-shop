@@ -20,7 +20,6 @@ public class UsuarioCadastroRequest {
     private String email;
     
     @NotBlank(message = "Senha é obrigatória")
-    @Pattern(regexp = "\\d{6}", message = "Senha deve conter exatamente 6 dígitos")
     private String senha;
     
     @NotBlank(message = "Confirmação de senha é obrigatória")

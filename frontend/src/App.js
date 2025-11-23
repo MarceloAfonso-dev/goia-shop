@@ -13,6 +13,7 @@ import CartPage from './components/CartPage';
 import CheckoutPage from './components/CheckoutPage';
 import OrderSummaryPage from './components/OrderSummaryPage';
 import OrderConfirmationPage from './components/OrderConfirmationPage';
+import PedidosEstoquistaPage from './components/PedidosEstoquistaPage';
 import { useAuth } from './hooks/useAuth';
 import { CartProvider } from './hooks/useCart';
 
@@ -118,6 +119,52 @@ function App() {
             element={<OrderDetailsPage />} 
           />
           
+          {/* Rota específica para estoquistas visualizarem pedidos */}
+          <Route 
+            path="/estoque/pedidos" 
+            element={
+              user && user.grupo === 'ESTOQUISTA' ? (
+                <div style={{ minHeight: '100vh', backgroundColor: '#F1F2F4' }}>
+                  <header className="goi-header">
+                    <div className="goi-logo">
+                      <h1>GOIA Shop - Pedidos</h1>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                      <button 
+                        className="btn btn-secondary"
+                        onClick={() => window.location.href = '/dashboard'}
+                      >
+                        ← Dashboard
+                      </button>
+                      <div style={{ textAlign: 'right' }}>
+                        <h6 style={{ margin: 0, fontSize: '16px', fontWeight: '500', color: '#000' }}>
+                          {user.nome}
+                        </h6>
+                        <small style={{ color: '#555', fontSize: '14px' }}>
+                          {user.grupo}
+                        </small>
+                      </div>
+                      <button 
+                        className="btn btn-danger"
+                        onClick={handleLogout}
+                        style={{ padding: '8px 16px' }}
+                      >
+                        Sair
+                      </button>
+                    </div>
+                  </header>
+                  <PedidosEstoquistaPage />
+                </div>
+              ) : user && isBackofficeUser() ? (
+                <Navigate to="/dashboard" replace />
+              ) : user && isClienteUser() ? (
+                <Navigate to="/" replace />
+              ) : (
+                <Navigate to="/admin" replace />
+              )
+            } 
+          />
+
           {/* Rota do dashboard (protegida - apenas backoffice) */}
           <Route 
             path="/dashboard" 

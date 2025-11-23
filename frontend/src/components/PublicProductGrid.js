@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { useCart } from '../hooks/useCart';
 import EcommerceHeader from './EcommerceHeader';
@@ -19,17 +18,7 @@ const AddToCartIcon = ({ size = 16 }) => (
     }} 
   />
 );
-const CartIcon = ({ size = 24 }) => (
-  <img 
-    src="/assets/img/cart.png" 
-    alt="Carrinho" 
-    style={{ 
-      width: size, 
-      height: size,
-      filter: 'brightness(0) saturate(100%) invert(42%) sepia(82%) saturate(3174%) hue-rotate(336deg) brightness(101%) contrast(102%)'
-    }} 
-  />
-);
+
 
 // Componente de carrossel de imagens
 const ImageCarousel = ({ product, getImageUrl }) => {
@@ -277,12 +266,16 @@ const ImageCarousel = ({ product, getImageUrl }) => {
 };
 
 const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
-  const navigate = useNavigate();
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const { cart, addToCart, cartCount } = useCart();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searching, setSearching] = useState(false);
+  const [categorias, setCategorias] = useState([]);
+  const [selectedCategoria, setSelectedCategoria] = useState('');
+  const { addToCart } = useCart();
 
   // Função para converter URL absoluta do backend em URL relativa
   const getImageUrl = (urlArquivo) => {
@@ -298,35 +291,56 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
     addToCart(product, 1);
   };
 
-  // Função para navegar para a home
-  const handleGoToHome = () => {
-    navigate('/');
-  };
+
 
   useEffect(() => {
+    fetchCategorias();
     fetchProducts();
   }, []);
 
-  const fetchProducts = async () => {
+  const fetchCategorias = async () => {
+    try {
+      const response = await api.get('/categorias/public');
+      setCategorias(response.data || []);
+    } catch (err) {
+      console.error('Erro ao carregar categorias:', err);
+    }
+  };
+
+  const fetchProducts = async (termo = '', categoria = '') => {
     try {
       setLoading(true);
-      const response = await api.get('/produtos?status=ATIVO&page=0&pageSize=12');
+      setError('');
       
-      if (response.data && response.data.content) {
-        // Para resposta paginada
-        setProducts(response.data.content);
-      } else if (Array.isArray(response.data)) {
-        // Para resposta não paginada, filtrar apenas produtos ativos
-        const activeProducts = response.data.filter(product => product.status === 'ATIVO');
-        setProducts(activeProducts);
+      let response;
+      
+      if (termo.trim() || categoria) {
+        // Buscar produtos com filtros
+        const params = new URLSearchParams();
+        if (termo.trim()) params.append('termo', termo);
+        if (categoria) params.append('categoriaId', categoria);
+        
+        response = await api.get(`/produtos/public/buscar?${params.toString()}`);
+        setProducts(Array.isArray(response.data) ? response.data : []);
       } else {
-        setError('Erro ao carregar produtos');
+        // Carregar todos os produtos ativos
+        response = await api.get('/produtos?status=ATIVO&page=0&pageSize=12');
+        
+        if (response.data && response.data.content) {
+          setProducts(response.data.content);
+        } else if (Array.isArray(response.data)) {
+          const activeProducts = response.data.filter(product => product.status === 'ATIVO');
+          setProducts(activeProducts);
+        } else {
+          setError('Erro ao carregar produtos');
+        }
       }
     } catch (err) {
       console.error('Erro ao buscar produtos:', err);
       setError('Erro ao conectar com o servidor');
     } finally {
       setLoading(false);
+      setSearching(false);
     }
   };
 
@@ -336,6 +350,33 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
 
   const closeProductDetails = () => {
     setSelectedProduct(null);
+  };
+
+  const handleSearch = async () => {
+    if (searchTerm.trim() === '' && !selectedCategoria) {
+      fetchProducts();
+      return;
+    }
+    setSearching(true);
+    await fetchProducts(searchTerm, selectedCategoria);
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    setSelectedCategoria('');
+    fetchProducts();
+  };
+
+  const handleCategoryChange = async (categoriaId) => {
+    setSelectedCategoria(categoriaId);
+    setSearching(true);
+    await fetchProducts(searchTerm, categoriaId);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
   };
 
   const formatPrice = (price) => {
@@ -400,21 +441,184 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
             fontSize: '16px', 
             color: '#555', 
             maxWidth: '600px', 
-            margin: '0 auto' 
+            margin: '0 auto 24px auto' 
           }}>
             Descubra produtos incríveis com cashback, parcelamento sem juros e ofertas exclusivas.
           </p>
+          
+          {/* Seletor de Categoria */}
+          {categorias.length > 0 && (
+            <div style={{
+              maxWidth: '600px',
+              margin: '0 auto 16px auto',
+              display: 'flex',
+              gap: '8px',
+              flexWrap: 'wrap',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={() => handleCategoryChange('')}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: !selectedCategoria ? '#FF4F5A' : '#f8f9fa',
+                  color: !selectedCategoria ? 'white' : '#666',
+                  border: !selectedCategoria ? 'none' : '1px solid #ddd',
+                  borderRadius: '20px',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                Todas
+              </button>
+              {categorias.map((categoria) => (
+                <button
+                  key={categoria.id}
+                  onClick={() => handleCategoryChange(categoria.id.toString())}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: selectedCategoria === categoria.id.toString() ? '#FF4F5A' : '#f8f9fa',
+                    color: selectedCategoria === categoria.id.toString() ? 'white' : '#666',
+                    border: selectedCategoria === categoria.id.toString() ? 'none' : '1px solid #ddd',
+                    borderRadius: '20px',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selectedCategoria !== categoria.id.toString()) {
+                      e.target.style.backgroundColor = '#e9ecef';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selectedCategoria !== categoria.id.toString()) {
+                      e.target.style.backgroundColor = '#f8f9fa';
+                    }
+                  }}
+                >
+                  {categoria.nome}
+                </button>
+              ))}
+            </div>
+          )}
+          
+          {/* Campo de Busca */}
+          <div style={{ 
+            maxWidth: '500px', 
+            margin: '0 auto',
+            display: 'flex',
+            gap: '8px',
+            alignItems: 'center'
+          }}>
+            <input
+              type="text"
+              placeholder="Buscar produtos..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyPress={handleKeyPress}
+              style={{
+                flex: 1,
+                padding: '12px 16px',
+                border: '2px solid #e0e0e0',
+                borderRadius: '8px',
+                fontSize: '16px',
+                outline: 'none',
+                transition: 'border-color 0.3s ease'
+              }}
+              onFocus={(e) => e.target.style.borderColor = '#FF4F5A'}
+              onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
+            />
+            <button
+              onClick={handleSearch}
+              disabled={searching}
+              style={{
+                padding: '12px 20px',
+                backgroundColor: '#FF4F5A',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '16px',
+                cursor: searching ? 'not-allowed' : 'pointer',
+                opacity: searching ? 0.7 : 1,
+                transition: 'all 0.3s ease',
+                minWidth: '80px'
+              }}
+            >
+              {searching ? '...' : '🔍'}
+            </button>
+            {searchTerm && (
+              <button
+                onClick={handleClearSearch}
+                style={{
+                  padding: '12px 16px',
+                  backgroundColor: '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                Limpar
+              </button>
+            )}
+          </div>
+          
+          {searchTerm && (
+            <p style={{
+              fontSize: '14px',
+              color: '#666',
+              marginTop: '12px'
+            }}>
+              {searching ? 'Buscando...' : `Resultados para: "${searchTerm}"`}
+            </p>
+          )}
         </div>
 
         {products.length === 0 ? (
           <div className="product-card" style={{ textAlign: 'center', marginTop: '40px' }}>
             <div style={{ fontSize: '48px', marginBottom: '20px' }}>📦</div>
-            <h3 style={{ color: '#464646', marginBottom: '10px' }}>Nenhum produto encontrado</h3>
-            <p style={{ color: '#555' }}>No momento não temos produtos disponíveis no marketplace.</p>
+            <h3 style={{ color: '#464646', marginBottom: '10px' }}>
+              {searchTerm ? 'Nenhum produto encontrado' : 'Nenhum produto disponível'}
+            </h3>
+            <p style={{ color: '#555' }}>
+              {searchTerm ? `Não encontramos produtos para "${searchTerm}". Tente outro termo.` : 'No momento não temos produtos disponíveis no marketplace.'}
+            </p>
+            {searchTerm && (
+              <button
+                onClick={handleClearSearch}
+                style={{
+                  marginTop: '16px',
+                  padding: '10px 20px',
+                  backgroundColor: '#FF4F5A',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer'
+                }}
+              >
+                Ver todos os produtos
+              </button>
+            )}
           </div>
         ) : (
-          <div className="product-grid">
-            {products.map((product) => (
+          <>
+            {/* Indicador de quantidade de produtos */}
+            <div style={{ 
+              textAlign: 'center', 
+              marginBottom: '24px',
+              color: '#666',
+              fontSize: '14px'
+            }}>
+              {searchTerm ? 
+                `${products.length} produto${products.length !== 1 ? 's' : ''} encontrado${products.length !== 1 ? 's' : ''}` :
+                `${products.length} produto${products.length !== 1 ? 's' : ''} disponível${products.length !== 1 ? 'eis' : ''}`
+              }
+            </div>
+            
+            <div className="product-grid">
+              {products.map((product) => (
               <div key={product.id} className="product-card">
                 <div 
                   style={{ 
@@ -494,7 +698,8 @@ const PublicProductGrid = ({ onBackToLanding, onLoginClick }) => {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          </>
         )}
       </div>
 

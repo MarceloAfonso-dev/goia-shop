@@ -1,20 +1,33 @@
 package com.goiashop.controller;
 
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired; // Mudança: import do DTO de alteração de quantidade
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.goiashop.dto.PaginatedResponse;
-import com.goiashop.dto.ProdutoAlteracaoQuantidadeRequest; // Mudança: import do DTO de alteração de quantidade
+import com.goiashop.dto.ProdutoAlteracaoQuantidadeRequest;
 import com.goiashop.dto.ProdutoCadastroRequest;
 import com.goiashop.dto.ProdutoCompletoRequest;
 import com.goiashop.model.Produto;
 import com.goiashop.model.ProdutoImagem;
 import com.goiashop.service.AuthService;
 import com.goiashop.service.ProdutoService;
-import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/produtos")
@@ -32,13 +45,14 @@ public class ProdutoController {
             @RequestParam(required = false) String nome,
             @RequestParam(required = false) Long codigo,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) Long categoriaId,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer pageSize) {
         
         // Se page foi fornecido, usar paginação
         if (page != null) {
             int size = pageSize != null ? pageSize : 10; // Default 10 itens por página
-            PaginatedResponse<Produto> response = produtoService.listarComPaginacao(nome, codigo, status, page, size);
+            PaginatedResponse<Produto> response = produtoService.listarComPaginacao(nome, codigo, status, categoriaId, page, size);
             return ResponseEntity.ok(response);
         } else {
             // Compatibilidade com versão anterior (sem paginação)
@@ -98,9 +112,40 @@ public class ProdutoController {
      * Busca produtos por nome (sem autenticação)
      */
     @GetMapping("/public/buscar")
-    public ResponseEntity<List<Produto>> buscarProdutos(@RequestParam String termo) {
-        List<Produto> produtos = produtoService.buscarPorNome(termo);
-        return ResponseEntity.ok(produtos);
+    public ResponseEntity<List<Produto>> buscarProdutos(
+            @RequestParam(required = false) String termo,
+            @RequestParam(required = false) Long categoriaId) {
+        
+        if (categoriaId != null && termo != null && !termo.trim().isEmpty()) {
+            // Busca por categoria E nome
+            List<Produto> produtos = produtoService.buscarPorCategoriaENome(categoriaId, termo);
+            return ResponseEntity.ok(produtos);
+        } else if (categoriaId != null) {
+            // Busca apenas por categoria
+            List<Produto> produtos = produtoService.listarPorCategoria(categoriaId);
+            return ResponseEntity.ok(produtos);
+        } else if (termo != null && !termo.trim().isEmpty()) {
+            // Busca apenas por nome
+            List<Produto> produtos = produtoService.buscarPorNome(termo);
+            return ResponseEntity.ok(produtos);
+        } else {
+            // Retorna produtos ativos
+            List<Produto> produtos = produtoService.listarProdutosAtivos();
+            return ResponseEntity.ok(produtos);
+        }
+    }
+    
+    /**
+     * Lista produtos por categoria (sem autenticação)
+     */
+    @GetMapping("/public/categoria/{categoriaId}")
+    public ResponseEntity<List<Produto>> listarProdutosPorCategoria(@PathVariable Long categoriaId) {
+        try {
+            List<Produto> produtos = produtoService.listarPorCategoria(categoriaId);
+            return ResponseEntity.ok(produtos);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(null);
+        }
     }
     
     /**
