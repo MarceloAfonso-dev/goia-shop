@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import EcommerceHeader from './EcommerceHeader';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
@@ -8,6 +8,7 @@ import './CheckoutPage.css';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { cart, cartCount, getCartTotal, clearCart } = useCart();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -19,6 +20,7 @@ const CheckoutPage = () => {
   const [enderecosSalvos, setEnderecosSalvos] = useState([]);
   const [enderecoSelecionadoId, setEnderecoSelecionadoId] = useState(null);
   const [usarNovoEndereco, setUsarNovoEndereco] = useState(false);
+  const [salvarNovoEndereco, setSalvarNovoEndereco] = useState(true);
 
   // Estados do formulário
   const [enderecoData, setEnderecoData] = useState({
@@ -37,7 +39,13 @@ const CheckoutPage = () => {
 
   const [pagamentoData, setPagamentoData] = useState({
     formaPagamento: 'PIX',
-    observacoes: ''
+    observacoes: '',
+    // Dados do cartão
+    numeroCartao: '',
+    nomeCartao: '',
+    validadeCartao: '',
+    cvvCartao: '',
+    parcelasCartao: 1
   });
 
   // Estado para countdown do redirecionamento
@@ -57,24 +65,78 @@ const CheckoutPage = () => {
     }
   }, [user, cartCount, navigate, step]);
 
-  // useEffect para countdown e redirecionamento automático
+  // useEffect para countdown e redirecionamento automático (desabilitado - agora redireciona para meus pedidos)
+  // useEffect(() => {
+  //   if (step === 4) {
+  //     setCountdown(8); // Reset countdown quando chegar no step 4
+      
+  //     const countdownTimer = setInterval(() => {
+  //       setCountdown(prev => {
+  //         if (prev <= 1) {
+  //           navigate('/produtos');
+  //           return 0;
+  //         }
+  //         return prev - 1;
+  //       });
+  //     }, 1000);
+      
+  //     return () => clearInterval(countdownTimer);
+  //   }
+  // }, [step, navigate]);
+
+  // useEffect para restaurar estado quando voltar da página de resumo
   useEffect(() => {
-    if (step === 4) {
-      setCountdown(8); // Reset countdown quando chegar no step 4
+    const locationState = location.state;
+    
+    if (locationState) {      
+      if (locationState.endereco) {
+        setEnderecoData(locationState.endereco);
+      }
       
-      const countdownTimer = setInterval(() => {
-        setCountdown(prev => {
-          if (prev <= 1) {
-            navigate('/produtos');
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      if (locationState.pagamento) {
+        setPagamentoData(prev => ({
+          ...prev,
+          formaPagamento: locationState.pagamento.metodo?.toUpperCase() || 'PIX',
+          observacoes: locationState.pagamento.observacoes || '',
+          ...(locationState.pagamento.metodo === 'cartao' && {
+            numeroCartao: locationState.pagamento.numeroCartao || '',
+            nomeCartao: locationState.pagamento.nomeCartao || '',
+            validadeCartao: locationState.pagamento.validadeCartao || '',
+            cvvCartao: locationState.pagamento.cvvCartao || '',
+            parcelasCartao: locationState.pagamento.parcelas || 1
+          })
+        }));
+      }
       
-      return () => clearInterval(countdownTimer);
+      if (locationState.frete) {
+        setFreteSelecionado(locationState.frete);
+      }
+      
+      if (locationState.step) {
+        setStep(locationState.step);
+      }
+      
+      // Se veio para editar frete (step 2), calcular imediatamente
+      if (locationState.step === 2 && locationState.endereco) {
+        // Pequeno delay para garantir que o enderecoData foi definido
+        setTimeout(() => {
+          calcularFreteComRestauracao(locationState.frete);
+        }, 100);
+      }
     }
-  }, [step, navigate]);
+    
+    // Carregar endereços salvos se não veio da revisão
+    if (user && !locationState) {
+      carregarEnderecosSalvos();
+    }
+  }, [location.state, user]);
+
+  // useEffect para calcular frete automaticamente quando necessário
+  useEffect(() => {
+    if (step === 2 && enderecoData.cep && enderecoData.logradouro && freteOptions.length === 0) {
+      calcularFrete();
+    }
+  }, [step, enderecoData.cep, enderecoData.logradouro]);
 
   const loadUserAddress = async () => {
     try {
@@ -110,34 +172,52 @@ const CheckoutPage = () => {
     try {
       const response = await api.get('/cliente/enderecos');
       if (response.data.success && response.data.enderecos) {
+        console.log('📍 CHECKOUT - Endereços carregados:', response.data.enderecos);
         setEnderecosSalvos(response.data.enderecos);
         
-        // Selecionar automaticamente o endereço padrão
-        const enderecoPadrao = response.data.enderecos.find(e => e.isPadrao);
-        if (enderecoPadrao) {
-          setEnderecoSelecionadoId(enderecoPadrao.id);
-          setEnderecoData({
-            cep: enderecoPadrao.cep || '',
-            logradouro: enderecoPadrao.logradouro || '',
-            numero: enderecoPadrao.numero || '',
-            complemento: enderecoPadrao.complemento || '',
-            bairro: enderecoPadrao.bairro || '',
-            cidade: enderecoPadrao.cidade || '',
-            uf: enderecoPadrao.estado || ''
-          });
-        } else if (response.data.enderecos.length > 0) {
-          // Se não houver padrão, selecionar o primeiro
-          const primeiroEndereco = response.data.enderecos[0];
-          setEnderecoSelecionadoId(primeiroEndereco.id);
-          setEnderecoData({
-            cep: primeiroEndereco.cep || '',
-            logradouro: primeiroEndereco.logradouro || '',
-            numero: primeiroEndereco.numero || '',
-            complemento: primeiroEndereco.complemento || '',
-            bairro: primeiroEndereco.bairro || '',
-            cidade: primeiroEndereco.cidade || '',
-            uf: primeiroEndereco.estado || ''
-          });
+        // Só selecionar automaticamente se não há endereço definido E não veio da revisão
+        const veioDaRevisao = location.state && location.state.endereco;
+        const temEnderecoDefinido = enderecoSelecionadoId || (enderecoData.cep && enderecoData.logradouro);
+        
+        if (!temEnderecoDefinido && !veioDaRevisao) {
+          const enderecoPadrao = response.data.enderecos.find(e => e.isPadrao);
+          if (enderecoPadrao) {
+            console.log('📍 CHECKOUT - Selecionando endereço padrão:', enderecoPadrao);
+            setEnderecoSelecionadoId(enderecoPadrao.id);
+            setEnderecoData({
+              cep: enderecoPadrao.cep || '',
+              logradouro: enderecoPadrao.logradouro || '',
+              numero: enderecoPadrao.numero || '',
+              complemento: enderecoPadrao.complemento || '',
+              bairro: enderecoPadrao.bairro || '',
+              cidade: enderecoPadrao.cidade || '',
+              uf: enderecoPadrao.estado || ''
+            });
+          } else if (response.data.enderecos.length > 0) {
+            // Se não houver padrão, selecionar o primeiro
+            const primeiroEndereco = response.data.enderecos[0];
+            console.log('📍 CHECKOUT - Selecionando primeiro endereço:', primeiroEndereco);
+            setEnderecoSelecionadoId(primeiroEndereco.id);
+            setEnderecoData({
+              cep: primeiroEndereco.cep || '',
+              logradouro: primeiroEndereco.logradouro || '',
+              numero: primeiroEndereco.numero || '',
+              complemento: primeiroEndereco.complemento || '',
+              bairro: primeiroEndereco.bairro || '',
+              cidade: primeiroEndereco.cidade || '',
+              uf: primeiroEndereco.estado || ''
+            });
+          }
+        } else {
+          console.log('📍 CHECKOUT - Mantendo endereço atual da revisão:', enderecoData);
+          // Se já tem endereço definido, encontrar o ID correspondente
+          const enderecoCorrespondente = response.data.enderecos.find(e => 
+            e.cep === enderecoData.cep && e.logradouro === enderecoData.logradouro && e.numero === enderecoData.numero
+          );
+          if (enderecoCorrespondente) {
+            console.log('📍 CHECKOUT - Encontrou endereço correspondente:', enderecoCorrespondente);
+            setEnderecoSelecionadoId(enderecoCorrespondente.id);
+          }
         }
       }
     } catch (error) {
@@ -146,9 +226,10 @@ const CheckoutPage = () => {
   };
   
   const handleSelecionarEndereco = (endereco) => {
+    console.log('📍 CHECKOUT - Selecionando endereço:', endereco);
     setEnderecoSelecionadoId(endereco.id);
     setUsarNovoEndereco(false);
-    setEnderecoData({
+    const novoEnderecoData = {
       cep: endereco.cep || '',
       logradouro: endereco.logradouro || '',
       numero: endereco.numero || '',
@@ -156,7 +237,9 @@ const CheckoutPage = () => {
       bairro: endereco.bairro || '',
       cidade: endereco.cidade || '',
       uf: endereco.estado || ''
-    });
+    };
+    console.log('📋 CHECKOUT - EnderecoData atualizado para:', novoEnderecoData);
+    setEnderecoData(novoEnderecoData);
   };
 
   const handleEnderecoChange = (e) => {
@@ -199,7 +282,86 @@ const CheckoutPage = () => {
     }
   };
 
+  const salvarEnderecoNaConta = async () => {
+    if (!user || !salvarNovoEndereco) return;
+    
+    try {
+      const novoEndereco = {
+        cep: enderecoData.cep,
+        logradouro: enderecoData.logradouro,
+        numero: enderecoData.numero,
+        complemento: enderecoData.complemento,
+        bairro: enderecoData.bairro,
+        cidade: enderecoData.cidade,
+        estado: enderecoData.uf,
+        apelido: `Endereço ${enderecosSalvos.length + 1}`,
+        isPadrao: enderecosSalvos.length === 0 // Primeiro endereço vira padrão
+      };
+
+      await api.post('/cliente/enderecos', novoEndereco);
+      
+      // Recarregar endereços salvos
+      await carregarEnderecosSalvos();
+      
+      console.log('✅ Endereço salvo na conta com sucesso!');
+    } catch (error) {
+      console.error('Erro ao salvar endereço:', error);
+    }
+  };
+
   const calcularFrete = async () => {
+    if (!enderecoData.cep) {
+      setError('CEP é obrigatório para calcular o frete');
+      return;
+    }
+
+    setLoadingFrete(true);
+    setError('');
+
+    try {
+      // Salvar endereço na conta se o usuário optou por isso
+      if (usarNovoEndereco && salvarNovoEndereco) {
+        await salvarEnderecoNaConta();
+      }
+      const response = await fetch('http://localhost:8080/api/frete/calcular', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cep: enderecoData.cep,
+          valorTotal: getCartTotal()
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setFreteOptions(result.opcoes);
+        
+        // Se já tinha um frete selecionado, verificar se ele ainda existe nas novas opções
+        if (freteSelecionado) {
+          const freteEncontrado = result.opcoes.find(opt => opt.tipo === freteSelecionado.tipo);
+          if (freteEncontrado) {
+            setFreteSelecionado(freteEncontrado); // Atualizar com dados mais recentes
+          } else {
+            setFreteSelecionado(null);
+          }
+        }
+        
+        setStep(2);
+      } else {
+        setError(result.message || 'Erro ao calcular frete');
+      }
+    } catch (error) {
+      console.error('Erro ao calcular frete:', error);
+      setError('Erro ao conectar com o servidor');
+    } finally {
+      setLoadingFrete(false);
+    }
+  };
+
+  const calcularFreteComRestauracao = async (freteOriginal) => {
     if (!enderecoData.cep) {
       setError('CEP é obrigatório para calcular o frete');
       return;
@@ -224,7 +386,16 @@ const CheckoutPage = () => {
 
       if (response.ok && result.success) {
         setFreteOptions(result.opcoes);
-        setStep(2);
+        
+        // GARANTIR que o frete original esteja selecionado se existir
+        const freteEncontrado = result.opcoes.find(opt => opt.tipo === freteOriginal?.tipo);
+        if (freteEncontrado) {
+          setFreteSelecionado(freteEncontrado);
+        } else if (freteOriginal) {
+          // Se não encontrou nas opções, adicionar o original
+          setFreteOptions(prev => [...prev, freteOriginal]);
+          setFreteSelecionado(freteOriginal);
+        }
       } else {
         setError(result.message || 'Erro ao calcular frete');
       }
@@ -248,39 +419,82 @@ const CheckoutPage = () => {
       return;
     }
 
+    // Validar dados do cartão se necessário
+    if (!validarCartao()) {
+      setError('Preencha todos os dados do cartão corretamente');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
-      // Simular processamento de pagamento (2 segundos)
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Gerar número do pedido simulado
-      const numeroPedido = 'GOIA' + Date.now().toString().slice(-6);
-      const valorTotal = getTotalComFrete();
-      const formaPagamento = pagamentoData.formaPagamento === 'PIX' ? 'PIX' : 'Saldo GOIA Bank';
-      
-      // Simular sucesso do pagamento
-      const compraData = {
-        numeroPedido,
-        valorTotal,
-        formaPagamento,
-        frete: freteSelecionado,
-        itens: cart.length,
-        enderecoEntrega: `${enderecoData.logradouro}, ${enderecoData.numero} - ${enderecoData.cidade}/${enderecoData.uf}`
+      // Preparar dados do pedido
+      const dadosPedido = {
+        itens: cart.map(item => ({
+          produtoId: item.id,
+          quantidade: item.quantity,
+          preco: item.price
+        })),
+        dadosPedido: {
+          observacoes: pagamentoData.observacoes,
+          formaPagamento: pagamentoData.formaPagamento,
+          // Dados de endereço de entrega
+          cep: enderecoData.cep,
+          logradouro: enderecoData.logradouro,
+          numero: enderecoData.numero,
+          complemento: enderecoData.complemento || '',
+          bairro: enderecoData.bairro,
+          cidade: enderecoData.cidade,
+          estado: enderecoData.uf,
+          // Dados do cartão se for cartão de crédito
+          ...(pagamentoData.formaPagamento === 'CARTAO' && {
+            numeroCartao: pagamentoData.numeroCartao,
+            nomeCartao: pagamentoData.nomeCartao,
+            validadeCartao: pagamentoData.validadeCartao,
+            cvvCartao: pagamentoData.cvvCartao,
+            parcelasCartao: parseInt(pagamentoData.parcelasCartao)
+          })
+        }
       };
-      
-      setSuccess('Compra realizada com sucesso!');
-      setStep(4);
-      
-      // Salvar dados da compra para mostrar no popup
-      localStorage.setItem('ultimaCompra', JSON.stringify(compraData));
-      
-      // Limpar carrinho
-      clearCart();
+
+      // Enviar pedido para o backend
+      const response = await api.post('/pedidos', dadosPedido);
+
+      if (response.data.success) {
+        const pedidoData = response.data.pedido;
+        
+        // Dados para mostrar no sucesso
+        const compraData = {
+          numeroPedido: `GOIA${pedidoData.id}`,
+          valorTotal: getTotalComFrete(),
+          formaPagamento: pagamentoData.formaPagamento,
+          frete: freteSelecionado,
+          itens: cart.length,
+          enderecoEntrega: `${enderecoData.logradouro}, ${enderecoData.numero} - ${enderecoData.cidade}/${enderecoData.uf}`,
+          pedidoId: pedidoData.id
+        };
+        
+        setSuccess('Pedido realizado com sucesso!');
+        setStep(4);
+        
+        // Salvar dados da compra para mostrar no popup
+        localStorage.setItem('ultimaCompra', JSON.stringify(compraData));
+        
+        // Limpar carrinho
+        clearCart();
+        
+        // O redirecionamento automático agora acontece na OrderConfirmationPage
+      } else {
+        setError(response.data.message || 'Erro ao processar pedido');
+      }
     } catch (error) {
       console.error('Erro ao finalizar pedido:', error);
-      setError('Erro ao conectar com o servidor');
+      if (error.response && error.response.data) {
+        setError(error.response.data.message || 'Erro ao processar pagamento');
+      } else {
+        setError('Erro ao conectar com o servidor');
+      }
     } finally {
       setLoading(false);
     }
@@ -291,6 +505,57 @@ const CheckoutPage = () => {
       style: 'currency',
       currency: 'BRL'
     }).format(price || 0);
+  };
+
+  // Funções para formatação de cartão
+  const formatCardNumber = (value) => {
+    const numbers = value.replace(/\D/g, '');
+    return numbers.replace(/(\d{4})(?=\d)/g, '$1 ').substring(0, 19);
+  };
+
+  const formatCardExpiry = (value) => {
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length <= 2) return numbers;
+    return numbers.substring(0, 2) + '/' + numbers.substring(2, 4);
+  };
+
+  const formatCVV = (value) => {
+    return value.replace(/\D/g, '').substring(0, 4);
+  };
+
+  const handlePagamentoChange = (e) => {
+    const { name, value } = e.target;
+    let formattedValue = value;
+
+    if (name === 'numeroCartao') {
+      formattedValue = formatCardNumber(value);
+    } else if (name === 'validadeCartao') {
+      formattedValue = formatCardExpiry(value);
+    } else if (name === 'cvvCartao') {
+      formattedValue = formatCVV(value);
+    } else if (name === 'nomeCartao') {
+      formattedValue = value.toUpperCase();
+    }
+
+    const novoPagamentoData = {
+      ...pagamentoData,
+      [name]: formattedValue
+    };
+
+    console.log('💳 CHECKOUT - Pagamento alterado:', { name, value: formattedValue, novoPagamentoData });
+    
+    setPagamentoData(novoPagamentoData);
+  };
+
+  // Validação simples dos dados do cartão
+  const validarCartao = () => {
+    if (pagamentoData.formaPagamento !== 'CARTAO') return true;
+    
+    const numeroLimpo = pagamentoData.numeroCartao.replace(/\s/g, '');
+    return numeroLimpo.length >= 13 && 
+           pagamentoData.nomeCartao.length >= 2 && 
+           pagamentoData.validadeCartao.length === 5 && 
+           pagamentoData.cvvCartao.length >= 3;
   };
 
   const getTotalComFrete = () => {
@@ -349,10 +614,13 @@ const CheckoutPage = () => {
               
               <div className="success-actions">
                 <button 
-                  onClick={() => navigate('/')} 
+                  onClick={() => {
+                    console.log('🔍 CHECKOUT - Botão Acompanhar Pedido clicado');
+                    navigate('/minha-conta?tab=orders');
+                  }} 
                   className="btn-primary btn-large"
                 >
-                  🏠 Voltar ao Início
+                  📦 Acompanhar Pedido
                 </button>
                 <button 
                   onClick={() => navigate('/produtos')} 
@@ -369,7 +637,7 @@ const CheckoutPage = () => {
               
               <div className="auto-redirect-info">
                 <p>
-                  🕒 Redirecionando automaticamente para a loja em <strong>{countdown}</strong> segundo{countdown !== 1 ? 's' : ''}...
+                  ℹ️ Clique em <strong>"Acompanhar Pedido"</strong> para ver seus pedidos ou continue comprando.
                 </p>
               </div>
             </div>
@@ -423,8 +691,22 @@ const CheckoutPage = () => {
                 {/* Seleção de endereços salvos */}
                 {enderecosSalvos.length > 0 && !usarNovoEndereco && (
                   <div style={{ marginBottom: '24px' }}>
+                    <div style={{ 
+                      backgroundColor: '#f0f9ff', 
+                      border: '1px solid #0ea5e9', 
+                      borderRadius: '8px', 
+                      padding: '16px', 
+                      marginBottom: '16px' 
+                    }}>
+                      <h4 style={{ fontSize: '16px', marginBottom: '8px', color: '#0c4a6e' }}>
+                        📍 Seus Endereços Salvos
+                      </h4>
+                      <p style={{ fontSize: '14px', color: '#075985', margin: '0' }}>
+                        Selecione um endereço ou cadastre um novo
+                      </p>
+                    </div>
                     <h4 style={{ fontSize: '16px', marginBottom: '12px', color: '#1e293b' }}>
-                      Selecione um endereço salvo:
+                      Selecione um endereço:
                     </h4>
                     <div style={{ display: 'grid', gap: '12px' }}>
                       {enderecosSalvos.map((endereco) => (
@@ -490,43 +772,74 @@ const CheckoutPage = () => {
                         });
                       }}
                       style={{
-                        marginTop: '12px',
-                        padding: '8px 16px',
-                        backgroundColor: 'transparent',
+                        marginTop: '16px',
+                        padding: '12px 20px',
+                        backgroundColor: '#FF4F5A',
                         border: '1px solid #FF4F5A',
                         borderRadius: '8px',
-                        color: '#FF4F5A',
+                        color: 'white',
                         cursor: 'pointer',
                         fontSize: '14px',
-                        fontWeight: '500'
+                        fontWeight: '600',
+                        width: '100%',
+                        boxShadow: '0 2px 4px rgba(255, 79, 90, 0.2)'
                       }}
                     >
-                      ➕ Usar novo endereço
+                      ➕ Cadastrar Novo Endereço
                     </button>
                   </div>
                 )}
                 
                 {/* Botão para voltar aos endereços salvos */}
                 {usarNovoEndereco && enderecosSalvos.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUsarNovoEndereco(false);
-                      carregarEnderecosSalvos();
-                    }}
-                    style={{
-                      marginBottom: '16px',
-                      padding: '8px 16px',
-                      backgroundColor: 'transparent',
-                      border: '1px solid #64748b',
-                      borderRadius: '8px',
-                      color: '#64748b',
-                      cursor: 'pointer',
-                      fontSize: '14px'
-                    }}
-                  >
-                    ← Voltar para endereços salvos
-                  </button>
+                  <div style={{ 
+                    backgroundColor: '#e0f2fe', 
+                    border: '1px solid #0284c7', 
+                    borderRadius: '8px', 
+                    padding: '12px', 
+                    marginBottom: '16px' 
+                  }}>
+                    <p style={{ fontSize: '14px', color: '#0369a1', margin: '0 0 8px 0' }}>
+                      💡 Você tem {enderecosSalvos.length} endereço(s) salvo(s) na sua conta
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUsarNovoEndereco(false);
+                        carregarEnderecosSalvos();
+                      }}
+                      style={{
+                        padding: '8px 16px',
+                        backgroundColor: '#0284c7',
+                        border: 'none',
+                        borderRadius: '6px',
+                        color: 'white',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500'
+                      }}
+                    >
+                      ← Voltar para Endereços Salvos
+                    </button>
+                  </div>
+                )}
+                
+                {/* Mensagem quando não há endereços salvos */}
+                {enderecosSalvos.length === 0 && !usarNovoEndereco && (
+                  <div style={{ 
+                    backgroundColor: '#fef3c7', 
+                    border: '1px solid #f59e0b', 
+                    borderRadius: '8px', 
+                    padding: '16px', 
+                    marginBottom: '16px' 
+                  }}>
+                    <h4 style={{ fontSize: '16px', marginBottom: '8px', color: '#92400e' }}>
+                      🏠 Primeiro Endereço de Entrega
+                    </h4>
+                    <p style={{ fontSize: '14px', color: '#451a03', margin: '0' }}>
+                      Cadastre seu primeiro endereço de entrega. Ele será salvo para futuras compras.
+                    </p>
+                  </div>
                 )}
                 
                 {/* Formulário de endereço (mostrar se não houver endereços salvos OU se optar por usar novo) */}
@@ -672,6 +985,33 @@ const CheckoutPage = () => {
                     </select>
                   </div>
                 </div>
+                
+                {/* Opção para salvar endereço na conta */}
+                {usarNovoEndereco && user && (
+                  <div style={{ 
+                    marginTop: '16px',
+                    padding: '12px', 
+                    backgroundColor: '#f8fafc', 
+                    border: '1px solid #e2e8f0', 
+                    borderRadius: '8px' 
+                  }}>
+                    <label style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      color: '#374151'
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={salvarNovoEndereco}
+                        onChange={(e) => setSalvarNovoEndereco(e.target.checked)}
+                        style={{ marginRight: '8px' }}
+                      />
+                      💾 Salvar este endereço na minha conta para futuras compras
+                    </label>
+                  </div>
+                )}
                   </>
                 )}
               </div>
@@ -697,14 +1037,20 @@ const CheckoutPage = () => {
                   <div 
                     key={index} 
                     className={`frete-option ${freteSelecionado?.tipo === opcao.tipo ? 'selected' : ''}`}
-                    onClick={() => setFreteSelecionado(opcao)}
+                    onClick={() => {
+                      console.log('🚚 CHECKOUT - Frete selecionado:', opcao);
+                      setFreteSelecionado(opcao);
+                    }}
                   >
                     <div className="frete-radio">
                       <input
                         type="radio"
                         name="frete"
                         checked={freteSelecionado?.tipo === opcao.tipo}
-                        onChange={() => setFreteSelecionado(opcao)}
+                        onChange={() => {
+                          console.log('🚚 CHECKOUT - Frete selecionado via radio:', opcao);
+                          setFreteSelecionado(opcao);
+                        }}
                       />
                     </div>
                     <div className="frete-info">
@@ -761,13 +1107,111 @@ const CheckoutPage = () => {
                   id="formaPagamento"
                   name="formaPagamento"
                   value={pagamentoData.formaPagamento}
-                  onChange={(e) => setPagamentoData({...pagamentoData, formaPagamento: e.target.value})}
+                  onChange={handlePagamentoChange}
                   required
                 >
                   <option value="PIX">💳 PIX - Instantâneo</option>
+                  <option value="BOLETO">🧾 Boleto Bancário - Vencimento em 3 dias</option>
+                  <option value="CARTAO">💳 Cartão de Crédito</option>
                   <option value="SALDO_GOIA">🏦 Saldo em Conta GOIA Bank</option>
                 </select>
               </div>
+
+              {/* Campos do Cartão */}
+              {pagamentoData.formaPagamento === 'CARTAO' && (
+                <div style={{ border: '1px solid #e1e5e9', borderRadius: '8px', padding: '16px', marginBottom: '16px', backgroundColor: '#f8f9fa' }}>
+                  <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', color: '#1e293b' }}>Dados do Cartão</h4>
+                  
+                  <div className="form-group">
+                    <label htmlFor="numeroCartao">Número do Cartão *</label>
+                    <input
+                      type="text"
+                      id="numeroCartao"
+                      name="numeroCartao"
+                      value={pagamentoData.numeroCartao}
+                      onChange={handlePagamentoChange}
+                      placeholder="0000 0000 0000 0000"
+                      required
+                      maxLength="19"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="nomeCartao">Nome no Cartão *</label>
+                    <input
+                      type="text"
+                      id="nomeCartao"
+                      name="nomeCartao"
+                      value={pagamentoData.nomeCartao}
+                      onChange={handlePagamentoChange}
+                      placeholder="NOME COMO IMPRESSO NO CARTÃO"
+                      required
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                    <div className="form-group">
+                      <label htmlFor="validadeCartao">Validade *</label>
+                      <input
+                        type="text"
+                        id="validadeCartao"
+                        name="validadeCartao"
+                        value={pagamentoData.validadeCartao}
+                        onChange={handlePagamentoChange}
+                        placeholder="MM/AA"
+                        required
+                        maxLength="5"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="cvvCartao">CVV *</label>
+                      <input
+                        type="text"
+                        id="cvvCartao"
+                        name="cvvCartao"
+                        value={pagamentoData.cvvCartao}
+                        onChange={handlePagamentoChange}
+                        placeholder="000"
+                        required
+                        maxLength="4"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="parcelasCartao">Parcelas</label>
+                      <select
+                        id="parcelasCartao"
+                        name="parcelasCartao"
+                        value={pagamentoData.parcelasCartao}
+                        onChange={handlePagamentoChange}
+                      >
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(parcela => {
+                          const valorParcela = getTotalComFrete() / parcela;
+                          return (
+                            <option key={parcela} value={parcela}>
+                              {parcela}x {formatPrice(valorParcela)}
+                              {parcela === 1 ? ' (à vista)' : ''}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Informações do Boleto */}
+              {pagamentoData.formaPagamento === 'BOLETO' && (
+                <div style={{ border: '1px solid #fbbf24', borderRadius: '8px', padding: '16px', marginBottom: '16px', backgroundColor: '#fefce8' }}>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '16px', color: '#92400e' }}>ℹ️ Informações do Boleto</h4>
+                  <p style={{ margin: '0', fontSize: '14px', color: '#451a03' }}>
+                    • O boleto será gerado após a confirmação do pedido<br/>
+                    • Vencimento em 3 dias úteis<br/>
+                    • Após o pagamento, o pedido será processado em até 2 dias úteis
+                  </p>
+                </div>
+              )}
 
               <div className="form-group">
                 <label htmlFor="observacoes">Observações</label>
@@ -775,7 +1219,7 @@ const CheckoutPage = () => {
                   id="observacoes"
                   name="observacoes"
                   value={pagamentoData.observacoes}
-                  onChange={(e) => setPagamentoData({...pagamentoData, observacoes: e.target.value})}
+                  onChange={handlePagamentoChange}
                   placeholder="Observações para o pedido (opcional)"
                   rows={3}
                 />
@@ -794,6 +1238,11 @@ const CheckoutPage = () => {
                   <span>Total:</span>
                   <span>{formatPrice(getTotalComFrete())}</span>
                 </div>
+                {pagamentoData.formaPagamento === 'CARTAO' && pagamentoData.parcelasCartao > 1 && (
+                  <div style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
+                    💳 {pagamentoData.parcelasCartao}x de {formatPrice(getTotalComFrete() / pagamentoData.parcelasCartao)} 
+                  </div>
+                )}
               </div>
 
               <div className="checkout-actions">
@@ -802,11 +1251,54 @@ const CheckoutPage = () => {
                 </button>
                 <button 
                   type="button" 
-                  onClick={finalizarPedido} 
-                  disabled={loading}
+                  onClick={() => {
+                    // Verificar se frete foi selecionado
+                    if (!freteSelecionado) {
+                      setError('Selecione uma opção de frete antes de continuar');
+                      setStep(2);
+                      return;
+                    }
+
+                    // Debug dos dados antes de navegar
+                    console.log('🚀 CHECKOUT - Navegando para revisar pedido:');
+                    console.log('📍 Endereço sendo enviado:', enderecoData);
+                    console.log('💳 Pagamento sendo enviado:', {
+                      metodo: pagamentoData.formaPagamento.toLowerCase(),
+                      observacoes: pagamentoData.observacoes || '',
+                      ...(pagamentoData.formaPagamento === 'CARTAO' && {
+                        numeroCartao: pagamentoData.numeroCartao,
+                        nomeCartao: pagamentoData.nomeCartao,
+                        validadeCartao: pagamentoData.validadeCartao,
+                        cvvCartao: pagamentoData.cvvCartao,
+                        parcelas: parseInt(pagamentoData.parcelasCartao) || 1
+                      })
+                    });
+                    console.log('🚚 Frete sendo enviado:', freteSelecionado);
+                    console.log('🔢 Endereço selecionado ID:', enderecoSelecionadoId);
+
+                    // Navegar para página de resumo com todos os dados
+                    navigate('/revisar-pedido', {
+                      state: {
+                        endereco: enderecoData,
+                        pagamento: {
+                          metodo: pagamentoData.formaPagamento.toLowerCase(),
+                          observacoes: pagamentoData.observacoes || '',
+                          ...(pagamentoData.formaPagamento === 'CARTAO' && {
+                            numeroCartao: pagamentoData.numeroCartao,
+                            nomeCartao: pagamentoData.nomeCartao,
+                            validadeCartao: pagamentoData.validadeCartao,
+                            cvvCartao: pagamentoData.cvvCartao,
+                            parcelas: parseInt(pagamentoData.parcelasCartao) || 1
+                          })
+                        },
+                        frete: freteSelecionado
+                      }
+                    });
+                  }} 
+                  disabled={loading || (pagamentoData.formaPagamento === 'CARTAO' && !validarCartao())}
                   className="btn-primary"
                 >
-                  {loading ? '⏳ Finalizando...' : (user ? '✨ Finalizar Pedido' : '🔐 Login e Finalizar')}
+                  {user ? '📋 Revisar Pedido' : '🔐 Login e Continuar'}
                 </button>
               </div>
             </div>

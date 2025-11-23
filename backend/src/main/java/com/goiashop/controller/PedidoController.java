@@ -1,18 +1,28 @@
 package com.goiashop.controller;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.goiashop.dto.CartItemRequest;
 import com.goiashop.dto.PedidoRequest;
 import com.goiashop.model.Pedido;
 import com.goiashop.service.ClienteSessionService;
 import com.goiashop.service.PedidoService;
-import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/pedidos")
@@ -52,8 +62,17 @@ public class PedidoController {
             List<CartItemRequest> itensCarrinho = itensData.stream()
                 .map(item -> {
                     CartItemRequest cartItem = new CartItemRequest();
-                    cartItem.setProdutoId(Long.valueOf(item.get("produtoId").toString()));
-                    cartItem.setQuantidade(Integer.valueOf(item.get("quantidade").toString()));
+                    Object produtoId = item.get("produtoId");
+                    Object quantidade = item.get("quantidade");
+                    
+                    if (produtoId != null) {
+                        cartItem.setProdutoId(Long.valueOf(produtoId.toString()));
+                    }
+                    if (quantidade != null) {
+                        cartItem.setQuantidade(Integer.valueOf(quantidade.toString()));
+                    } else {
+                        cartItem.setQuantidade(1); // Quantidade padrão
+                    }
                     return cartItem;
                 })
                 .toList();
@@ -69,6 +88,26 @@ public class PedidoController {
             dadosPedido.setBairro((String) dadosPedidoData.get("bairro"));
             dadosPedido.setCidade((String) dadosPedidoData.get("cidade"));
             dadosPedido.setEstado((String) dadosPedidoData.get("estado"));
+            
+            // Dados do cartão (se fornecidos) - apenas para validação simulada
+            if (dadosPedidoData.containsKey("numeroCartao")) {
+                dadosPedido.setNumeroCartao((String) dadosPedidoData.get("numeroCartao"));
+            }
+            if (dadosPedidoData.containsKey("nomeCartao")) {
+                dadosPedido.setNomeCartao((String) dadosPedidoData.get("nomeCartao"));
+            }
+            if (dadosPedidoData.containsKey("validadeCartao")) {
+                dadosPedido.setValidadeCartao((String) dadosPedidoData.get("validadeCartao"));
+            }
+            if (dadosPedidoData.containsKey("cvvCartao")) {
+                dadosPedido.setCvvCartao((String) dadosPedidoData.get("cvvCartao"));
+            }
+            if (dadosPedidoData.containsKey("parcelasCartao")) {
+                Object parcelas = dadosPedidoData.get("parcelasCartao");
+                if (parcelas != null) {
+                    dadosPedido.setParcelasCartao(Integer.valueOf(parcelas.toString()));
+                }
+            }
             
             // Criar pedido
             Pedido pedido = pedidoService.criarPedido(clienteId, itensCarrinho, dadosPedido);

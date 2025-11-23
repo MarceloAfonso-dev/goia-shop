@@ -9,6 +9,8 @@ const EcommerceHeader = () => {
   const location = useLocation();
   const { cartCount } = useCart();
   const { user } = useAuth();
+  
+  // Debug removido
 
   const handleLogoClick = () => {
     navigate('/');
@@ -128,7 +130,7 @@ const EcommerceHeader = () => {
         </button>
 
         {/* Link Admin (pequeno) - Apenas se não for cliente */}
-        {!user || (user && user.grupo !== 'CLIENTE' && user.tipo !== 'CLIENTE') ? (
+        {!user || (user && user.tipo !== 'CLIENTE') ? (
           <small style={{marginLeft: '10px'}}>
             <a href="/admin" style={{color: '#666', fontSize: '12px', textDecoration: 'none'}}>
               Admin

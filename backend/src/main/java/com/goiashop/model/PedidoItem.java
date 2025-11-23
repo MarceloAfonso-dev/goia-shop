@@ -1,7 +1,18 @@
 package com.goiashop.model;
 
-import jakarta.persistence.*;
 import java.math.BigDecimal;
+
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "pedido_itens")
@@ -13,10 +24,12 @@ public class PedidoItem {
     
     @ManyToOne
     @JoinColumn(name = "pedido_id", nullable = false)
+    @JsonBackReference
     private Pedido pedido;
     
     @ManyToOne
     @JoinColumn(name = "produto_id", nullable = false)
+    @JsonIgnoreProperties({"imagens", "createdAt", "updatedAt", "descricao"})
     private Produto produto;
     
     @Column(name = "quantidade", nullable = false)
@@ -29,6 +42,18 @@ public class PedidoItem {
     private BigDecimal precoTotal;
     
     // Dados do produto no momento da compra (para histórico)
+    @Column(name = "name_snapshot", nullable = false, length = 200)
+    private String nameSnapshot;
+    
+    @Column(name = "unit_price", nullable = false, precision = 10, scale = 2)
+    private BigDecimal unitPrice;
+    
+    @Column(name = "quantity", nullable = false)
+    private Integer quantity;
+    
+    @Column(name = "subtotal", nullable = false, precision = 10, scale = 2)
+    private BigDecimal subtotal;
+    
     @Column(name = "produto_nome", nullable = false, length = 200)
     private String produtoNome;
     
@@ -46,6 +71,12 @@ public class PedidoItem {
         this.precoTotal = this.precoUnitario.multiply(BigDecimal.valueOf(quantidade));
         this.produtoNome = produto.getNome();
         this.produtoDescricao = produto.getDescricao();
+        
+        // Preencher os novos campos obrigatórios
+        this.nameSnapshot = produto.getNome();
+        this.unitPrice = produto.getPreco();
+        this.quantity = quantidade;
+        this.subtotal = this.precoUnitario.multiply(BigDecimal.valueOf(quantidade));
     }
     
     // Getters and Setters
@@ -117,5 +148,37 @@ public class PedidoItem {
     
     public void setProdutoDescricao(String produtoDescricao) {
         this.produtoDescricao = produtoDescricao;
+    }
+    
+    public String getNameSnapshot() {
+        return nameSnapshot;
+    }
+    
+    public void setNameSnapshot(String nameSnapshot) {
+        this.nameSnapshot = nameSnapshot;
+    }
+    
+    public BigDecimal getUnitPrice() {
+        return unitPrice;
+    }
+    
+    public void setUnitPrice(BigDecimal unitPrice) {
+        this.unitPrice = unitPrice;
+    }
+    
+    public Integer getQuantity() {
+        return quantity;
+    }
+    
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
+    
+    public BigDecimal getSubtotal() {
+        return subtotal;
+    }
+    
+    public void setSubtotal(BigDecimal subtotal) {
+        this.subtotal = subtotal;
     }
 }

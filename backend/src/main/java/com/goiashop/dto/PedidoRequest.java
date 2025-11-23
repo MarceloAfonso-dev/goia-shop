@@ -6,6 +6,13 @@ public class PedidoRequest {
     private String observacoes;
     private String formaPagamento;
     
+    // Dados do cartão (simulados - não persistir em produção)
+    private String numeroCartao;
+    private String nomeCartao;
+    private String validadeCartao;
+    private String cvvCartao;
+    private Integer parcelasCartao;
+    
     // Endereço de entrega
     private String cep;
     private String logradouro;
@@ -97,5 +104,46 @@ public class PedidoRequest {
     
     public void setEstado(String estado) {
         this.estado = estado;
+    }
+    
+    // Getters and Setters para dados do cartão
+    public String getNumeroCartao() {
+        return numeroCartao;
+    }
+    
+    public void setNumeroCartao(String numeroCartao) {
+        this.numeroCartao = numeroCartao;
+    }
+    
+    public String getNomeCartao() {
+        return nomeCartao;
+    }
+    
+    public void setNomeCartao(String nomeCartao) {
+        this.nomeCartao = nomeCartao;
+    }
+    
+    public String getValidadeCartao() {
+        return validadeCartao;
+    }
+    
+    public void setValidadeCartao(String validadeCartao) {
+        this.validadeCartao = validadeCartao;
+    }
+    
+    public String getCvvCartao() {
+        return cvvCartao;
+    }
+    
+    public void setCvvCartao(String cvvCartao) {
+        this.cvvCartao = cvvCartao;
+    }
+    
+    public Integer getParcelasCartao() {
+        return parcelasCartao;
+    }
+    
+    public void setParcelasCartao(Integer parcelasCartao) {
+        this.parcelasCartao = parcelasCartao;
     }
 }

@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import EcommerceHeader from './EcommerceHeader';
 import { useAuth } from '../hooks/useAuth';
+import { useCart } from '../hooks/useCart';
 import { Modal, Button } from 'react-bootstrap';
 import api from '../utils/api';
 import './AuthPage.css';
 
 const AuthPage = ({ onLoginSuccess }) => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { user, logout, updateUser } = useAuth();
+    const { restorePreservedCart, clearCartOnLogout, switchToUserCart, preserveCartWithToken } = useCart();
     const [activeTab, setActiveTab] = useState('login'); // 'login' ou 'register'
+    
+    // Capturar parâmetros da URL
+    const cartToken = searchParams.get('cart_token');
+    const redirectTo = searchParams.get('redirect');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -131,6 +138,9 @@ const AuthPage = ({ onLoginSuccess }) => {
         setLoading(true);
         setError('');
 
+        // Preservar carrinho atual antes do login
+        preserveCartWithToken();
+
         try {
             // Verificar se há usuário do backoffice logado
             const existingUser = localStorage.getItem('user');
@@ -157,22 +167,57 @@ const AuthPage = ({ onLoginSuccess }) => {
             const result = await response.json();
 
             if (response.ok && result.success) {
-                // Limpar qualquer sessão anterior
-                localStorage.clear();
+                // Preservar carrinho e cart_token antes de limpar
+                const preservedCart = localStorage.getItem('goia-shop-cart-preserved');
+                const cartToken = localStorage.getItem('goia-shop-cart-token');
+                
+                // Limpar apenas sessões de usuário, não carrinho
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                localStorage.removeItem('userType');
+                
+                // Restaurar dados preservados
+                if (preservedCart) {
+                    localStorage.setItem('goia-shop-cart-preserved', preservedCart);
+                }
+                if (cartToken) {
+                    localStorage.setItem('goia-shop-cart-token', cartToken);
+                }
                 
                 // Salvar token e dados do cliente
                 localStorage.setItem('token', result.token);
                 localStorage.setItem('user', JSON.stringify(result.user));
                 localStorage.setItem('userType', 'cliente');
                 
+                console.log('Login realizado com sucesso:');
+                console.log('- Token:', result.token);
+                console.log('- User:', result.user);
+                console.log('- UserType:', 'cliente');
+                
                 // Notificar sobre o login
                 onLoginSuccess(result.user);
                 
-                // Para clientes, navegar para a página inicial ou conta
-                if (result.user.tipo === 'CLIENTE') {
-                    navigate('/');
+                // Trocar para o carrinho do usuário
+                switchToUserCart();
+                
+                // Restaurar carrinho se houver cart_token
+                const cartRestored = restorePreservedCart();
+                
+                // Redirecionar para onde estava antes ou página padrão
+                if (redirectTo === 'checkout' && cartRestored) {
+                    navigate('/checkout');
+                } else if (redirectTo === 'checkout') {
+                    navigate('/carrinho'); // Se não restaurou carrinho, volta para carrinho
+                } else if (redirectTo === '/minha-conta') {
+                    // Verificar se há parâmetro tab e redirecionar
+                    const tabParam = searchParams.get('tab');
+                    if (tabParam) {
+                        navigate(`/minha-conta?tab=${tabParam}`);
+                    } else {
+                        navigate('/minha-conta');
+                    }
                 } else {
-                    navigate('/minha-conta');
+                    navigate('/'); // Sempre vai para home após login
                 }
             } else {
                 const errorMsg = typeof result.message === 'string' ? result.message : 'Email ou senha incorretos';
@@ -224,8 +269,9 @@ const AuthPage = ({ onLoginSuccess }) => {
             return;
         }
 
-        if (registerData.senha.length < 6) {
-            setError('A senha deve ter pelo menos 6 caracteres');
+        // Validar senha - exatamente 6 dígitos numéricos
+        if (!/^\d{6}$/.test(registerData.senha)) {
+            setError('A senha deve conter exatamente 6 dígitos numéricos');
             setLoading(false);
             return;
         }
@@ -321,6 +367,13 @@ const AuthPage = ({ onLoginSuccess }) => {
             if (response.ok && result.success) {
                 setSuccess('Conta criada com sucesso! Você já pode fazer login.');
                 setActiveTab('login');
+                // Pre-preencher email no login se veio do carrinho
+                if (cartToken && redirectTo) {
+                    setLoginData(prev => ({
+                        ...prev,
+                        email: registerData.email
+                    }));
+                }
                 // Limpar formulário
                 setRegisterData({
                     nome: '',
@@ -377,9 +430,10 @@ const AuthPage = ({ onLoginSuccess }) => {
             logout();
             setSuccess('Logout realizado e cache limpo com sucesso!');
         } else {
-            // Apenas fazer logout (mantém cache do carrinho e outras preferências)
-        logout();
-        setSuccess('Logout realizado com sucesso!');
+            // Limpar apenas o carrinho do usuário específico antes do logout
+            clearCartOnLogout();
+            logout();
+            setSuccess('Logout realizado com sucesso!');
         }
         
         setShowLogoutModal(false);
@@ -505,8 +559,8 @@ const AuthPage = ({ onLoginSuccess }) => {
                 setLoading(false);
                 return;
             }
-            if (editData.novaSenha.length < 6) {
-                setError('A nova senha deve ter pelo menos 6 caracteres');
+            if (!/^\d{6}$/.test(editData.novaSenha)) {
+                setError('A nova senha deve conter exatamente 6 dígitos numéricos');
                 setLoading(false);
                 return;
             }
@@ -1148,6 +1202,9 @@ const AuthPage = ({ onLoginSuccess }) => {
                                         value={editData.senhaAtual || ''}
                                         onChange={handleEditChange}
                                         placeholder="Digite sua senha atual"
+                                        maxLength="6"
+                                        pattern="\d{6}"
+                                        title="Deve conter exatamente 6 dígitos numéricos"
                                     />
                                 </div>
                             </div>
@@ -1161,7 +1218,10 @@ const AuthPage = ({ onLoginSuccess }) => {
                                         name="novaSenha"
                                         value={editData.novaSenha || ''}
                                         onChange={handleEditChange}
-                                        placeholder="Mínimo 6 caracteres"
+                                        placeholder="Exatamente 6 dígitos"
+                                        maxLength="6"
+                                        pattern="\d{6}"
+                                        title="Deve conter exatamente 6 dígitos numéricos"
                                     />
                                 </div>
                                 <div className="col-md-6 mb-3">
@@ -1173,6 +1233,9 @@ const AuthPage = ({ onLoginSuccess }) => {
                                         value={editData.confirmarNovaSenha || ''}
                                         onChange={handleEditChange}
                                         placeholder="Confirme a nova senha"
+                                        maxLength="6"
+                                        pattern="\d{6}"
+                                        title="Deve conter exatamente 6 dígitos numéricos"
                                     />
                                 </div>
                             </div>
@@ -1632,6 +1695,9 @@ const AuthPage = ({ onLoginSuccess }) => {
                                     onChange={handleLoginChange}
                                     required
                                     placeholder="Sua senha"
+                                    maxLength="6"
+                                    pattern="\d{6}"
+                                    title="Deve conter exatamente 6 dígitos numéricos"
                                 />
                             </div>
 
@@ -1762,8 +1828,10 @@ const AuthPage = ({ onLoginSuccess }) => {
                                         value={registerData.senha}
                                         onChange={handleRegisterChange}
                                         required
-                                        placeholder="Mínimo 6 caracteres"
-                                        minLength={6}
+                                        placeholder="Exatamente 6 dígitos"
+                                        maxLength="6"
+                                        pattern="\d{6}"
+                                        title="Deve conter exatamente 6 dígitos numéricos"
                                     />
                                 </div>
 
@@ -1777,6 +1845,9 @@ const AuthPage = ({ onLoginSuccess }) => {
                                         onChange={handleRegisterChange}
                                         required
                                         placeholder="Confirme sua senha"
+                                        maxLength="6"
+                                        pattern="\d{6}"
+                                        title="Deve conter exatamente 6 dígitos numéricos"
                                     />
                                 </div>
                             </div>

@@ -76,8 +76,8 @@ const UsuarioAlteracaoModal = ({ show, onHide, usuario, onUsuarioAlterado }) => 
             }
             
             // Validar senha apenas se foi fornecida
-            if (formData.senha && formData.senha.length < 6) {
-                throw new Error('Senha deve ter no mínimo 6 caracteres');
+            if (formData.senha && !/^\d{6}$/.test(formData.senha)) {
+                throw new Error('Senha deve conter exatamente 6 dígitos numéricos');
             }
             if (formData.senha && formData.senha !== formData.confirmaSenha) {
                 throw new Error('As senhas não coincidem');
@@ -190,7 +190,9 @@ const UsuarioAlteracaoModal = ({ show, onHide, usuario, onUsuarioAlterado }) => 
                                     value={formData.senha}
                                     onChange={handleInputChange}
                                     placeholder="Deixe em branco para manter a atual"
-                                    minLength={6}
+                                    maxLength={6}
+                                    pattern="\d{6}"
+                                    title="Deve conter exatamente 6 dígitos numéricos"
                                 />
                             </Form.Group>
                         </Col>
@@ -203,6 +205,9 @@ const UsuarioAlteracaoModal = ({ show, onHide, usuario, onUsuarioAlterado }) => 
                                     value={formData.confirmaSenha}
                                     onChange={handleInputChange}
                                     placeholder="Confirme a nova senha"
+                                    maxLength={6}
+                                    pattern="\d{6}"
+                                    title="Deve conter exatamente 6 dígitos numéricos"
                                 />
                             </Form.Group>
                         </Col>

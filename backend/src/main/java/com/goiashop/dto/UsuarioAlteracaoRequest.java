@@ -1,9 +1,13 @@
 package com.goiashop.dto;
 
+import jakarta.validation.constraints.Pattern;
+
 public class UsuarioAlteracaoRequest {
     
     private String nome;
     private String cpf;
+    
+    @Pattern(regexp = "\\d{6}", message = "Senha deve conter exatamente 6 dígitos")
     private String senha;
     private String confirmaSenha;
     private String grupo; // "ADMIN" ou "ESTOQUISTA"

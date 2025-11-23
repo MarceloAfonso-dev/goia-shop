@@ -1,9 +1,26 @@
 package com.goiashop.model;
 
-import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "pedidos")
@@ -15,10 +32,14 @@ public class Pedido {
     
     @ManyToOne
     @JoinColumn(name = "cliente_id", nullable = false)
+    @JsonIgnoreProperties({"pedidos", "senha", "createdAt", "updatedAt"})
     private Cliente cliente;
     
     @Column(name = "numero_pedido", nullable = false, unique = true, length = 20)
     private String numeroPedido;
+    
+    @Column(name = "order_sequence", nullable = false, unique = true)
+    private Long orderSequence;
     
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
@@ -26,6 +47,28 @@ public class Pedido {
     
     @Column(name = "valor_total", nullable = false, precision = 10, scale = 2)
     private BigDecimal valorTotal;
+    
+    @Column(name = "items_total", nullable = false, precision = 10, scale = 2)
+    private BigDecimal itemsTotal;
+    
+    @Column(name = "shipping_price", precision = 10, scale = 2)
+    private BigDecimal shippingPrice = BigDecimal.ZERO;
+    
+    @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
+    private BigDecimal totalAmount;
+    
+    @Column(name = "payment_info", columnDefinition = "JSON")
+    private String paymentInfo;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", nullable = false)
+    private PaymentMethod paymentMethod;
+    
+    @Column(name = "shipping_service", length = 100)
+    private String shippingService;
+    
+    @Column(name = "shipping_deadline")
+    private Integer shippingDeadline;
     
     @Column(name = "observacoes", columnDefinition = "TEXT")
     private String observacoes;
@@ -56,6 +99,7 @@ public class Pedido {
     private String entregaEstado;
     
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     private List<PedidoItem> itens;
     
     @Column(name = "created_at", nullable = false)
@@ -68,6 +112,11 @@ public class Pedido {
     public Pedido() {
         this.createdAt = LocalDateTime.now();
         this.numeroPedido = generateNumeroPedido();
+        this.orderSequence = System.currentTimeMillis();
+        this.valorTotal = BigDecimal.ZERO;
+        this.itemsTotal = BigDecimal.ZERO;
+        this.totalAmount = BigDecimal.ZERO;
+        this.shippingPrice = BigDecimal.ZERO;
     }
     
     public Pedido(Cliente cliente) {
@@ -214,6 +263,70 @@ public class Pedido {
     
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+    
+    public Long getOrderSequence() {
+        return orderSequence;
+    }
+    
+    public void setOrderSequence(Long orderSequence) {
+        this.orderSequence = orderSequence;
+    }
+    
+    public BigDecimal getItemsTotal() {
+        return itemsTotal;
+    }
+    
+    public void setItemsTotal(BigDecimal itemsTotal) {
+        this.itemsTotal = itemsTotal;
+    }
+    
+    public BigDecimal getShippingPrice() {
+        return shippingPrice;
+    }
+    
+    public void setShippingPrice(BigDecimal shippingPrice) {
+        this.shippingPrice = shippingPrice;
+    }
+    
+    public BigDecimal getTotalAmount() {
+        return totalAmount;
+    }
+    
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
+    }
+    
+    public String getPaymentInfo() {
+        return paymentInfo;
+    }
+    
+    public void setPaymentInfo(String paymentInfo) {
+        this.paymentInfo = paymentInfo;
+    }
+    
+    public PaymentMethod getPaymentMethod() {
+        return paymentMethod;
+    }
+    
+    public void setPaymentMethod(PaymentMethod paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+    
+    public String getShippingService() {
+        return shippingService;
+    }
+    
+    public void setShippingService(String shippingService) {
+        this.shippingService = shippingService;
+    }
+    
+    public Integer getShippingDeadline() {
+        return shippingDeadline;
+    }
+    
+    public void setShippingDeadline(Integer shippingDeadline) {
+        this.shippingDeadline = shippingDeadline;
     }
     
     @PreUpdate

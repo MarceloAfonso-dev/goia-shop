@@ -6,15 +6,20 @@ import AuthPage from './components/AuthPage';
 import AdminLogin from './components/AdminLogin';
 import Dashboard from './components/Dashboard';
 import MyAccountPage from './components/MyAccountPage';
+import OrderDetailsPage from './components/OrderDetailsPage';
 import PublicProductGrid from './components/PublicProductGrid';
 import ProductDetailPage from './components/ProductDetailPage';
 import CartPage from './components/CartPage';
 import CheckoutPage from './components/CheckoutPage';
+import OrderSummaryPage from './components/OrderSummaryPage';
+import OrderConfirmationPage from './components/OrderConfirmationPage';
 import { useAuth } from './hooks/useAuth';
 import { CartProvider } from './hooks/useCart';
 
 function App() {
   const { user, loading, login, logout, isBackofficeUser, isClienteUser, getUserType } = useAuth();
+  
+  // Debug removido
 
   if (loading) {
     return (
@@ -82,19 +87,35 @@ function App() {
               <CheckoutPage />
             )
           } />
+          <Route path="/revisar-pedido" element={
+            isBackofficeUser() ? (
+              <Navigate to="/dashboard" replace />
+            ) : user && isClienteUser() ? (
+              <OrderSummaryPage />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          } />
+          <Route path="/pedido-confirmado" element={
+            isBackofficeUser() ? (
+              <Navigate to="/dashboard" replace />
+            ) : user && isClienteUser() ? (
+              <OrderConfirmationPage />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          } />
           
           {/* Rota da área do usuário - apenas para clientes */}
           <Route 
             path="/minha-conta" 
-            element={
-              isBackofficeUser() ? (
-                <Navigate to="/dashboard" replace />
-              ) : user && isClienteUser() ? (
-                <MyAccountPage />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            } 
+            element={<MyAccountPage />} 
+          />
+          
+          {/* Rota de detalhes do pedido - apenas para clientes */}
+          <Route 
+            path="/pedido/:id" 
+            element={<OrderDetailsPage />} 
           />
           
           {/* Rota do dashboard (protegida - apenas backoffice) */}

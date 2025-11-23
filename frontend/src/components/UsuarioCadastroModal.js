@@ -50,8 +50,8 @@ const UsuarioCadastroModal = ({ show, onHide, onUsuarioCadastrado }) => {
             if (!validarEmail(formData.email)) {
                 throw new Error('Email deve ter formato válido');
             }
-            if (formData.senha.length < 6) {
-                throw new Error('Senha deve ter no mínimo 6 caracteres');
+            if (!/^\d{6}$/.test(formData.senha)) {
+                throw new Error('Senha deve conter exatamente 6 dígitos numéricos');
             }
             if (formData.senha !== formData.confirmaSenha) {
                 throw new Error('As senhas não coincidem');
@@ -197,8 +197,10 @@ const UsuarioCadastroModal = ({ show, onHide, onUsuarioCadastrado }) => {
                                     value={formData.senha}
                                     onChange={handleInputChange}
                                     required
-                                    placeholder="Mínimo 6 caracteres"
-                                    minLength={6}
+                                    placeholder="Exatamente 6 dígitos"
+                                    maxLength={6}
+                                    pattern="\d{6}"
+                                    title="Deve conter exatamente 6 dígitos numéricos"
                                 />
                             </Form.Group>
                         </Col>
@@ -212,6 +214,9 @@ const UsuarioCadastroModal = ({ show, onHide, onUsuarioCadastrado }) => {
                                     onChange={handleInputChange}
                                     required
                                     placeholder="Repita a senha"
+                                    maxLength={6}
+                                    pattern="\d{6}"
+                                    title="Deve conter exatamente 6 dígitos numéricos"
                                 />
                             </Form.Group>
                         </Col>

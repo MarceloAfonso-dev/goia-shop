@@ -130,23 +130,9 @@ CREATE TABLE users (
     UNIQUE KEY uq_cpf (cpf)
 );
 
-<<<<<<< HEAD
 -- Nota: Sistema usa JWT stateless, não precisa de tabela de sessões
 
 -- Tabela de produtos do e-commerce
-=======
--- Tabela de sessões (para controle de login)
-CREATE TABLE sessions (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    user_id BIGINT NOT NULL,
-    token VARCHAR(255) NOT NULL UNIQUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    expires_at TIMESTAMP NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
-
--- Tabela de produtos (placeholder para funcionalidade futura)
->>>>>>> origin/Listar-produtos-(ESTOQUISTA)-Gustavo
 CREATE TABLE produtos_ecommerce (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(100) NOT NULL,

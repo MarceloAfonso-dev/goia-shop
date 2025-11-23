@@ -1,23 +1,40 @@
 package com.goiashop.controller;
 
-import com.goiashop.dto.ClienteRegistroRequest;
-import com.goiashop.dto.EnderecoEntregaRequest;
-import com.goiashop.dto.EnderecoEntregaResponse;
-import com.goiashop.model.Cliente;
-import com.goiashop.model.EnderecoEntrega;
-import com.goiashop.service.ClienteService;
-import com.goiashop.service.ClienteSessionService;
-import com.goiashop.service.EnderecoEntregaService;
-import com.goiashop.service.PedidoService;
-import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.goiashop.dto.AlterarSenhaRequest;
+import com.goiashop.dto.ClientePerfilRequest;
+import com.goiashop.dto.EnderecoEntregaRequest;
+import com.goiashop.dto.EnderecoEntregaResponse;
+import com.goiashop.dto.SecurityLogResponse;
+import com.goiashop.model.Cliente;
+import com.goiashop.model.EnderecoEntrega;
+import com.goiashop.model.SecurityLog;
+import com.goiashop.service.ClienteService;
+import com.goiashop.service.ClienteSessionService;
+import com.goiashop.service.EnderecoEntregaService;
+import com.goiashop.service.PedidoService;
+import com.goiashop.service.SecurityLogService;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/cliente")
@@ -29,6 +46,9 @@ public class ClienteController {
     
     @Autowired
     private ClienteSessionService clienteSessionService;
+    
+    @Autowired
+    private SecurityLogService securityLogService;
     
     @Autowired
     private PedidoService pedidoService;
@@ -89,7 +109,7 @@ public class ClienteController {
     @PutMapping("/perfil")
     public ResponseEntity<Map<String, Object>> atualizarPerfil(
             @RequestHeader("Authorization") String authorization,
-            @Valid @RequestBody ClienteRegistroRequest request) {
+            @RequestBody ClientePerfilRequest request) {
         
         Map<String, Object> response = new HashMap<>();
         
@@ -101,7 +121,7 @@ public class ClienteController {
         }
         
         try {
-            Cliente cliente = clienteService.atualizarCliente(clienteId, request);
+            Cliente cliente = clienteService.atualizarPerfil(clienteId, request);
             
             response.put("success", true);
             response.put("message", "Perfil atualizado com sucesso");
@@ -124,7 +144,8 @@ public class ClienteController {
     @PostMapping("/alterar-senha")
     public ResponseEntity<Map<String, String>> alterarSenha(
             @RequestHeader("Authorization") String authorization,
-            @RequestBody Map<String, String> request) {
+            @RequestBody AlterarSenhaRequest request,
+            HttpServletRequest httpRequest) {
         
         Map<String, String> response = new HashMap<>();
         
@@ -136,32 +157,29 @@ public class ClienteController {
         }
         
         try {
-            // String senhaAtual = request.get("senhaAtual"); // TODO: implementar verificação de senha atual
-            String novaSenha = request.get("novaSenha");
+            // Validar se as senhas coincidem
+            if (!request.senhasCoinciden()) {
+                response.put("success", "false");
+                response.put("message", "Nova senha e confirmação não coincidem");
+                return ResponseEntity.badRequest().body(response);
+            }
             
             // Buscar cliente
             Cliente cliente = clienteService.buscarPorId(clienteId);
             
-            // Verificar senha atual (você precisa implementar este método no ClienteService)
-            // clienteService.verificarSenha(cliente, senhaAtual);
+            // Verificar senha atual
+            if (!clienteService.verificarSenha(cliente, request.getSenhaAtual())) {
+                securityLogService.registrarAlteracaoSenhaFailed(cliente, "Senha atual incorreta", httpRequest);
+                response.put("success", "false");
+                response.put("message", "Senha atual incorreta");
+                return ResponseEntity.badRequest().body(response);
+            }
             
-            // Criar request de atualização apenas com a nova senha
-            ClienteRegistroRequest updateRequest = new ClienteRegistroRequest();
-            updateRequest.setNome(cliente.getNome());
-            updateRequest.setEmail(cliente.getEmail());
-            updateRequest.setCpf(cliente.getCpf());
-            updateRequest.setTelefone(cliente.getTelefone());
-            updateRequest.setDataNascimento(cliente.getDataNascimento().toString());
-            updateRequest.setCep(cliente.getCep());
-            updateRequest.setLogradouro(cliente.getLogradouro());
-            updateRequest.setNumero(cliente.getNumero());
-            updateRequest.setComplemento(cliente.getComplemento());
-            updateRequest.setBairro(cliente.getBairro());
-            updateRequest.setCidade(cliente.getCidade());
-            updateRequest.setEstado(cliente.getEstado());
-            updateRequest.setSenha(novaSenha);
+            // Alterar senha
+            clienteService.alterarSenha(clienteId, request.getNovaSenha());
             
-            clienteService.atualizarCliente(clienteId, updateRequest);
+            // Registrar log de segurança
+            securityLogService.registrarAlteracaoSenha(cliente, httpRequest);
             
             response.put("success", "true");
             response.put("message", "Senha alterada com sucesso");
@@ -170,6 +188,40 @@ public class ClienteController {
             
         } catch (Exception e) {
             response.put("success", "false");
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    @GetMapping("/historico-seguranca")
+    public ResponseEntity<Map<String, Object>> buscarHistoricoSeguranca(
+            @RequestHeader("Authorization") String authorization) {
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        Long clienteId = validateClienteSession(authorization);
+        if (clienteId == null) {
+            response.put("success", false);
+            response.put("message", "Sessão inválida");
+            return ResponseEntity.status(401).body(response);
+        }
+        
+        try {
+            // Buscar últimos 50 logs do cliente
+            List<SecurityLog> logs = securityLogService.buscarUltimosLogs(clienteId, 50);
+            
+            // Converter para DTOs de resposta
+            List<SecurityLogResponse> logsResponse = logs.stream()
+                .map(SecurityLogResponse::new)
+                .collect(Collectors.toList());
+            
+            response.put("success", true);
+            response.put("logs", logsResponse);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.put("success", false);
             response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }

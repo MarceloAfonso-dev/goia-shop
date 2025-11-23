@@ -1,0 +1,150 @@
+/* OrderConfirmationPage.css */
+
+.confirmation-card {
+    border: none;
+    box-shadow: 0 4px 20px rgba(40, 167, 69, 0.15);
+    border-radius: 16px;
+}
+
+.success-icon {
+    animation: successPulse 2s ease-in-out infinite;
+}
+
+@keyframes successPulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.timeline-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 11px;
+    top: 24px;
+    bottom: -8px;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item i {
+    font-size: 1.25rem;
+    z-index: 1;
+    background: white;
+    padding: 2px;
+}
+
+.timeline-item span {
+    color: #495057;
+}
+
+.order-info-card {
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    transition: transform 0.2s ease;
+}
+
+.order-info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.payment-status {
+    padding: 0.5rem;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    border: 1px solid #e1bee7;
+}
+
+.delivery-info {
+    background: linear-gradient(135deg, #f1f8e9 0%, #e8f5e8 100%);
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid #c8e6c9;
+}
+
+.support-actions .btn {
+    border-radius: 20px;
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+}
+
+.support-actions .btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Animações */
+.confirmation-card,
+.order-info-card {
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .timeline {
+        padding-left: 1.5rem;
+    }
+    
+    .timeline-item {
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .timeline-item span {
+        font-size: 0.9rem;
+    }
+    
+    .success-icon i {
+        font-size: 3rem !important;
+    }
+    
+    .confirmation-card .card-body {
+        padding: 2rem 1rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .d-grid.gap-2.d-md-flex {
+        gap: 0.5rem !important;
+    }
+    
+    .support-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .support-actions .btn {
+        width: 100%;
+    }
+}
