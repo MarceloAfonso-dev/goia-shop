@@ -76,11 +76,18 @@ const UsuarioAlteracaoModal = ({ show, onHide, usuario, onUsuarioAlterado }) => 
             }
             
             // Validar senha apenas se foi fornecida
-            if (formData.senha && !/^\d{6}$/.test(formData.senha)) {
-                throw new Error('Senha deve conter exatamente 6 dígitos numéricos');
-            }
-            if (formData.senha && formData.senha !== formData.confirmaSenha) {
-                throw new Error('As senhas não coincidem');
+            if (formData.senha) {
+                // Validação apenas para CLIENTE
+                if (formData.grupo === 'CLIENTE') {
+                    if (!/^\d{6}$/.test(formData.senha)) {
+                        throw new Error('Senha de cliente deve conter exatamente 6 dígitos numéricos');
+                    }
+                }
+                // ADMIN e ESTOQUISTA: sem restrições de formato de senha
+                
+                if (formData.senha !== formData.confirmaSenha) {
+                    throw new Error('As senhas não coincidem');
+                }
             }
             
             // Impedir que admin altere seu próprio grupo de acesso
@@ -190,9 +197,9 @@ const UsuarioAlteracaoModal = ({ show, onHide, usuario, onUsuarioAlterado }) => 
                                     value={formData.senha}
                                     onChange={handleInputChange}
                                     placeholder="Deixe em branco para manter a atual"
-                                    maxLength={6}
-                                    pattern="\d{6}"
-                                    title="Deve conter exatamente 6 dígitos numéricos"
+                                    maxLength={formData.grupo === 'CLIENTE' ? 6 : undefined}
+                                    pattern={formData.grupo === 'CLIENTE' ? '\\d{6}' : undefined}
+                                    title={formData.grupo === 'CLIENTE' ? 'Deve conter exatamente 6 dígitos numéricos' : 'Digite sua nova senha'}
                                 />
                             </Form.Group>
                         </Col>
@@ -205,9 +212,9 @@ const UsuarioAlteracaoModal = ({ show, onHide, usuario, onUsuarioAlterado }) => 
                                     value={formData.confirmaSenha}
                                     onChange={handleInputChange}
                                     placeholder="Confirme a nova senha"
-                                    maxLength={6}
-                                    pattern="\d{6}"
-                                    title="Deve conter exatamente 6 dígitos numéricos"
+                                    maxLength={formData.grupo === 'CLIENTE' ? 6 : undefined}
+                                    pattern={formData.grupo === 'CLIENTE' ? '\\d{6}' : undefined}
+                                    title={formData.grupo === 'CLIENTE' ? 'Deve conter exatamente 6 dígitos numéricos' : 'Confirme sua nova senha'}
                                 />
                             </Form.Group>
                         </Col>

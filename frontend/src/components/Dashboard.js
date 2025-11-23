@@ -82,14 +82,15 @@ const Dashboard = ({ user, onLogout }) => {
 
                     {user.grupo === 'ESTOQUISTA' && (
                         <div className="product-card">
-                            <div className="icon" style={{ fontSize: '20px', marginBottom: '10px' }}>�</div>
-                            <h3>Controle de Estoque</h3>
-                            <p>Gerencie quantidades dos produtos em estoque</p>
+                            <div className="icon" style={{ fontSize: '20px', marginBottom: '10px' }}>📋</div>
+                            <h3>Pedidos</h3>
+                            <p>Visualize e gerencie status dos pedidos</p>
                             <button 
                                 className="btn btn-primary"
+                                onClick={() => window.location.href = '/estoque/pedidos'}
                                 style={{ width: '100%' }}
                             >
-                                Gerenciar Estoque
+                                Ver Pedidos
                             </button>
                         </div>
                     )}
@@ -107,9 +108,10 @@ const Dashboard = ({ user, onLogout }) => {
                             </>
                         ) : (
                             <>
-                                <strong>1.</strong> Para gerenciar estoque, clique em "Gerenciar Estoque"<br/>
-                                <strong>2.</strong> Como estoquista, você pode apenas alterar quantidades<br/>
-                                <strong>3.</strong> Para voltar ao menu, use o botão "Voltar ao Menu"
+                                <strong>1.</strong> Para visualizar pedidos, clique em "Ver Pedidos"<br/>
+                                <strong>2.</strong> Para gerenciar estoque, clique em "Gerenciar Estoque"<br/>
+                                <strong>3.</strong> Como estoquista, você pode alterar status dos pedidos e quantidades<br/>
+                                <strong>4.</strong> Para voltar ao menu, use o botão "Voltar ao Menu"
                             </>
                         )}
                     </p>
@@ -158,6 +160,7 @@ const Dashboard = ({ user, onLogout }) => {
                         </div>
                     </div>
                 );
+
             default:
                 return renderMenu();
         }

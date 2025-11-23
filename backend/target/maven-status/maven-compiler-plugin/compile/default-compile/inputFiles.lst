@@ -10,6 +10,7 @@
 /app/src/main/java/com/goiashop/controller/AuditLogController.java
 /app/src/main/java/com/goiashop/repository/ProdutoRepository.java
 /app/src/main/java/com/goiashop/service/PagamentoService.java
+/app/src/main/java/com/goiashop/controller/EstoqueController.java
 /app/src/main/java/com/goiashop/repository/AuditLogRepository.java
 /app/src/main/java/com/goiashop/service/EstoqueMovimentoService.java
 /app/src/main/java/com/goiashop/service/OrderService.java

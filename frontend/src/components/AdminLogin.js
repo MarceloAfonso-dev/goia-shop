@@ -113,9 +113,7 @@ const AdminLogin = () => {
                                         onChange={handleChange}
                                         placeholder="••••••"
                                         required
-                                        maxLength="6"
-                                        pattern="\d{6}"
-                                        title="Deve conter exatamente 6 dígitos numéricos"
+                                        title="Digite sua senha"
                                     />
                                 </Form.Group>
 

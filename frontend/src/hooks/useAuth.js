@@ -76,6 +76,10 @@ export const useAuth = () => {
         return localStorage.getItem('userType');
     };
 
+    const getToken = () => {
+        return localStorage.getItem('token');
+    };
+
     return {
         user,
         loading,
@@ -87,6 +91,7 @@ export const useAuth = () => {
         isEstoquista,
         isBackofficeUser,
         isClienteUser,
-        getUserType
+        getUserType,
+        token: getToken()
     };
 };

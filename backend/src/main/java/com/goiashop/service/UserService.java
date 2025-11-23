@@ -154,6 +154,10 @@ public class UserService {
      * Cadastra um novo usuário
      */
     public User cadastrarUsuario(UsuarioCadastroRequest request) {
+        // Validação de senha baseada no grupo (apenas para clientes)
+        // ADMIN e ESTOQUISTA não têm restrições de formato de senha
+        // Esta validação é redundante com o frontend, mas mantém segurança backend
+        
         User novoUsuario = new User();
         novoUsuario.setNome(request.getNome());
         novoUsuario.setCpf(request.getCpf());

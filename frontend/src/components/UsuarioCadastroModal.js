@@ -50,9 +50,15 @@ const UsuarioCadastroModal = ({ show, onHide, onUsuarioCadastrado }) => {
             if (!validarEmail(formData.email)) {
                 throw new Error('Email deve ter formato válido');
             }
-            if (!/^\d{6}$/.test(formData.senha)) {
-                throw new Error('Senha deve conter exatamente 6 dígitos numéricos');
+            
+            // Validação de senha apenas para CLIENTE
+            if (formData.grupo === 'CLIENTE') {
+                if (!/^\d{6}$/.test(formData.senha)) {
+                    throw new Error('Senha de cliente deve conter exatamente 6 dígitos numéricos');
+                }
             }
+            // ADMIN e ESTOQUISTA: sem restrições de formato de senha
+            
             if (formData.senha !== formData.confirmaSenha) {
                 throw new Error('As senhas não coincidem');
             }
@@ -197,10 +203,10 @@ const UsuarioCadastroModal = ({ show, onHide, onUsuarioCadastrado }) => {
                                     value={formData.senha}
                                     onChange={handleInputChange}
                                     required
-                                    placeholder="Exatamente 6 dígitos"
-                                    maxLength={6}
-                                    pattern="\d{6}"
-                                    title="Deve conter exatamente 6 dígitos numéricos"
+                                    placeholder={formData.grupo === 'CLIENTE' ? 'Exatamente 6 dígitos' : 'Digite sua senha'}
+                                    maxLength={formData.grupo === 'CLIENTE' ? 6 : undefined}
+                                    pattern={formData.grupo === 'CLIENTE' ? '\\d{6}' : undefined}
+                                    title={formData.grupo === 'CLIENTE' ? 'Deve conter exatamente 6 dígitos numéricos' : 'Digite sua senha'}
                                 />
                             </Form.Group>
                         </Col>
@@ -214,9 +220,9 @@ const UsuarioCadastroModal = ({ show, onHide, onUsuarioCadastrado }) => {
                                     onChange={handleInputChange}
                                     required
                                     placeholder="Repita a senha"
-                                    maxLength={6}
-                                    pattern="\d{6}"
-                                    title="Deve conter exatamente 6 dígitos numéricos"
+                                    maxLength={formData.grupo === 'CLIENTE' ? 6 : undefined}
+                                    pattern={formData.grupo === 'CLIENTE' ? '\\d{6}' : undefined}
+                                    title={formData.grupo === 'CLIENTE' ? 'Deve conter exatamente 6 dígitos numéricos' : 'Repita sua senha'}
                                 />
                             </Form.Group>
                         </Col>
